@@ -3,5 +3,24 @@
 {% extends "_base.html" %}
 
 {% block content %}
-  <h1 class="text-3xl text-green-800">Django + Tailwind CSS + Flowbite</h1>
+  <h1 class="text-3xl text-slate-200">Django + Tailwind CSS + Flowbite</h1>
 {% endblock content %}
+
+{% block navbuttons %}
+<a href="login/">
+  <button
+    type="button"
+    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+  >
+    Login
+  </button>
+</a>
+<a href="signup/">
+  <button
+    type="button"
+    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+  >
+    Sign Up
+  </button>
+</a>
+{% endblock navbuttons %}
