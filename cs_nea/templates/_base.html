@@ -1,7 +1,6 @@
 <!-- templates/_base.html -->
 
-{% load static %}
-{% load static tailwind_tags %}
+{% load static %} {% load static tailwind_tags %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -15,11 +14,22 @@
 
   <body class="bg-neutral-200">
     <!-- Navbar -->
-    <div class="flex">
-    </div>
-    
+    <div class="flex w-full gap-x-10 p-4 text-lg bg-transparent">
+      <div class="flex flex-row font-semibold">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+      <div class="flex">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+      <div class="flex">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
 
-    
+      <div class="flex">
+        <button type="button" class="">Default</button>
+        
+      </div>
+    </div>
 
     <!-- Content -->
     {% block content %} {% endblock content %}
