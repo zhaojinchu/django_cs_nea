@@ -12,25 +12,40 @@
     {% tailwind_css %}
   </head>
 
-  <body class="bg-neutral-200">
-    <!-- Navbar -->
-    <div class="flex w-full gap-x-10 p-4 text-lg bg-transparent">
-      <div class="flex flex-row font-semibold">
-        <a href="{% url 'index' %}">Home</a>
-      </div>
-      <div class="flex">
-        <a href="{% url 'index' %}">Home</a>
-      </div>
-      <div class="flex">
-        <a href="{% url 'index' %}">Home</a>
-      </div>
+  <div>
+    <header class="sticky top-0 z-50">
+      
+    </header>
+    <main class="relative"></main>
+    <footer></footer>
+  </div>
 
-      <div class="flex">
-        <button type="button" class="">Default</button>
-        
+  <body class="bg-neutral-200">
+    <div class="flex flex-col">
+      <!-- Navbar -->
+      <div
+        class="flex fixed top-0 w-full align-center items-center bg-neutral-200 bg-opacity-95 backdrop-blur"
+      >
+        <!-- Left -->
+        <div class="flex w-full gap-x-10 p-4 text-lg ml-4">
+          <!-- AM I STUPID WHY DOES THIS NOT WORK?????!?!?!??!! -->
+          <img class="h-auto" src="{% static 'logo.png' %}" alt="logo" />
+        </div>
+
+        <!-- Center -->
+        <div class="flex gap-x-10 p-4 text-lg justify-center align-center">
+          <div class="flex">
+            <a href="{% url 'index' %}" class="hover:text-purple-700">Home</a>
+          </div>
+          <div class="flex">
+            <a href="{% url 'index' %}" class="hover:text-purple-700">Home</a>
+          </div>
+        </div>
+
+        <!-- Right -->
+      {% block navleft %}{% endblock navleft %}
       </div>
     </div>
-
     <!-- Content -->
     {% block content %} {% endblock content %}
 
