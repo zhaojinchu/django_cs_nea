@@ -12,42 +12,40 @@
     {% tailwind_css %}
   </head>
 
-  <div>
-    <header class="sticky top-0 z-50">
-      
-    </header>
-    <main class="relative"></main>
-    <footer></footer>
-  </div>
-
   <body class="bg-neutral-200">
-    <div class="flex flex-col">
-      <!-- Navbar -->
-      <div
-        class="flex fixed top-0 w-full align-center items-center bg-neutral-200 bg-opacity-95 backdrop-blur"
-      >
-        <!-- Left -->
-        <div class="flex w-full gap-x-10 p-4 text-lg ml-4">
-          <!-- AM I STUPID WHY DOES THIS NOT WORK?????!?!?!??!! -->
-          <img class="h-auto" src="{% static 'logo.png' %}" alt="logo" />
-        </div>
-
-        <!-- Center -->
-        <div class="flex gap-x-10 p-4 text-lg justify-center align-center">
-          <div class="flex">
-            <a href="{% url 'index' %}" class="hover:text-purple-700">Home</a>
+    <div>
+      <header class="sticky top-0 z-50">
+        <div
+          class="flex fixed top-0 w-full align-center items-center bg-neutral-800 bg-opacity-95 backdrop-blur shadow-md"
+        >
+          <!-- Left -->
+          <div class="flex w-full gap-x-10 p-4 text-lg ml-4">
+            <!-- AM I STUPID WHY DOES THIS NOT WORK?????!?!?!??!! -->
+            <img class="h-auto" src="{% static 'logo.png' %}" alt="logo" />
           </div>
-          <div class="flex">
-            <a href="{% url 'index' %}" class="hover:text-purple-700">Home</a>
-          </div>
-        </div>
 
-        <!-- Right -->
-      {% block navleft %}{% endblock navleft %}
-      </div>
+          <!-- Center -->
+          <div class="flex gap-x-10 p-4 text-lg justify-center align-center text-white">
+            <div class="flex">
+              <a href="{% url 'index' %}" class="hover:text-purple-400">Home</a>
+            </div>
+            <div class="flex">
+              <a href="{% url 'index' %}" class="hover:text-purple-400">Home</a>
+            </div>
+          </div>
+
+          <!-- Right -->
+          {% block navleft %}{% endblock navleft %}
+        </div>
+      </header>
+
+      <main class="relative">
+        <!-- Content -->
+        {% block content %} {% endblock content %}
+      </main>
+
+      <footer></footer>
     </div>
-    <!-- Content -->
-    {% block content %} {% endblock content %}
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
   </body>
