@@ -3,7 +3,7 @@
 <!-- Make more responsive -->
 <form class="flex pt-28 justify-center" action="/" method="post">
   {% csrf_token %} 
-  {{ form.as_p }}
+  {{ % form|add_class:"css_class_1 css_class_2" % }}
   <div class="flex flex-col gap-4 justify-center">
     <div>
       <label
