@@ -1,37 +1,20 @@
-{% extends "_base.html" %} {% block content %}
+{% extends "_base.html" %} {% load widget_tweaks %} {% block content %}
 
 <!-- Make more responsive -->
 <form class="flex pt-28 justify-center" action="/" method="post">
   {% csrf_token %} 
-  {{ % form|add_class:"css_class_1 css_class_2" % }}
   <div class="flex flex-col gap-4 justify-center">
-    <div>
-      <label
-        class="text-neutral-800 text-sm font-bold"
-        for="username"
-      >
-        Username
-      </label>
-      <input
-        class="shadow border rounded w-full text-gray-700 focus:border-purple-500"
-        id="username"
-        type="text"
-        placeholder="Username"
-        value="{{ username }}"
-      />
-    </div>
-    <div>
-      <label class="text-neutral-800 text-sm font-bold mb-2" for="password">
-        Password
-      </label>
-      <input
-        class="shadow border rounded w-full text-gray-700 focus:border-purple-500"
-        id="password"
-        type="password"
-        placeholder="******************"
-        value="{{ password }}"
-      />
-    </div>
+    {% for field in form %}
+      <div>
+        <label
+          class="text-neutral-800 text-sm font-bold"
+          for="{{ field.id_for_label }}">
+          {{ field.label }}
+        </label>
+        {{ field|add_class:"shadow border rounded w-full text-gray-700 focus:border-purple-500" }}
+        {{ field.errors }}
+      </div>
+    {% endfor %}
     <div>
       <input
         class="bg-purple-500 text-white font-medium rounded-lg px-5 py-2.5 hover:bg-purple-600 hover:ring-2 ring-purple-800"
