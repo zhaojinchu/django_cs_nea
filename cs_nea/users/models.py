@@ -24,12 +24,12 @@ class User(AbstractBaseUser):
     first_name = models.CharField(
         "first name",
         max_length=150,
-        validators=[RegexValidator(r"^[a-zA-Z\s]+$", "Enter a valid first name.")],
+        validators=[RegexValidator(r"^[a-zA-Z\s]+$", "Enter a valid first name (letters only).")],
     )
     last_name = models.CharField(
         "last name",
         max_length=150,
-        validators=[RegexValidator(r"^[a-zA-Z\s]+$", "Enter a valid last name.")],
+        validators=[RegexValidator(r"^[a-zA-Z\s]+$", "Enter a valid last name (letters only).")],
     )
     password = models.CharField(
         "password",
@@ -38,7 +38,7 @@ class User(AbstractBaseUser):
             MinLengthValidator(6),
             RegexValidator(
                 r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$",
-                "Password must have at least 6 characters, a special character, a number, and a capital letter.",
+                "Password must have at least 6 characters, including a special character, a number, and a capital letter.",
             ),
         ],
     )
@@ -52,14 +52,8 @@ class User(AbstractBaseUser):
             )
         ],
     )
-    date_of_birth = models.DateField(
-        "date of birth",
-        validators=[
-            RegexValidator(
-                r"^\d{2}-\d{2}-\d{4}$", "Enter a valid date in DD-MM-YYYY format."
-            )
-        ],
-    )
+    
+    date_of_birth = models.DateField("date of birth")
 
     objects = UserManager()
 

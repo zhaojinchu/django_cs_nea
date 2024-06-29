@@ -1,15 +1,11 @@
-from django.forms import ModelForm
-from django.core.validators import RegexValidator
-from .models import User
 from django import forms
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from .models import User
 
-class LoginForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ["email", "password"]  
-        widgets = {
-            "password": forms.PasswordInput()
-        }
+class LoginForm(forms.Form):
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput())
     
 class SignupForm(forms.ModelForm):
     confirm_password = forms.CharField(widget=forms.PasswordInput())
@@ -27,25 +23,27 @@ class SignupForm(forms.ModelForm):
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
 
-        if password and confirm_password and password != confirm_password:
-            self.add_error("confirm_password", "Passwords do not match")
+        if password and confirm_password:
+            if password != confirm_password:
+                raise ValidationError("Passwords do not match")
+            try:
+                validate_password(password)
+            except forms.ValidationError as error:
+                self.add_error('password', error)
 
         return cleaned_data
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("Email already exists")
+             raise ValidationError("Email already exists")
         return email
-
-    def clean_contact_number(self):
-        contact_number = self.cleaned_data.get("contact_number")
-        if not contact_number.startswith('+'):
-            raise forms.ValidationError("Contact number must start with a '+' followed by the country code")
-        return contact_number
 
     def clean_date_of_birth(self):
         date_of_birth = self.cleaned_data.get("date_of_birth")
-        if date_of_birth and date_of_birth.strftime("%d-%m-%Y") != self.data["date_of_birth"]:
-            raise forms.ValidationError("Enter a valid date in DD-MM-YYYY format")
+        if date_of_birth:
+            from datetime import date
+            age = (date.today() - date_of_birth).days // 365
+            if age < 10:
+                raise ValidationError("You must be at least 10 years old to register. Please have your parent or guardian register for you.")
         return date_of_birth

@@ -1,13 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login
-from django.http import JsonResponse
+from django.contrib import messages
 from .forms import LoginForm, SignupForm
 from .models import User
 
 
 def index(request):
     return render(request, "index.html")
-
 
 def login(request):
     if request.method == "POST":
@@ -18,20 +17,14 @@ def login(request):
             user = authenticate(request, username=email, password=password)
             if user is not None:
                 auth_login(request, user)
-                return JsonResponse(
-                    {"success": True, "message": "You have successfully logged in."}
-                )
+                messages.success(request, "You have successfully logged in.")
+                return redirect('index')
             else:
-                return JsonResponse(
-                    {"success": False, "message": "Invalid email or password"}
-                )
-        else:
-            return JsonResponse({"success": False, "errors": form.errors})
+                messages.error(request, "Invalid email or password")
     else:
         form = LoginForm()
 
     return render(request, "users/login.html", {"form": form})
-
 
 def signup(request):
     if request.method == "POST":
@@ -40,14 +33,8 @@ def signup(request):
             user = form.save(commit=False)
             user.set_password(form.cleaned_data["password"])
             user.save()
-            return JsonResponse(
-                {
-                    "success": True,
-                    "message": "Your account has been created. You can now log in.",
-                }
-            )
-        else:
-            return JsonResponse({"success": False, "errors": form.errors})
+            messages.success(request, "Your account has been successfully created!")
+            return redirect('login')
     else:
         form = SignupForm()
 

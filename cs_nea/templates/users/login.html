@@ -1,30 +1,53 @@
-{% extends "_base.html" %} {% load widget_tweaks %} {% block content %}
+{% extends "_base.html" %}
+{% load widget_tweaks %}
 
-<!-- Make more responsive -->
-<form class="flex pt-28 justify-center" action="/" method="post">
-  {% csrf_token %} 
-  <div class="flex flex-col gap-4 justify-center">
+{% block content %}
+<form class="flex pt-28 justify-center" method="post">
+  {% csrf_token %}
+  <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
+    <div class="text-4xl font-semibold">Log In</div>
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="{% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %} px-4 py-3 rounded relative" role="alert">
+          <span class="block sm:inline">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     {% for field in form %}
-      <div>
-        <label
-          class="text-neutral-800 text-sm font-bold"
-          for="{{ field.id_for_label }}">
+      <div class="w-full">
+        <label class="text-neutral-800 text-sm font-bold" for="{{ field.id_for_label }}">
           {{ field.label }}
         </label>
         {{ field|add_class:"shadow border rounded w-full text-gray-700 focus:border-purple-500" }}
-        {{ field.errors }}
+        {% if field.errors %}
+          {% for error in field.errors %}
+            <p class="text-red-500 text-xs italic">{{ error }}</p>
+          {% endfor %}
+        {% endif %}
       </div>
     {% endfor %}
     <div>
       <input
-        class="bg-purple-500 text-white font-medium rounded-lg px-5 py-2.5 hover:bg-purple-600 hover:ring-2 ring-purple-800"
+        class="bg-purple-500 text-white font-medium rounded-lg px-5 py-2.5 hover:bg-purple-600 hover:ring-2 ring-purple-800 w-full"
         type="submit"
+        value="Log In"
       />
     </div>
   </div>
 </form>
+{% endblock content %}
 
-{% endblock content %} {% block navleft %}
+{% block navleft %}
 <div class="flex w-full gap-x-10 p-4 text-lg flex-row-reverse mr-4">
   <a href="{% url 'login' %}">
     <button
