@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import RegexValidator, EmailValidator, MinLengthValidator
-
+from phonenumber_field.modelfields import PhoneNumberField
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -37,21 +37,12 @@ class User(AbstractBaseUser):
         validators=[
             MinLengthValidator(6),
             RegexValidator(
-                r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$",
-                "Password must have at least 6 characters, including a special character, a number, and a capital letter.",
+                r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$",
+                "Password must have at least 6 characters, including a number and a capital letter.",
             ),
         ],
     )
-    contact_number = models.CharField(
-        "contact number",
-        max_length=20,
-        validators=[
-            RegexValidator(
-                r"^\+\d{1,3}\s?\d{1,14}(\s?\d{1,13})?$",
-                "Enter a valid contact number with country code.",
-            )
-        ],
-    )
+    contact_number = PhoneNumberField()
     
     date_of_birth = models.DateField("date of birth")
 

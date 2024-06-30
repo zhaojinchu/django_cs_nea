@@ -35,6 +35,8 @@ def signup(request):
             user.save()
             messages.success(request, "Your account has been successfully created!")
             return redirect('login')
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = SignupForm()
 

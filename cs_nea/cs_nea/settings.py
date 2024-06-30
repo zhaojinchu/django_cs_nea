@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     "theme",
     "django_browser_reload",
     'widget_tweaks',
+    "phonenumber_field",
+    
+    # My django apps
     "users",
 ]
 

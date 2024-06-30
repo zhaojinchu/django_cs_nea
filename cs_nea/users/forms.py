@@ -3,12 +3,15 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .models import User
 
+from phonenumber_field.formfields import SplitPhoneNumberField
+
 class LoginForm(forms.Form):
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput())
     
 class SignupForm(forms.ModelForm):
     confirm_password = forms.CharField(widget=forms.PasswordInput())
+    contact_number = SplitPhoneNumberField()
     
     class Meta:
         model = User
