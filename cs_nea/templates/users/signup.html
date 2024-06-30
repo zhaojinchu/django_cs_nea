@@ -20,21 +20,28 @@
           <p>{{ error }}</p>
         {% endfor %}
       </div>
-    {% endif %}
+      {% endif %}
 
     {% for field in form %}
       <div class="w-full">
-        <label class="text-neutral-800 text-sm font-bold" for="{{ field.id_for_label }}">
-          {{ field.label }}
-        </label>
+      <label class="text-neutral-800 text-sm font-bold" for="{{ field.id_for_label }}">
+      {{ field.label }}
+      </label>
+      {% if field.name == 'contact_number' %}
+        <div class="flex gap-2">
+          {{ field|add_class:"w-full" }}
+        </div>
+      {% else %}
         {{ field|add_class:"shadow border rounded w-full text-gray-700 focus:border-purple-500" }}
-        {% if field.errors %}
-          {% for error in field.errors %}
-            <p class="text-red-500 text-xs italic">{{ error }}</p>
-          {% endfor %}
-        {% endif %}
+      {% endif %}
+      {% if field.errors %}
+        {% for error in field.errors %}
+          <p class="text-red-500 text-xs italic">{{ error }}</p>
+        {% endfor %}
+      {% endif %}
       </div>
     {% endfor %}
+
     <div>
       <input
         class="w-full bg-purple-500 text-white font-medium rounded-lg px-5 py-2.5 hover:bg-purple-600 hover:ring-2 ring-purple-800"
