@@ -37,19 +37,17 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    
     # Additional apps
     "tailwind",
     "theme",
     "django_browser_reload",
-    'widget_tweaks',
+    "widget_tweaks",
     "phonenumber_field",
-    
     # My django apps
     "users",
 ]
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -136,8 +134,11 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-TAILWIND_APP_NAME = 'theme'
+TAILWIND_APP_NAME = "theme"
 
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "dashboard"

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
 from .forms import LoginForm, SignupForm
 
@@ -40,3 +40,12 @@ def signup(request):
 
     return render(request, "users/signup.html", {"form": form})
 
+def logout(request):
+    auth_logout(request)
+    return redirect('index')
+
+def student(request):
+    return render(request, "users/student.html")
+
+def teacher(request):
+    return render(request, "users/teacher.html")

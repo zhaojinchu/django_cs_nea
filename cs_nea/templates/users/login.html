@@ -48,24 +48,5 @@
 {% endblock content %}
 
 {% block navleft %}
-<div class="flex w-full gap-x-10 p-4 text-lg flex-row-reverse mr-4">
-  <a href="{% url 'login' %}">
-    <button
-      type="button"
-      class="bg-neutral-700 text-white font-medium rounded-lg px-5 py-2.5 hover:bg-neutral-800 hover:ring-2 ring-neutral-500"
-      href="/login"
-    >
-      Log in
-    </button>
-  </a>
-  <a href="{% url 'signup' %}">
-    <button
-      type="button"
-      class="bg-purple-500 text-white font-medium rounded-lg px-5 py-2.5 hover:bg-purple-600 hover:ring-2 ring-purple-800"
-      href="{% url 'signup' %}"
-    >
-      Sign up
-    </button>
-  </a>
-</div>
+{% include "components/loginlogoutbutton.html" %}
 {% endblock navleft %}
