@@ -2,8 +2,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib import messages
 from .forms import LoginForm, SignupForm
-from .models import User
-
 
 def index(request):
     return render(request, "index.html")
@@ -18,7 +16,7 @@ def login(request):
             if user is not None:
                 auth_login(request, user)
                 messages.success(request, "You have successfully logged in.")
-                return redirect('index')
+                return redirect('dashboard')
             else:
                 messages.error(request, "Invalid email or password")
     else:
@@ -41,3 +39,4 @@ def signup(request):
         form = SignupForm()
 
     return render(request, "users/signup.html", {"form": form})
+
