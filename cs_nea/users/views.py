@@ -64,8 +64,8 @@ def logout(request):
     auth_logout(request)
     return redirect('index')
 
-def student(request):
-    return render(request, "users/student.html")
+def profile(request):
+    return render(request, "users/profile.html")
 
-def teacher(request):
-    return render(request, "users/teacher.html")
+def settings(request):
+    return render(request, "users/settings.html")
