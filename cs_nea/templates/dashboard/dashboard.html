@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block navleft %}
-<button @click="sidebarOpen = !sidebarOpen; console.log('Button clicked', sidebarOpen)" class="text-white focus:outline-none">
+<button @click="sidebarOpen = !sidebarOpen" class="text-white focus:outline-none">
     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M4 6H20M4 12H20M4 18H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
     </svg>
@@ -10,10 +10,10 @@
 {% endblock navleft %}
 
 {% block content %}
-<div class="flex h-screen bg-gray-100" x-data="{ sidebarOpen: true }">
+<div class="flex h-screen bg-gray-200">
     <!-- Sidebar -->
     <div 
-        class="z-30 inset-y-0 left-0 w-64 transition duration-300 transform bg-gray-900 overflow-y-auto fixed top-14"
+        class="z-30 inset-y-0 left-0 w-56 transition duration-300 transform bg-gray-900 overflow-y-auto fixed top-14"
         :class="{'translate-x-0 ease-out': sidebarOpen, '-translate-x-full ease-in': !sidebarOpen}"
     >
         <!-- Sidebar content -->
@@ -31,7 +31,7 @@
     <!-- Main content -->
     <div class="flex-1 flex flex-col overflow-hidden" :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}">
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 pt-14" role="main">
-            <div class="container mx-auto px-6 py-8">
+            <div class="container mx-auto py-8">
                 <h3 class="text-gray-700 text-3xl font-medium">Dashboard Content</h3>
                 <!-- Add your dashboard content here -->
             </div>
