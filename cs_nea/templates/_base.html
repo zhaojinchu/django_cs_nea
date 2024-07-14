@@ -20,9 +20,11 @@
             <div class="flex font-semibold">
               <a href="{% url 'index' %}" class="hover:text-purple-400">Home</a>
             </div>
+            {% if user.is_authenticated %}
             <div class="flex">
-              <a href="{% url 'index' %}" class="hover:text-purple-400">Home</a>
+              <a href="{% url 'dashboard' %}" class="hover:text-purple-400">Dashboard</a>
             </div>
+            {% endif %}
           </div>
 
           <!-- Right -->
