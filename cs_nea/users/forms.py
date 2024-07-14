@@ -50,3 +50,33 @@ class SignupForm(forms.ModelForm):
             if age < 10:
                 raise ValidationError("You must be at least 10 years old to register. Please have your parent or guardian register for you.")
         return date_of_birth
+    
+class StudentSignupForm(SignupForm):
+    grade_level = forms.IntegerField(
+        min_value=1,
+        max_value=12,
+        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+        help_text="Enter a grade level between 1 and 12.",
+        label="Grade Level"
+    )
+    extra_student_info = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        required=False,
+        label="Extra Information About You (Optional)",
+    )
+
+    class Meta(SignupForm.Meta):
+        model = User
+        fields = SignupForm.Meta.fields + ["grade_level", "extra_student_info"]
+
+class TeacherSignupForm(SignupForm):
+    extra_teacher_info = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        required=False,
+        label="Extra Information About You (Optional)",
+    )
+
+    class Meta(SignupForm.Meta):
+        model = User
+        fields = SignupForm.Meta.fields + ["extra_teacher_info"]
+        

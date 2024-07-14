@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
-from .forms import LoginForm, SignupForm
+from .forms import LoginForm, SignupForm, StudentSignupForm, TeacherSignupForm
 
 def index(request):
     return render(request, "index.html")
@@ -25,18 +25,38 @@ def login(request):
     return render(request, "users/login.html", {"form": form})
 
 def signup(request):
+    if request.path == "/student/signup":
+        form_class = StudentSignupForm
+    elif request.path == "/teacher/signup":
+        form_class = TeacherSignupForm
+    else:
+        return redirect('index')  # handle this case as appropriate
+
     if request.method == "POST":
-        form = SignupForm(request.POST)
+        form = form_class(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
             user.set_password(form.cleaned_data["password"])
             user.save()
+
+            if isinstance(form, StudentSignupForm):
+                Student.objects.create(
+                    user=user,
+                    grade_level=form.cleaned_data['grade_level'],
+                    extra_student_info=form.cleaned_data['extra_student_info']
+                )
+            elif isinstance(form, TeacherSignupForm):
+                Teacher.objects.create(
+                    user=user,
+                    extra_teacher_info=form.cleaned_data['extra_teacher_info']
+                )
+
             messages.success(request, "Your account has been successfully created!")
             return redirect('login')
         else:
             messages.error(request, "Please correct the errors below.")
     else:
-        form = SignupForm()
+        form = form_class()
 
     return render(request, "users/signup.html", {"form": form})
 
