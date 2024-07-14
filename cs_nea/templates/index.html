@@ -30,7 +30,7 @@
 </div>
 {% endblock content %}
 
-{% block navleft %}
+{% block navright %}
 {% if user.is_authenticated %}
   <div x-data="{ open: false }" class="relative inline-block text-left mr-4">
     <div>
@@ -53,4 +53,4 @@
 {% else %}
   
 {% endif %}
-{% endblock navleft %}
+{% endblock navright %}

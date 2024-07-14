@@ -107,13 +107,6 @@
   </form>
 {% endif %}
 
-{% endblock content %} {% block navleft %}
-{% include "components/loginlogoutbutton.html" %}
-
-{% block login %}
-{% url 'student_login' %}
-{% endblock login %} {% block signup %}
-{% url 'student_signup' %}
-{% endblock signup %} {% endblock navleft %}
-
-{% endblock navleft %}
+{% endblock content %} {% block navright %}
+{% include "components/loginlogoutbutton.html" with login_url=login_url signup_url=signup_url %}
+{% endblock navright %}

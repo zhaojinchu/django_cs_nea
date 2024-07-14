@@ -47,6 +47,6 @@
 </form>
 {% endblock content %}
 
-{% block navleft %}
-{% include "components/loginlogoutbutton.html" %}
-{% endblock navleft %}
+{% block navright %}
+{% include "components/loginlogoutbutton.html" with login_url=login_url signup_url=signup_url %}
+{% endblock navright %}

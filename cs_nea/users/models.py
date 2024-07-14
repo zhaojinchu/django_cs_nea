@@ -42,6 +42,13 @@ class User(AbstractBaseUser):
             ),
         ],
     )
+    
+    USER_TYPE_CHOICES = (
+        ('student', 'Student'),
+        ('teacher', 'Teacher'),
+    )
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
+    
     contact_number = PhoneNumberField()
     
     date_of_birth = models.DateField("date of birth")
