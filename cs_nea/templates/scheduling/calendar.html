@@ -4,17 +4,19 @@
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6 text-neutral-800">Calendar</h1>
+
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <div x-data="{ currentDate: new Date() }" class="p-4">
+        <div class="p-4" x-data="{ currentDate: new Date() }">
             <div class="flex justify-between items-center mb-4">
-                <button @click="currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">
+                <button @click="currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                     Previous Month
                 </button>
-                <h2 x-text="currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })" class="text-xl font-semibold"></h2>
-                <button @click="currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">
+                <h2 class="text-xl font-semibold" x-text="currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })"></h2>
+                <button @click="currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                     Next Month
                 </button>
             </div>
+
             <div class="calendar-container">
                 {{ calendar|safe }}
             </div>
