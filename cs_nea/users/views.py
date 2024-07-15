@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
 from .forms import LoginForm, SignupForm, StudentSignupForm, TeacherSignupForm
+from .models import Student, Teacher
 
 def index(request):
     return render(request, "index.html")
@@ -27,8 +28,10 @@ def login(request):
 def signup(request):
     if request.path == "/student/signup":
         form_class = StudentSignupForm
+        user_type = 1
     elif request.path == "/teacher/signup":
         form_class = TeacherSignupForm
+        user_type = 2
     else:
         return redirect('index')  # handle this case as appropriate
 
@@ -37,6 +40,7 @@ def signup(request):
         if form.is_valid():
             user = form.save(commit=False)
             user.set_password(form.cleaned_data["password"])
+            user.user_type = user_type
             user.save()
 
             if isinstance(form, StudentSignupForm):
@@ -52,7 +56,10 @@ def signup(request):
                 )
 
             messages.success(request, "Your account has been successfully created!")
-            return redirect('login')
+            if request.path == "/student/signup":
+                return redirect("student_login")
+            elif request.path == "/teacher/signup":
+                return redirect("teacher_login")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
