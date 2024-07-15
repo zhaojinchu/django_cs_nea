@@ -1,12 +1,13 @@
 from calendar import HTMLCalendar
-from datetime import date
+from datetime import date, timedelta
 from .models import Lesson, OtherEvent
 from django.utils import timezone
 
 class LessonCalendar(HTMLCalendar):
-    def __init__(self, year=None, month=None):
+    def __init__(self, year=None, month=None, week=None):
         self.year = year
         self.month = month
+        self.week = week
         super(LessonCalendar, self).__init__()
 
     def formatday(self, day, weekday, lessons, other_events):
@@ -49,3 +50,23 @@ class LessonCalendar(HTMLCalendar):
         for week in self.monthdays2calendar(self.year, self.month):
             cal += f'{self.formatweek(week, lessons, other_events)}\n'
         return cal  
+    
+    def formatweek_view(self):
+        month_calendar = self.monthdays2calendar(self.year, self.month)
+        week_dates = month_calendar[self.week - 1]  # Subtract 1 because weeks are 0-indexed
+
+        lessons = Lesson.objects.filter(start_datetime__year=self.year, start_datetime__month=self.month)
+        other_events = OtherEvent.objects.filter(start_datetime__year=self.year, start_datetime__month=self.month)
+
+        cal = f'<table class="calendar table-auto w-full border-collapse h-full">\n'
+        cal += f'<tr><th colspan="7">{date(self.year, self.month, 1).strftime("%B %Y")} - Week {self.week}</th></tr>\n'
+        cal += f'{self.formatweekheader()}\n'
+        cal += '<tr class="h-full">'
+        for day, weekday in week_dates:
+            if day != 0:
+                date_obj = date(self.year, self.month, day)
+                cal += self.formatday(day, weekday, lessons, other_events)
+            else:
+                cal += '<td class="p-2 border border-gray-200 bg-gray-100"></td>'
+        cal += '</tr>\n'
+        return cal

@@ -91,17 +91,24 @@ def create_other_event(request):
     return render(request, "scheduling/create_other_event.html", {"form": form})
 
 
-# Calendar view
+# Calendar views
 @login_required
 def calendar_view(request):
     return render(request, 'scheduling/calendar.html')
 
+# Calendar refresh view
 @login_required
 def get_calendar_data(request):
     year = int(request.GET.get('year'))
     month = int(request.GET.get('month'))
+    view_type = request.GET.get('view_type', 'month')
     
-    cal = LessonCalendar(year, month)
-    html_cal = cal.formatmonth(withyear=True)
+    if view_type == 'month': # month view
+        cal = LessonCalendar(year, month)
+        html_cal = cal.formatmonth(withyear=True)
+    else:  # week view
+        week = int(request.GET.get('week', 1))
+        cal = LessonCalendar(year, month, week)
+        html_cal = cal.formatweek_view()
     
     return JsonResponse({'calendar_html': html_cal})

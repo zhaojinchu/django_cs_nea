@@ -2,22 +2,27 @@
 {% load static %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto px-4 py-8 h-screen flex flex-col">
     <h1 class="text-3xl font-bold mb-6 text-neutral-800">Calendar</h1>
 
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <div class="p-4" x-data="calendarData()">
+    <div class="bg-white shadow-md rounded-lg overflow-hidden flex-grow flex flex-col">
+        <div class="p-4 flex flex-col h-full" x-data="calendarData()">
             <div class="flex justify-between items-center mb-4">
-                <button @click="previousMonth()" class="bg-purple-500 text-white hover:bg-purple-600 ring-purple-800 font-semibold py-2 px-4 rounded">
-                    Previous Month
+                <button @click="previousPeriod()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Previous
                 </button>
-                <h2 class="text-xl font-semibold" x-text="currentMonthName"></h2>
-                <button @click="nextMonth()" class="bg-purple-500 text-white hover:bg-purple-600 ring-purple-800 font-semibold py-2 px-4 rounded">
-                    Next Month
+                <h2 class="text-xl font-semibold" x-text="currentPeriodName"></h2>
+                <button @click="nextPeriod()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Next
                 </button>
             </div>
 
-            <div class="calendar-container" x-html="calendarHtml"></div>
+            <div class="mb-4">
+                <button @click="toggleView()" x-text="viewType === 'month' ? 'Switch to Week View' : 'Switch to Month View'" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                </button>
+            </div>
+
+            <div class="calendar-container flex-grow" x-html="calendarHtml"></div>
         </div>
     </div>
 </div>
@@ -27,21 +32,59 @@ function calendarData() {
     return {
         currentDate: new Date(),
         calendarHtml: '',
-        get currentMonthName() {
-            return this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        viewType: 'month',
+        get currentPeriodName() {
+            if (this.viewType === 'month') {
+                return this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            } else {
+                const weekNumber = this.getWeekNumberInMonth(this.currentDate);
+                return `${this.getOrdinal(weekNumber)} Week, ${this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`;
+            }
         },
         async fetchCalendar() {
-            const response = await fetch(`/get_calendar_data?year=${this.currentDate.getFullYear()}&month=${this.currentDate.getMonth() + 1}`);
+            const year = this.currentDate.getFullYear();
+            const month = this.currentDate.getMonth() + 1;
+            const week = this.getWeekNumberInMonth(this.currentDate);
+            const response = await fetch(`/get_calendar_data?year=${year}&month=${month}&week=${week}&view_type=${this.viewType}`);
             const data = await response.json();
             this.calendarHtml = data.calendar_html;
         },
-        previousMonth() {
-            this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
+        previousPeriod() {
+            if (this.viewType === 'month') {
+                this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
+            } else {
+                this.currentDate.setDate(this.currentDate.getDate() - 7);
+                if (this.getWeekNumberInMonth(this.currentDate) > 4) {
+                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+                }
+            }
             this.fetchCalendar();
         },
-        nextMonth() {
-            this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+        nextPeriod() {
+            if (this.viewType === 'month') {
+                this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+            } else {
+                this.currentDate.setDate(this.currentDate.getDate() + 7);
+                if (this.getWeekNumberInMonth(this.currentDate) > 4) {
+                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+                }
+            }
             this.fetchCalendar();
+        },
+        toggleView() {
+            this.viewType = this.viewType === 'month' ? 'week' : 'month';
+            this.fetchCalendar();
+        },
+        getWeekNumberInMonth(d) {
+            const firstDayOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+            const offsetDate = new Date(d.getTime());
+            offsetDate.setDate(offsetDate.getDate() - firstDayOfMonth.getDay());
+            return Math.ceil((d.getDate() + firstDayOfMonth.getDay()) / 7);
+        },
+        getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
         },
         init() {
             this.fetchCalendar();
