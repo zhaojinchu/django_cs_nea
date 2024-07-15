@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import LessonRequestForm, OtherEventForm, LessonForm
-from .models import Student, Teacher, Lesson, OtherEvent
+from .models import Student, Teacher
 from django.contrib.auth.decorators import login_required, user_passes_test
-from datetime import datetime
 from .calendar_utils import LessonCalendar
+from django.http import JsonResponse
 
 # Predefined functions to check user type
 def is_student(user):
@@ -94,11 +94,14 @@ def create_other_event(request):
 # Calendar view
 @login_required
 def calendar_view(request):
-    d = datetime.now()
-    cal = LessonCalendar(d.year, d.month)
-    html_cal = cal.formatmonth(withyear=True)
-    context = {
-        'calendar': html_cal,
-    }
-    return render(request, 'scheduling/calendar.html', context)
+    return render(request, 'scheduling/calendar.html')
 
+@login_required
+def get_calendar_data(request):
+    year = int(request.GET.get('year'))
+    month = int(request.GET.get('month'))
+    
+    cal = LessonCalendar(year, month)
+    html_cal = cal.formatmonth(withyear=True)
+    
+    return JsonResponse({'calendar_html': html_cal})
