@@ -103,7 +103,7 @@ def get_calendar_data(request):
     month = int(request.GET.get('month'))
     view_type = request.GET.get('view_type', 'month')
     
-    if view_type == 'month': # month view
+    if view_type == 'month':
         cal = LessonCalendar(year, month)
         html_cal = cal.formatmonth(withyear=True)
     else:  # week view

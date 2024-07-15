@@ -34,12 +34,8 @@ function calendarData() {
         calendarHtml: '',
         viewType: 'month',
         get currentPeriodName() {
-            if (this.viewType === 'month') {
-                return this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-            } else {
-                const weekNumber = this.getWeekNumberInMonth(this.currentDate);
-                return `${this.getOrdinal(weekNumber)} Week, ${this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`;
-            }
+            return `${this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`;
+
         },
         async fetchCalendar() {
             const year = this.currentDate.getFullYear();
