@@ -15,6 +15,13 @@ class UserManager(BaseUserManager):
         return user
 
 class User(AbstractBaseUser):
+    # User types
+    USER_TYPE_CHOICES = (
+        (1, 'Student'),
+        (2, 'Teacher'),
+    )
+    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES)
+    
     email = models.EmailField(
         "email address",
         max_length=255,

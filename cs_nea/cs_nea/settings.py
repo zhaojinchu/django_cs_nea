@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     "phonenumber_field",
     # My django apps
     "users",
+    "dashboard",
+    "scheduling",
 ]
 
 AUTH_USER_MODEL = "users.User"
