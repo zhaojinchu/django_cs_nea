@@ -1,1 +1,28 @@
 {% extends "_dashboard.html" %}
+
+{% block name %} Teacher Dashboard {% endblock %}
+
+{% block content %}
+<div class="pt-16">
+    <h2>Calendar</h2>
+    <div class="calendar">
+        <h3>Lessons</h3>
+        {% for lesson in lessons %}
+            <div class="lesson">
+                <p>{{ lesson.start_datetime|date:"F d, Y H:i" }} - {{ lesson.end_datetime|date:"H:i" }}</p>
+                <p>Student: {{ lesson.student }}</p>
+                <p>Teacher: {{ lesson.teacher }}</p>
+            </div>
+        {% endfor %}
+
+        <h3>Other Events</h3>
+        {% for event in other_events %}
+            <div class="other-event">
+                <p>{{ event.start_datetime|date:"F d, Y H:i" }} - {{ event.end_datetime|date:"H:i" }}</p>
+                <p>Teacher: {{ event.teacher }}</p>
+                <p>Description: {{ event.event_description }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -11,7 +11,7 @@ def is_student(user):
 def is_teacher(user):
     return user.user_type == 2
 
-# Lesson request view
+# Lesson request view for students
 @login_required
 @user_passes_test(is_student)
 def lesson_request(request):
@@ -32,6 +32,7 @@ def lesson_request(request):
 
     return render(request, "scheduling/schedule_lesson.html", {"form": form})
 
+# Lesson request view for teachers
 @login_required
 @user_passes_test(is_teacher)
 def lesson_request(request):
