@@ -3,6 +3,8 @@ from django.contrib import messages
 from .forms import LessonRequestForm, OtherEventForm, LessonForm
 from .models import Student, Teacher, Lesson, OtherEvent
 from django.contrib.auth.decorators import login_required, user_passes_test
+from datetime import datetime
+from .calendar_utils import LessonCalendar
 
 # Predefined functions to check user type
 def is_student(user):
@@ -90,20 +92,13 @@ def create_other_event(request):
 
 
 # Calendar view
+@login_required
 def calendar_view(request):
-    lessons = Lesson.objects.all()
-    other_events = OtherEvent.objects.all()
-
-    # You might want to add filtering based on the logged-in user or date range
-    # For example:
-    # if request.user.is_student:
-    #     lessons = lessons.filter(student__user=request.user)
-    # elif request.user.is_teacher:
-    #     lessons = lessons.filter(teacher__user=request.user)
-    #     other_events = other_events.filter(teacher__user=request.user)
-
+    d = datetime.now()
+    cal = LessonCalendar(d.year, d.month)
+    html_cal = cal.formatmonth(withyear=True)
     context = {
-        "lessons": lessons,
-        "other_events": other_events,
+        'calendar': html_cal,
     }
-    return render(request, "scheduling/calendar.html", context)
+    return render(request, 'scheduling/calendar.html', context)
+

@@ -1,24 +1,24 @@
 {% extends "_dashboard.html" %}
+{% load static %}
 
 {% block content %}
-<h2>Calendar</h2>
-<div class="calendar">
-    <h3>Lessons</h3>
-    {% for lesson in lessons %}
-        <div class="lesson">
-            <p>{{ lesson.start_datetime|date:"F d, Y H:i" }} - {{ lesson.end_datetime|date:"H:i" }}</p>
-            <p>Student: {{ lesson.student }}</p>
-            <p>Teacher: {{ lesson.teacher }}</p>
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-neutral-800">Calendar</h1>
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div x-data="{ currentDate: new Date() }" class="p-4">
+            <div class="flex justify-between items-center mb-4">
+                <button @click="currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">
+                    Previous Month
+                </button>
+                <h2 x-text="currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })" class="text-xl font-semibold"></h2>
+                <button @click="currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">
+                    Next Month
+                </button>
+            </div>
+            <div class="calendar-container">
+                {{ calendar|safe }}
+            </div>
         </div>
-    {% endfor %}
-
-    <h3>Other Events</h3>
-    {% for event in other_events %}
-        <div class="other-event">
-            <p>{{ event.start_datetime|date:"F d, Y H:i" }} - {{ event.end_datetime|date:"H:i" }}</p>
-            <p>Teacher: {{ event.teacher }}</p>
-            <p>Description: {{ event.event_description }}</p>
-        </div>
-    {% endfor %}
+    </div>
 </div>
-{% endblock %}
+{% endblock content %}
