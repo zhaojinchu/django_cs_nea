@@ -35,7 +35,14 @@
     <div class="flex-1 flex flex-col overflow-hidden" :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}">
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 pt-14" role="main">
             <div class="container mx-auto py-8">
-                <h3 class="text-gray-700 text-3xl font-medium">Dashboard Content</h3>
+            {% if user.user_type == 1 %}
+                <h3 class="text-gray-700 text-3xl font-medium">Student Dashboard Content</h3>
+                <!-- Other student-specific navigation items -->
+            {% elif user.user_type == 2 %}
+                <h3 class="text-gray-700 text-3xl font-medium">Teacher Dashboard Content</h3>
+                <!-- Other teacher-specific navigation items -->
+            {% endif %}
+                
                 <!-- Add your dashboard content here -->
             </div>
         </main>

@@ -2,9 +2,18 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import LessonRequestForm, OtherEventForm, LessonForm
 from .models import Student, Teacher, Lesson, OtherEvent
+from django.contrib.auth.decorators import login_required, user_passes_test
 
+# Predefined functions to check user type
+def is_student(user):
+    return user.user_type == 1
+
+def is_teacher(user):
+    return user.user_type == 2
 
 # Lesson request view
+@login_required
+@user_passes_test(is_student)
 def lesson_request(request):
     if request.method == "POST":
         form = LessonRequestForm(request.POST)
@@ -23,6 +32,25 @@ def lesson_request(request):
 
     return render(request, "scheduling/schedule_lesson.html", {"form": form})
 
+@login_required
+@user_passes_test(is_teacher)
+def lesson_request(request):
+    if request.method == "POST":
+        form = LessonRequestForm(request.POST)
+        if form.is_valid():
+            lesson_request = form.save(commit=False)
+            lesson_request.student = Student.objects.get(
+                user=request.user
+            )  # Assuming the logged-in user is a student
+            lesson_request.save()
+            messages.success(request, "Lesson request submitted successfully!")
+            return redirect(
+                "dashboard"
+            )  # Or wherever you want to redirect after successful submission
+    else:
+        form = LessonRequestForm()
+
+    return render(request, "scheduling/schedule_lesson.html", {"form": form})
 
 # Create lesson view
 def create_lesson(request):

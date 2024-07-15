@@ -20,7 +20,10 @@ class User(AbstractBaseUser):
         (1, 'Student'),
         (2, 'Teacher'),
     )
-    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES)
+    user_type = models.PositiveSmallIntegerField(
+        choices=USER_TYPE_CHOICES,
+        default=1,
+    )
     
     email = models.EmailField(
         "email address",
