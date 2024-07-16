@@ -23,10 +23,12 @@ urlpatterns = [
     path("teacher/signup", signup, name="teacher_signup"),
     path("profile", profile, name="user_profile"),
     path("settings", settings, name="settings"),
+    # URL for two-factor authentication verification before login, only if 2FA activated in settings
     path("two_factor_verify", two_factor_verify, name="two_factor_verify"),
     path("account_recovery", account_recovery, name="account_recovery"),
     path(
         "password_reset_request", password_reset_request, name="password_reset_request"
     ),
+    # Password reset token is passed as a URL parameter, URL only accessed through emailed link
     path('password_reset/<str:token>/', password_reset, name='password_reset'),
 ]

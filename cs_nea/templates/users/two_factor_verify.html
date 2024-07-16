@@ -1,13 +1,47 @@
 {% extends "_base.html" %}
+{% load widget_tweaks %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-bold mb-4">Two-Factor Authentication</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Verify</button>
-    </form>
-</div>
-{% endblock %}
+<div class="flex pt-28 justify-center" x-data="{ isLoading: false }">
+  <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
+    <div class="text-4xl font-semibold">Two-Factor Authentication</div>
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="px-4 py-3 {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %} rounded" role="alert">
+          <span class="block sm:inline">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
 
+    <form method="post" @submit="isLoading = true">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-4">
+          <label class="block text-neutral-800 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+          {{ field|add_class:"shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" }}
+          {% if field.errors %}
+            {% for error in field.errors %}
+              <p class="text-red-500 text-xs italic">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="flex items-center justify-between">
+        <button class="bg-purple-500 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" :disabled="isLoading">
+          <span x-show="!isLoading">Verify</span>
+          <span x-show="isLoading" class="inline-flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}

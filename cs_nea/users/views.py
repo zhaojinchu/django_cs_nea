@@ -86,15 +86,9 @@ def account_recovery(request):
             email = form.cleaned_data.get("email")
             try:
                 user = User.objects.get(email=email)
-                if user.two_factor_enabled:
-                    user.generate_two_factor_code()
-                    send_two_factor_code(user)
-                    request.session['user_id'] = user.id
-                    return render(request, "users/account_recovery_2fa.html", {"form": TwoFactorForm()})
-                else:
-                    send_password_reset_link(request, user)
-                    messages.success(request, "A password reset link has been sent to your email.")
-                    return redirect("index")
+                send_password_reset_link(request, user)
+                messages.success(request, "A password reset link has been sent to your email.")
+                return redirect("index")
             except User.DoesNotExist:
                 messages.error(request, "No account found with this email address.")
     else:
