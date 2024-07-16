@@ -1,11 +1,29 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
-from .forms import LoginForm, SignupForm, StudentSignupForm, TeacherSignupForm
-from .models import Student, Teacher
+from django.core.mail import send_mail
+from django.utils import timezone
+from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+from datetime import timedelta
+from .forms import (
+    LoginForm,
+    SignupForm,
+    StudentSignupForm,
+    TeacherSignupForm,
+    TwoFactorForm,
+    RetrieveAccountForm,
+    PasswordResetRequestForm,
+    PasswordResetForm,
+    UserSettingsForm,
+)
+from .models import Student, Teacher, User
+
 
 def index(request):
     return render(request, "index.html")
+
 
 def login(request):
     if request.method == "POST":
@@ -15,15 +33,152 @@ def login(request):
             password = form.cleaned_data.get("password")
             user = authenticate(request, username=email, password=password)
             if user is not None:
-                auth_login(request, user)
-                messages.success(request, "You have successfully logged in.")
-                return redirect('dashboard')
+                if user.two_factor_enabled:
+                    user.generate_two_factor_code()
+                    send_two_factor_code(user)
+                    request.session["user_id"] = user.id
+                    return redirect("two_factor_verify")
+                else:
+                    auth_login(request, user)
+                    messages.success(request, "You have successfully logged in.")
+                    return redirect("dashboard")
             else:
                 messages.error(request, "Invalid email or password")
     else:
         form = LoginForm()
 
     return render(request, "users/login.html", {"form": form})
+
+# 2 factor authentication views
+def two_factor_verify(request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("index")
+
+    user = User.objects.get(id=user_id)
+
+    if request.method == "POST":
+        form = TwoFactorForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data.get("code")
+            if (
+                user.two_factor_code == code
+                and user.two_factor_code_expiry > timezone.now()
+            ):
+                auth_login(request, user)
+                user.two_factor_code = None
+                user.two_factor_code_expiry = None
+                user.save()
+                messages.success(request, "You have successfully logged in.")
+                return redirect("dashboard")
+            else:
+                messages.error(request, "Invalid or expired code")
+    else:
+        form = TwoFactorForm()
+
+    return render(request, "users/two_factor_verify.html", {"form": form})
+
+
+def account_recovery(request):
+    if request.method == "POST":
+        form = RetrieveAccountForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get("email")
+            try:
+                user = User.objects.get(email=email)
+                if user.two_factor_enabled:
+                    user.generate_two_factor_code()
+                    send_two_factor_code(user)
+                    request.session['user_id'] = user.id
+                    return render(request, "users/account_recovery_2fa.html", {"form": TwoFactorForm()})
+                else:
+                    send_password_reset_link(request, user)
+                    messages.success(request, "A password reset link has been sent to your email.")
+                    return redirect("index")
+            except User.DoesNotExist:
+                messages.error(request, "No account found with this email address.")
+    else:
+        form = RetrieveAccountForm()
+    
+    return render(request, "users/account_recovery.html", {"form": form})
+
+
+def send_two_factor_code(user):
+    subject = "Your Two-Factor Authentication Code"
+    message = f"Your two-factor authentication code is: {user.two_factor_code}"
+    send_mail(subject, message, "noreply@example.com", [user.email])
+
+
+# Account retrieval views
+def password_reset_request(request):
+    if request.method == "POST":
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get("email")
+            try:
+                user = User.objects.get(email=email)
+                user.generate_password_reset_token()
+                send_password_reset_link(request, user)
+                messages.success(request, "A password reset link has been sent to your email.")
+                return redirect("index")
+            except User.DoesNotExist:
+                messages.error(request, "No account found with this email address.")
+    else:
+        form = PasswordResetRequestForm()
+    
+    return render(request, "users/password_reset_request.html", {"form": form})
+
+def password_reset(request, token):
+    user = get_object_or_404(User, password_reset_token=token)
+    
+    # Check if the token has expired (e.g., after 24 hours)
+    if user.password_reset_token_created_at < timezone.now() - timedelta(hours=24):
+        messages.error(request, "The password reset link has expired. Please request a new one.")
+        return redirect('password_reset_request')
+    
+    if request.method == "POST":
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data.get("new_password")
+            user.set_password(new_password)
+            user.password_reset_token = None
+            user.password_reset_token_created_at = None
+            user.save()
+            messages.success(request, "Your password has been reset successfully.")
+            return redirect('login')
+    else:
+        form = PasswordResetForm()
+    
+    return render(request, "users/password_reset.html", {"form": form})
+
+@login_required
+def enable_disable_2fa(request):
+    user = request.user
+    if request.method == "POST":
+        form = EnableDisable2FAForm(request.POST)
+        if form.is_valid():
+            enable_2fa = form.cleaned_data.get("enable_2fa")
+            user.two_factor_enabled = enable_2fa
+            user.save()
+            if enable_2fa:
+                messages.success(request, "Two-factor authentication has been enabled.")
+            else:
+                messages.success(request, "Two-factor authentication has been disabled.")
+            return redirect('settings')
+    else:
+        form = EnableDisable2FAForm(initial={"enable_2fa": user.two_factor_enabled})
+    
+    return render(request, "users/enable_disable_2fa.html", {"form": form})
+
+def send_password_reset_link(request, user):
+    user.generate_password_reset_token()
+    reset_link = request.build_absolute_uri(
+        reverse('password_reset', args=[user.password_reset_token])
+    )
+    subject = "Password Reset Link"
+    message = f"Click the following link to reset your password: {reset_link}"
+    send_mail(subject, message, "noreply@example.com", [user.email])
+
 
 def signup(request):
     if request.path == "/student/signup":
@@ -33,7 +188,7 @@ def signup(request):
         form_class = TeacherSignupForm
         user_type = 2
     else:
-        return redirect('index')  # handle this case as appropriate
+        return redirect("index")  # handle this case as appropriate
 
     if request.method == "POST":
         form = form_class(request.POST)
@@ -46,13 +201,13 @@ def signup(request):
             if isinstance(form, StudentSignupForm):
                 Student.objects.create(
                     user=user,
-                    grade_level=form.cleaned_data['grade_level'],
-                    extra_student_info=form.cleaned_data['extra_student_info']
+                    grade_level=form.cleaned_data["grade_level"],
+                    extra_student_info=form.cleaned_data["extra_student_info"],
                 )
             elif isinstance(form, TeacherSignupForm):
                 Teacher.objects.create(
                     user=user,
-                    extra_teacher_info=form.cleaned_data['extra_teacher_info']
+                    extra_teacher_info=form.cleaned_data["extra_teacher_info"],
                 )
 
             messages.success(request, "Your account has been successfully created!")
@@ -67,12 +222,35 @@ def signup(request):
 
     return render(request, "users/signup.html", {"form": form})
 
+
 def logout(request):
     auth_logout(request)
-    return redirect('index')
+    return redirect("index")
+
 
 def profile(request):
     return render(request, "users/profile.html")
 
+
+@login_required
 def settings(request):
-    return render(request, "users/settings.html")
+    user = request.user
+    if request.method == "POST":
+        form = UserSettingsForm(request.POST, instance=user)
+        if form.is_valid():
+            if form.cleaned_data.get('new_password'):
+                if user.check_password(form.cleaned_data.get('current_password')):
+                    user.set_password(form.cleaned_data.get('new_password'))
+                    update_session_auth_hash(request, user)  # Keep the user logged in
+                    messages.success(request, "Your password has been updated.")
+                else:
+                    messages.error(request, "Current password is incorrect.")
+                    return render(request, "users/settings.html", {"form": form})
+            
+            form.save()
+            messages.success(request, "Your settings have been updated.")
+            return redirect('settings')
+    else:
+        form = UserSettingsForm(instance=user)
+    
+    return render(request, "users/settings.html", {"form": form})

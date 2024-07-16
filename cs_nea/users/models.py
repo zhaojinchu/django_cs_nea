@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import RegexValidator, EmailValidator, MinLengthValidator
 from phonenumber_field.modelfields import PhoneNumberField
+from django.utils import timezone
+from django.utils.crypto import get_random_string
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -25,7 +27,7 @@ class User(AbstractBaseUser):
         default=1,
     )
     
-    email = models.EmailField(
+    email = models.EmailField(  
         "email address",
         max_length=255,
         unique=True,
@@ -56,11 +58,28 @@ class User(AbstractBaseUser):
     contact_number = PhoneNumberField()
     
     date_of_birth = models.DateField("date of birth")
+    
+    # Two-factor authentication fields
+    two_factor_enabled = models.BooleanField(default=False)
+    two_factor_code = models.CharField(max_length=6, blank=True, null=True)
+    two_factor_code_expiry = models.DateTimeField(blank=True, null=True)
+    password_reset_token = models.CharField(max_length=100, null=True, blank=True)
+    password_reset_token_created_at = models.DateTimeField(null=True, blank=True)
 
     objects = UserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["__all__"]
+    
+    def generate_password_reset_token(self):
+        self.password_reset_token = get_random_string(length=32)
+        self.password_reset_token_created_at = timezone.now()
+        self.save()
+        
+    def generate_two_factor_code(self):
+        self.two_factor_code = get_random_string(length=6, allowed_chars='0123456789')
+        self.two_factor_code_expiry = timezone.now() + timezone.timedelta(minutes=10)
+        self.save()
 
     def __str__(self):
         return self.email
