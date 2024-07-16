@@ -205,23 +205,20 @@ def signup(request):
             user.user_type = user_type
             user.save()
 
-            if isinstance(form, StudentSignupForm):
+            if user_type == 1:  # Student
                 Student.objects.create(
                     user=user,
                     grade_level=form.cleaned_data["grade_level"],
-                    extra_student_info=form.cleaned_data["extra_student_info"],
+                    extra_student_info=form.cleaned_data.get("extra_student_info", "")
                 )
-            elif isinstance(form, TeacherSignupForm):
+            elif user_type == 2:  # Teacher
                 Teacher.objects.create(
                     user=user,
-                    extra_teacher_info=form.cleaned_data["extra_teacher_info"],
+                    extra_teacher_info=form.cleaned_data.get("extra_teacher_info", "")
                 )
 
             messages.success(request, "Your account has been successfully created!")
-            if request.path == "/student/signup":
-                return redirect("student_login")
-            elif request.path == "/teacher/signup":
-                return redirect("teacher_login")
+            return redirect("student_login" if user_type == 1 else "teacher_login")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
