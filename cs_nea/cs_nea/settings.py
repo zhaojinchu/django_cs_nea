@@ -142,7 +142,7 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-LOGIN_URL = "login"
+LOGIN_URL = "index"
 LOGIN_REDIRECT_URL = "dashboard"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
