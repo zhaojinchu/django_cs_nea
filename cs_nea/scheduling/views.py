@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import LessonRequestForm, OtherEventForm, LessonForm
-from .models import Student, Teacher
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .calendar_utils import LessonCalendar
 from django.http import JsonResponse
+from datetime import date
+from .forms import LessonRequestForm, OtherEventForm, LessonForm
+from .models import Student, Teacher, Lesson, OtherEvent
+from .calendar_utils import LessonCalendar
+
 
 # Predefined functions to check user type
 def is_student(user):
@@ -103,12 +105,25 @@ def get_calendar_data(request):
     month = int(request.GET.get('month'))
     view_type = request.GET.get('view_type', 'month')
     
+    # Fetch events for the entire month
+    start_date = date(year, month, 1)
+    end_date = date(year, month + 1, 1) if month < 12 else date(year + 1, 1, 1)
+    
+    lessons = Lesson.objects.filter(
+        start_datetime__gte=start_date,
+        start_datetime__lt=end_date
+    )
+    other_events = OtherEvent.objects.filter(
+        start_datetime__gte=start_date,
+        start_datetime__lt=end_date
+    )
+    
     if view_type == 'month':
-        cal = LessonCalendar(year, month)
+        cal = LessonCalendar(year, month, lessons=lessons, other_events=other_events)
         html_cal = cal.formatmonth(withyear=True)
     else:  # week view
         week = int(request.GET.get('week', 1))
-        cal = LessonCalendar(year, month, week)
+        cal = LessonCalendar(year, month, week, lessons=lessons, other_events=other_events)
         html_cal = cal.formatweek_view()
     
     return JsonResponse({'calendar_html': html_cal})
