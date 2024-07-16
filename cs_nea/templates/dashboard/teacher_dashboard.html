@@ -1,28 +1,48 @@
-{% extends "_dashboard.html" %}
+{% extends "_dashboard.html" %} {% block name %} Teacher Dashboard {% endblock %} {% block sidemenu %}
+<a
+  href="{% url 'invite_student' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+  ><span class="mx-3">Invite Student</span></a
+>
+<a
+  href="{% url 'teacher_students' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+  ><span class="mx-3">My Students</span></a
+>
+<a
+  href="{% url 'lesson_request' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+>
+  <span class="mx-3">Schedule with a student</span>
+</a>
 
-{% block name %} Teacher Dashboard {% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="pt-16">
-    <h2>Calendar</h2>
-    <div class="calendar">
-        <h3>Lessons</h3>
-        {% for lesson in lessons %}
-            <div class="lesson">
-                <p>{{ lesson.start_datetime|date:"F d, Y H:i" }} - {{ lesson.end_datetime|date:"H:i" }}</p>
-                <p>Student: {{ lesson.student }}</p>
-                <p>Teacher: {{ lesson.teacher }}</p>
-            </div>
-        {% endfor %}
-
-        <h3>Other Events</h3>
-        {% for event in other_events %}
-            <div class="other-event">
-                <p>{{ event.start_datetime|date:"F d, Y H:i" }} - {{ event.end_datetime|date:"H:i" }}</p>
-                <p>Teacher: {{ event.teacher }}</p>
-                <p>Description: {{ event.event_description }}</p>
-            </div>
-        {% endfor %}
+  <h2>Calendar</h2>
+  <div class="calendar">
+    <h3>Lessons</h3>
+    {% for lesson in lessons %}
+    <div class="lesson">
+      <p>
+        {{ lesson.start_datetime|date:"F d, Y H:i" }} - {{
+        lesson.end_datetime|date:"H:i" }}
+      </p>
+      <p>Student: {{ lesson.student }}</p>
+      <p>Teacher: {{ lesson.teacher }}</p>
     </div>
+    {% endfor %}
+
+    <h3>Other Events</h3>
+    {% for event in other_events %}
+    <div class="other-event">
+      <p>
+        {{ event.start_datetime|date:"F d, Y H:i" }} - {{
+        event.end_datetime|date:"H:i" }}
+      </p>
+      <p>Teacher: {{ event.teacher }}</p>
+      <p>Description: {{ event.event_description }}</p>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

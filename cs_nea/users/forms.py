@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import User
+from .models import User, Student, Teacher, Invite
 
 from phonenumber_field.formfields import SplitPhoneNumberField
 
@@ -153,3 +153,10 @@ class UserSettingsForm(forms.ModelForm):
                 raise forms.ValidationError("New passwords do not match")
         
         return cleaned_data
+    
+# Invite form
+class InviteForm(forms.Form):
+    student = forms.ModelChoiceField(queryset=Student.objects.all())
+    message = forms.CharField(widget=forms.Textarea, max_length=500, required=False)
+
+

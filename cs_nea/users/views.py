@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.utils import timezone
 from django.urls import reverse
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
 from datetime import timedelta
 from .forms import (
@@ -17,8 +17,9 @@ from .forms import (
     PasswordResetRequestForm,
     PasswordResetForm,
     UserSettingsForm,
+    InviteForm,
 )
-from .models import Student, Teacher, User
+from .models import Student, Teacher, User, Invite
 
 
 def index(request):
@@ -48,6 +49,7 @@ def login(request):
         form = LoginForm()
 
     return render(request, "users/login.html", {"form": form})
+
 
 # 2 factor authentication views
 def two_factor_verify(request):
@@ -87,13 +89,15 @@ def account_recovery(request):
             try:
                 user = User.objects.get(email=email)
                 send_password_reset_link(request, user)
-                messages.success(request, "A password reset link has been sent to your email.")
+                messages.success(
+                    request, "A password reset link has been sent to your email."
+                )
                 return redirect("index")
             except User.DoesNotExist:
                 messages.error(request, "No account found with this email address.")
     else:
         form = RetrieveAccountForm()
-    
+
     return render(request, "users/account_recovery.html", {"form": form})
 
 
@@ -113,23 +117,28 @@ def password_reset_request(request):
                 user = User.objects.get(email=email)
                 user.generate_password_reset_token()
                 send_password_reset_link(request, user)
-                messages.success(request, "A password reset link has been sent to your email.")
+                messages.success(
+                    request, "A password reset link has been sent to your email."
+                )
                 return redirect("index")
             except User.DoesNotExist:
                 messages.error(request, "No account found with this email address.")
     else:
         form = PasswordResetRequestForm()
-    
+
     return render(request, "users/password_reset_request.html", {"form": form})
 
+
 def password_reset(request, token):
-    user = get_object_or_404(User, password_reset_token=token)  
-    
+    user = get_object_or_404(User, password_reset_token=token)
+
     # Check if the token has expired (e.g., after 24 hours)
     if user.password_reset_token_created_at < timezone.now() - timedelta(hours=24):
-        messages.error(request, "The password reset link has expired. Please request a new one.")
-        return redirect('password_reset_request')
-    
+        messages.error(
+            request, "The password reset link has expired. Please request a new one."
+        )
+        return redirect("password_reset_request")
+
     if request.method == "POST":
         form = PasswordResetForm(request.POST)
         if form.is_valid():
@@ -142,8 +151,9 @@ def password_reset(request, token):
             return redirect("index")
     else:
         form = PasswordResetForm()
-    
+
     return render(request, "users/password_reset.html", {"form": form})
+
 
 @login_required
 def enable_disable_2fa(request):
@@ -157,17 +167,20 @@ def enable_disable_2fa(request):
             if enable_2fa:
                 messages.success(request, "Two-factor authentication has been enabled.")
             else:
-                messages.success(request, "Two-factor authentication has been disabled.")
-            return redirect('settings')
+                messages.success(
+                    request, "Two-factor authentication has been disabled."
+                )
+            return redirect("settings")
     else:
         form = EnableDisable2FAForm(initial={"enable_2fa": user.two_factor_enabled})
-    
+
     return render(request, "users/enable_disable_2fa.html", {"form": form})
+
 
 def send_password_reset_link(request, user):
     user.generate_password_reset_token()
     reset_link = request.build_absolute_uri(
-        reverse('password_reset', args=[user.password_reset_token])
+        reverse("password_reset", args=[user.password_reset_token])
     )
     subject = "Password Reset Link"
     message = f"Click the following link to reset your password: {reset_link}"
@@ -232,19 +245,87 @@ def settings(request):
     if request.method == "POST":
         form = UserSettingsForm(request.POST, instance=user)
         if form.is_valid():
-            if form.cleaned_data.get('new_password'):
-                if user.check_password(form.cleaned_data.get('current_password')):
-                    user.set_password(form.cleaned_data.get('new_password'))
+            if form.cleaned_data.get("new_password"):
+                if user.check_password(form.cleaned_data.get("current_password")):
+                    user.set_password(form.cleaned_data.get("new_password"))
                     update_session_auth_hash(request, user)  # Keep the user logged in
                     messages.success(request, "Your password has been updated.")
                 else:
                     messages.error(request, "Current password is incorrect.")
                     return render(request, "users/settings.html", {"form": form})
-            
+
             form.save()
             messages.success(request, "Your settings have been updated.")
-            return redirect('settings')
+            return redirect("settings")
     else:
         form = UserSettingsForm(instance=user)
-    
+
     return render(request, "users/settings.html", {"form": form})
+
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 2)
+def invite_student(request):
+    if request.method == "POST":
+        form = InviteForm(request.POST)
+        if form.is_valid():
+            student = form.cleaned_data["student"]
+            message = form.cleaned_data["message"]
+            teacher = request.user.teacher
+
+            invite, created = Invite.objects.get_or_create(
+                student=student,
+                teacher=teacher,
+                defaults={"message": message, "status": "pending"},
+            )
+
+            if created:
+                messages.success(request, f"Invite sent to {student.user.email}")
+            else:
+                messages.info(request, f"Invite already sent to {student.user.email}")
+
+            return redirect("teacher_dashboard")
+    else:
+        form = InviteForm()
+
+    return render(request, "users/invite_student.html", {"form": form})
+
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 1)
+def student_invites(request):
+    student = request.user.student
+    pending_invites = Invite.objects.filter(student=student, status="pending")
+    return render(request, "users/student_invites.html", {"invites": pending_invites})
+
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 1)
+def accept_invite(request, invite_id):
+    invite = get_object_or_404(
+        Invite, id=invite_id, student=request.user.student, status="pending"
+    )
+    invite.status = "accepted"
+    invite.save()
+    messages.success(
+        request, f"You are now connected with {invite.teacher.user.get_full_name()}"
+    )
+    return redirect("student_dashboard")
+
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 2)
+def teacher_students(request):
+    teacher = request.user.teacher
+    accepted_invites = Invite.objects.filter(teacher=teacher, status="accepted")
+    students = [invite.student for invite in accepted_invites]
+    return render(request, "users/teacher_students.html", {"students": students})
+
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 1)
+def student_teachers(request):
+    student = request.user.student
+    accepted_invites = Invite.objects.filter(student=student, status="accepted")
+    teachers = [invite.teacher for invite in accepted_invites]
+    return render(request, "users/student_teachers.html", {"teachers": teachers})

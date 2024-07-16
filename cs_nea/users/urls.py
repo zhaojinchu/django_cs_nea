@@ -12,6 +12,11 @@ from .views import (
     account_recovery,
     password_reset_request,
     password_reset,
+    invite_student,
+    student_invites,
+    accept_invite,
+    teacher_students,
+    student_teachers,
 )
 
 urlpatterns = [
@@ -31,4 +36,11 @@ urlpatterns = [
     ),
     # Password reset token is passed as a URL parameter, URL only accessed through emailed link
     path('password_reset/<str:token>/', password_reset, name='password_reset'),
+    
+    # Invite related URLs
+    path('invite_student/', invite_student, name='invite_student'),
+    path('student_invites/', student_invites, name='student_invites'),
+    path('accept_invite/<int:invite_id>/', accept_invite, name='accept_invite'),
+    path('teacher_students/', teacher_students, name='teacher_students'),
+    path('student_teachers/', student_teachers, name='student_teachers'),
 ]

@@ -1,0 +1,20 @@
+{% extends "_dashboard.html" %}
+
+{% block content %}
+<h2>My Students</h2>
+{% if students %}
+    <ul>
+    {% for student in students %}
+        <li>
+            {{ student.user.get_full_name }} ({{ student.user.email }})
+            <p>Grade: {{ student.grade_level }}</p>
+            <p>Extra Info: {{ student.extra_info }}</p>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>You don't have any students yet.</p>
+{% endif %}
+<a href="{% url 'invite_student' %}">Invite New Student</a>
+{% endblock %}
+

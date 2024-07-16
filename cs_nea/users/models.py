@@ -5,6 +5,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 
+
 # Create your models here.
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -16,18 +17,19 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+
 class User(AbstractBaseUser):
     # User types
     USER_TYPE_CHOICES = (
-        (1, 'Student'),
-        (2, 'Teacher'),
+        (1, "Student"),
+        (2, "Teacher"),
     )
     user_type = models.PositiveSmallIntegerField(
         choices=USER_TYPE_CHOICES,
         default=1,
     )
-    
-    email = models.EmailField(  
+
+    email = models.EmailField(
         "email address",
         max_length=255,
         unique=True,
@@ -36,12 +38,16 @@ class User(AbstractBaseUser):
     first_name = models.CharField(
         "first name",
         max_length=150,
-        validators=[RegexValidator(r"^[a-zA-Z\s]+$", "Enter a valid first name (letters only).")],
+        validators=[
+            RegexValidator(r"^[a-zA-Z\s]+$", "Enter a valid first name (letters only).")
+        ],
     )
     last_name = models.CharField(
         "last name",
         max_length=150,
-        validators=[RegexValidator(r"^[a-zA-Z\s]+$", "Enter a valid last name (letters only).")],
+        validators=[
+            RegexValidator(r"^[a-zA-Z\s]+$", "Enter a valid last name (letters only).")
+        ],
     )
     password = models.CharField(
         "password",
@@ -54,11 +60,11 @@ class User(AbstractBaseUser):
             ),
         ],
     )
-    
+
     contact_number = PhoneNumberField()
-    
+
     date_of_birth = models.DateField("date of birth")
-    
+
     # Two-factor authentication fields
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_code = models.CharField(max_length=6, blank=True, null=True)
@@ -70,14 +76,14 @@ class User(AbstractBaseUser):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["__all__"]
-    
+
     def generate_password_reset_token(self):
         self.password_reset_token = get_random_string(length=32)
         self.password_reset_token_created_at = timezone.now()
         self.save()
-        
+
     def generate_two_factor_code(self):
-        self.two_factor_code = get_random_string(length=6, allowed_chars='0123456789')
+        self.two_factor_code = get_random_string(length=6, allowed_chars="0123456789")
         self.two_factor_code_expiry = timezone.now() + timezone.timedelta(minutes=10)
         self.save()
 
@@ -94,6 +100,9 @@ class Teacher(models.Model):
         blank=True,  # This field is optional
         null=True,
     )
+
+    def __str__(self):
+        return f"{self.user.first_name} {self.user.last_name}"
 
 
 class Student(models.Model):
@@ -112,13 +121,31 @@ class Student(models.Model):
         ],
     )
 
+    def __str__(self):
+        return f"{self.user.first_name} {self.user.last_name}"
+
 
 class Invite(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    invite_status = models.CharField(max_length=20)
-    messages_sent = models.TextField("content of messages sent", max_length=2000)
-    date_of_invite = models.DateTimeField(auto_now_add=True)
+    INVITE_STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("declined", "Declined"),
+    )
+
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name="invites"
+    )
+    teacher = models.ForeignKey(
+        Teacher, on_delete=models.CASCADE, related_name="sent_invites"
+    )
+    status = models.CharField(
+        max_length=10, choices=INVITE_STATUS_CHOICES, default="pending"
+    )
+    message = models.TextField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("student", "teacher")
+
+    def __str__(self):
+        return f"Invite from {self.teacher} to {self.student} ({self.status})"

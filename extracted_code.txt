@@ -36,52 +36,156 @@ if __name__ == '__main__':
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NEA</title>
     {% tailwind_css %}
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
+    ></script>
   </head>
 
   <body class="bg-neutral-200" x-data="{ sidebarOpen: true }">
     <div>
       <header class="sticky top-0 z-50">
-        <div class="flex fixed top-0 py-2 w-full items-center justify-between bg-neutral-800 bg-opacity-95 backdrop-blur shadow-md">
+        <div
+          class="flex fixed top-0 py-2 w-full items-center justify-between bg-neutral-800 bg-opacity-95 backdrop-blur shadow-md"
+        >
           <!-- Left -->
           <div class="flex flex-grow gap-x-10 px-10 text-lg text-white py-2.5">
-            {% if "home" in request.path %}
+            {% if "home" or "password_reset" in request.path %}
             <div class="flex font-semibold">
               <a href="{% url 'index' %}" class="hover:text-purple-400">Home</a>
             </div>
-            {% endif %}
-            {% block navleft %}{% endblock navleft %}
-            {% if user.is_authenticated %}
+            {% endif %} {% block navleft %}{% endblock navleft %} {% if user.is_authenticated %}
             <div class="flex">
-              <a href="{% url 'dashboard' %}" class="hover:text-purple-400">Dashboard</a>
+              <a href="{% url 'dashboard' %}" class="hover:text-purple-400"
+                >Dashboard</a
+              >
             </div>
             {% endif %}
           </div>
 
-          <!-- Right -->
-          <div class="flex gap-x-6 px-6">
-            {% block navright %}{% endblock navright %}
-            {% if user.is_authenticated %}
-            <div x-data="{ open: false }" class="relative inline-block text-left mr-4">
-              <div>
-                <button @click="open = !open" type="button" class="inline-flex justify-center w-full rounded-md shadow-sm px-4 py-2 bg-purple-500 text-sm font-medium text-white hover:bg-purple-600 ring-purple-800" id="options-menu" aria-haspopup="true" x-bind:aria-expanded="open">
-                  {{ user.first_name }} {{ user.last_name }}
-                  <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+          <!-- Auto dissapearing messages -->
+          <div
+            id="messages-container"
+            class="fixed left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4"
+          >
+            <div class="w-full pt-2">
+              {% for message in messages %}
+              <div
+                class="message px-4 py-3 rounded-md shadow-sm mb-2 flex items-center justify-between {% if message.tags == 'error' %} bg-red-100 border border-red-400 text-red-700 {% else %} bg-green-100 border border-green-400 text-green-700 {% endif %}"
+                role="alert"
+              >
+                <span class="flex-grow">{{ message }}</span>
+                <button
+                  onclick="dismissMessage(this.parentNode)"
+                  class="ml-4 focus:outline-none"
+                >
+                  <svg
+                    class="h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clip-rule="evenodd"
+                    />
                   </svg>
                 </button>
               </div>
-          
-              <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-neutral-100">
-                <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                  <a href="{% url 'settings' %}" class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800" role="menuitem">Settings</a>
-                  <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800" role="menuitem">Profile</a>
-                  <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800" role="menuitem">Log out</a>
-                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              const messages = document.querySelectorAll(
+                "#messages-container .message"
+              );
+              messages.forEach((message) => {
+                setTimeout(() => {
+                  dismissMessage(message);
+                }, 10000);
+              });
+            });
+
+            function dismissMessage(messageElement) {
+              messageElement.style.transition =
+                "opacity 300ms, transform 300ms";
+              messageElement.style.opacity = "0";
+              messageElement.style.transform = "scale(0.9)";
+              setTimeout(() => {
+                messageElement.remove();
+              }, 300);
+            }
+          </script>
+        </div>
+        <!-- Right -->
+        <div class="flex gap-x-6 px-6">
+          {% block navright %}{% endblock navright %} {% if user.is_authenticated %}
+          <div
+            x-data="{ open: false }"
+            class="relative inline-block text-left mr-4"
+          >
+            <div>
+              <button
+                @click="open = !open"
+                type="button"
+                class="inline-flex justify-center w-full rounded-md shadow-sm px-4 py-2 bg-purple-500 text-sm font-medium text-white hover:bg-purple-600 ring-purple-800"
+                id="options-menu"
+                aria-haspopup="true"
+                x-bind:aria-expanded="open"
+              >
+                {{ user.first_name }} {{ user.last_name }}
+                <svg
+                  class="-mr-1 ml-2 h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div
+              x-show="open"
+              @click.away="open = false"
+              class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-neutral-100"
+            >
+              <div
+                class="py-1"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="options-menu"
+              >
+                <a
+                  href="{% url 'settings' %}"
+                  class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                  role="menuitem"
+                  >Settings</a
+                >
+                <a
+                  href="{% url 'user_profile' %}"
+                  class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                  role="menuitem"
+                  >Profile</a
+                >
+                <a
+                  href="{% url 'logout' %}"
+                  class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                  role="menuitem"
+                  >Log out</a
+                >
               </div>
             </div>
-            {% endif %}
           </div>
+          {% endif %}
         </div>
       </header>
 
@@ -93,9 +197,13 @@ if __name__ == '__main__':
       <footer></footer>
     </div>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
+    ></script>
   </body>
 </html>
+
 
 # File: cs_nea/templates/_dashboard.html
 {% load static %} {% load static tailwind_tags %}
@@ -108,13 +216,18 @@ if __name__ == '__main__':
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NEA</title>
     {% tailwind_css %}
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
+    ></script>
   </head>
 
   <body class="bg-neutral-200" x-data="{ sidebarOpen: true }">
     <div>
       <header class="sticky top-0 z-50">
-        <div class="flex fixed top-0 py-2 w-full items-center justify-between bg-neutral-800 bg-opacity-95 backdrop-blur shadow-md">
+        <div
+          class="flex fixed top-0 py-2 w-full items-center justify-between bg-neutral-800 bg-opacity-95 backdrop-blur shadow-md"
+        >
           <!-- Left -->
           <div class="flex flex-grow gap-x-10 px-10 text-lg text-white py-2.5">
             {% if "home" in request.path %}
@@ -124,36 +237,152 @@ if __name__ == '__main__':
             {% endif %}
             <!-- Sidebar Button -->
             {% if user.is_authenticated %}
-            <button @click="sidebarOpen = !sidebarOpen" class="text-white focus:outline-none">
-                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 6H20M4 12H20M4 18H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                </svg>
+            <button
+              @click="sidebarOpen = !sidebarOpen"
+              class="text-white focus:outline-none"
+            >
+              <svg
+                class="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 6H20M4 12H20M4 18H11"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ></path>
+              </svg>
             </button>
             <div class="flex">
-              <a href="{% url 'dashboard' %}" class="hover:text-purple-400">Dashboard</a>
+              <a href="{% url 'dashboard' %}" class="hover:text-purple-400"
+                >Dashboard</a
+              >
             </div>
             {% endif %}
           </div>
 
-          <!-- Right -->
-          <div class="flex gap-x-6 px-6">
-            {% block navright %}{% endblock navright %}
-            {% if user.is_authenticated %}
-            <div x-data="{ open: false }" class="relative inline-block text-left mr-4">
-              <div>
-                <button @click="open = !open" type="button" class="inline-flex justify-center w-full rounded-md shadow-sm px-4 py-2 bg-purple-500 text-sm font-medium text-white hover:bg-purple-600 ring-purple-800" id="options-menu" aria-haspopup="true" x-bind:aria-expanded="open">
-                  {{ user.first_name }} {{ user.last_name }}
-                  <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+          <!-- Auto dissapearing messages -->
+          <div
+            id="messages-container"
+            class="fixed left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4"
+          >
+            <div class="w-full pt-2">
+              {% for message in messages %}
+              <div
+                class="message px-4 py-3 rounded-md shadow-sm mb-2 flex items-center justify-between {% if message.tags == 'error' %} bg-red-100 border border-red-400 text-red-700 {% else %} bg-green-100 border border-green-400 text-green-700 {% endif %}"
+                role="alert"
+              >
+                <span class="flex-grow">{{ message }}</span>
+                <button
+                  onclick="dismissMessage(this.parentNode)"
+                  class="ml-4 focus:outline-none"
+                >
+                  <svg
+                    class="h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clip-rule="evenodd"
+                    />
                   </svg>
                 </button>
               </div>
-          
-              <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-neutral-100">
-                <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                  <a href="{% url 'settings' %}" class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800" role="menuitem">Settings</a>
-                  <a href="{% url 'user_profile' %}" class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800" role="menuitem">Profile</a>
-                  <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800" role="menuitem">Log out</a>
+              {% endfor %}
+            </div>
+          </div>
+
+          <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              const messages = document.querySelectorAll(
+                "#messages-container .message"
+              );
+              messages.forEach((message) => {
+                setTimeout(() => {
+                  dismissMessage(message);
+                }, 10000);
+              });
+            });
+
+            function dismissMessage(messageElement) {
+              messageElement.style.transition =
+                "opacity 300ms, transform 300ms";
+              messageElement.style.opacity = "0";
+              messageElement.style.transform = "scale(0.9)";
+              setTimeout(() => {
+                messageElement.remove();
+              }, 300);
+            }
+          </script>
+
+          <!-- Right -->
+          <div class="flex gap-x-6 px-6">
+            {% block navright %} {% endblock navright %} {% if user.is_authenticated %}
+            <div
+              x-data="{ open: false }"
+              class="relative inline-block text-left mr-4"
+            >
+              <div>
+                <button
+                  @click="open = !open"
+                  type="button"
+                  class="inline-flex justify-center w-full rounded-md shadow-sm px-4 py-2 bg-purple-500 text-sm font-medium text-white hover:bg-purple-600 ring-purple-800"
+                  id="options-menu"
+                  aria-haspopup="true"
+                  x-bind:aria-expanded="open"
+                >
+                  {{ user.first_name }} {{ user.last_name }}
+                  <svg
+                    class="-mr-1 ml-2 h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div
+                x-show="open"
+                @click.away="open = false"
+                class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-neutral-100"
+              >
+                <div
+                  class="py-1"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="options-menu"
+                >
+                  <a
+                    href="{% url 'settings' %}"
+                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                    role="menuitem"
+                    >Settings</a
+                  >
+                  <a
+                    href="{% url 'user_profile' %}"
+                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                    role="menuitem"
+                    >Profile</a
+                  >
+                  <a
+                    href="{% url 'logout' %}"
+                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                    role="menuitem"
+                    >Log out</a
+                  >
                 </div>
               </div>
             </div>
@@ -165,54 +394,81 @@ if __name__ == '__main__':
       <main class="relative">
         <!-- Content | Below is dashboard only code -->
         <div class="flex h-screen bg-gray-200">
-            <!-- Sidebar -->
-            <div 
-                class="z-30 inset-y-0 left-0 w-56 transition duration-300 transform bg-gray-900 overflow-y-auto fixed top-14"
-                :class="{'translate-x-0 ease-out': sidebarOpen, '-translate-x-full ease-in': !sidebarOpen}"
+          <!-- Sidebar -->
+          <div
+            class="z-30 inset-y-0 left-0 w-56 transition duration-300 transform bg-gray-900 overflow-y-auto fixed top-14"
+            :class="{'translate-x-0 ease-out': sidebarOpen, '-translate-x-full ease-in': !sidebarOpen}"
+          >
+            <!-- Sidebar content -->
+            <a
+              href="{% url 'calendar' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
             >
-                <!-- Sidebar content -->
-                <a href="{% url 'calendar' %}" class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100">
-                    <span class="mx-3">Home</span>
-                </a>
-                <a href="#" class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100">
-                    <span class="mx-3">Profile</span>
-                </a>
-                <a href="#" class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100">
-                    <span class="mx-3">Settings</span>
-                </a>
-                <!-- Student specific menu items -->
-                {% if user.user_type == 1%}
-                <a href="{% url 'lesson_request' %}" class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100">
-                  <span class="mx-3">Schedule with a teacher</span>
-                </a>
-                {% endif %}
-                <!-- Teacher specific menu items -->
-                {% if user.user_type == 2 %}
-                <a href="{% url 'lesson_request' %}" class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100">
-                    <span class="mx-3">Schedule with a student</span>
-                </a>
-                {% endif %}
-            </div>
-        
-            <!-- Main content -->
-            <div class="flex-1 flex flex-col overflow-hidden" :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}">
-                <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 pt-14" role="main">
-                    <div class="container mx-auto py-8">
-                        <h3 class="text-gray-700 text-3xl font-medium">{% block name %}{% endblock %}</h3>
-                        <!-- Add dashboard content here... -->
-                        {% block content %}{% endblock %}   
-                    </div>
-                </main>
-            </div>
+              <span class="mx-3">Home</span>
+            </a>
+            <a
+              href="#"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Profile</span>
+            </a>
+            <a
+              href="#"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Settings</span>
+            </a>
+            <!-- Student specific menu items -->
+            {% if user.user_type == 1%}
+            <a
+              href="{% url 'lesson_request' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Schedule with a teacher</span>
+            </a>
+            {% endif %}
+            <!-- Teacher specific menu items -->
+            {% if user.user_type == 2 %}
+            <a
+              href="{% url 'lesson_request' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Schedule with a student</span>
+            </a>
+            {% endif %}
+          </div>
+
+          <!-- Main content -->
+          <div
+            class="flex-1 flex flex-col overflow-hidden"
+            :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}"
+          >
+            <main
+              class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 pt-14"
+              role="main"
+            >
+              <div class="container mx-auto py-8">
+                <h3 class="text-gray-700 text-3xl font-medium">
+                  {% block name %}{% endblock %}
+                </h3>
+                <!-- Add dashboard content here... -->
+                {% block content %}{% endblock %}
+              </div>
+            </main>
+          </div>
         </div>
       </main>
 
       <footer></footer>
     </div>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
+    ></script>
   </body>
 </html>
+
 
 # File: cs_nea/templates/index.html
 {% extends "_base.html" %}
@@ -589,24 +845,205 @@ function calendarData() {
 {% endblock navright %}
 
 
-# File: cs_nea/templates/users/settings.html
+# File: cs_nea/templates/users/password_reset.html
 {% extends "_base.html" %}
+{% load widget_tweaks %}
 
 {% block content %}
-<div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
-  <div class="text-4xl font-semibold">Settings</div>
-  <form method="post">
-    {% csrf_token %}
-    <div>
+<div class="flex pt-28 justify-center" x-data="{ isLoading: false }">
+  <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
+    <div class="text-4xl font-semibold">Reset Your Password</div>
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="px-4 py-3 {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %} rounded" role="alert">
+          <span class="block sm:inline">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
 
+    <form method="post" @submit="isLoading = true">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-4">
+          <label class="block text-neutral-800 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+          {{ field|add_class:"shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" }}
+          {% if field.errors %}
+            {% for error in field.errors %}
+              <p class="text-red-500 text-xs italic">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="flex items-center justify-between">
+        <button class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" :disabled="isLoading">
+          <span x-show="!isLoading">Reset Password</span>
+          <span x-show="isLoading" class="inline-flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Resetting...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}
+
+# File: cs_nea/templates/users/account_recovery.html
+{% extends "_base.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="flex pt-28 justify-center" x-data="{ isLoading: false }">
+  <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
+    <div class="text-4xl font-semibold">Account Recovery</div>
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="px-4 py-3 {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %} rounded" role="alert">
+          <span class="block sm:inline">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" @submit="isLoading = true">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-4">
+          <label class="block text-neutral-800 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+          {{ field|add_class:"shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" }}
+          {% if field.errors %}
+            {% for error in field.errors %}
+              <p class="text-red-500 text-xs italic">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="flex items-center justify-between">
+        <button class="bg-purple-500 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" :disabled="isLoading">
+          <span x-show="!isLoading">Recover Account</span>
+          <span x-show="isLoading" class="inline-flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}
+
+# File: cs_nea/templates/users/settings.html
+<!-- users/templates/users/settings.html -->
+{% extends "_dashboard.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-semibold mb-6">User Settings</h2>
+    
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-4 {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %} rounded">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        
+        {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ field.label }}
+            </label>
+            <div class="mt-1">
+                {% if field.name == 'two_factor_enabled' %}
+                    {{ field|add_class:"h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" }}
+                {% else %}
+                    {{ field|add_class:"shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" }}
+                {% endif %}
+            </div>
+            {% if field.help_text %}
+            <p class="mt-2 text-sm text-gray-500">{{ field.help_text }}</p>
+            {% endif %}
+            {% for error in field.errors %}
+            <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        
+        <div>
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}
 
-
-# File: cs_nea/templates/users/teacher.html
+# File: cs_nea/templates/users/account_recovery_2fa.html
 {% extends "_base.html" %}
+{% load widget_tweaks %}
 
-# File: cs_nea/templates/users/student.html
-{% extends "_base.html" %}
+{% block content %}
+<div class="flex pt-28 justify-center" x-data="{ isLoading: false }">
+  <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
+    <div class="text-4xl font-semibold">Two-Factor Authentication</div>
+    <p class="text-neutral-600">Please enter the 6-digit code sent to your email.</p>
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="px-4 py-3 {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %} rounded" role="alert">
+          <span class="block sm:inline">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" @submit="isLoading = true">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-4">
+          <label class="block text-neutral-800 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+          {{ field|add_class:"shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" }}
+          {% if field.errors %}
+            {% for error in field.errors %}
+              <p class="text-red-500 text-xs italic">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="flex items-center justify-between">
+        <button class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" :disabled="isLoading">
+          <span x-show="!isLoading">Verify</span>
+          <span x-show="isLoading" class="inline-flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Verifying...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}
 
 # File: cs_nea/templates/users/login.html
 {% extends "_base.html" %}
@@ -620,14 +1057,6 @@ function calendarData() {
       <div class="text-4xl font-semibold">Student Log In</div>
     {% else %}
       <div class="text-4xl font-semibold">Teacher Log In</div>
-    {% endif %}
-
-    {% if messages %}
-      {% for message in messages %}
-        <div class="{% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %} px-4 py-3 rounded relative" role="alert">
-          <span class="block sm:inline">{{ message }}</span>
-        </div>
-      {% endfor %}
     {% endif %}
 
     {% if form.non_field_errors %}
@@ -651,6 +1080,9 @@ function calendarData() {
         {% endif %}
       </div>
     {% endfor %}
+    <div>
+      <a href="{% url 'account_recovery' %}" class="text-neutral-800 hover:underline text-sm font-semibold">Forgot password?</a>
+    </div>
     <div>
       <input
         class="bg-purple-500 text-white font-medium rounded-lg px-5 py-2.5 hover:bg-purple-600 hover:ring-2 ring-purple-800 w-full"
@@ -723,6 +1155,56 @@ function calendarData() {
     </div>
   </div>
 {% endblock content %}
+
+# File: cs_nea/templates/users/two_factor_verify.html
+{% extends "_base.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="flex pt-28 justify-center" x-data="{ isLoading: false }">
+  <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
+    <div class="text-4xl font-semibold">Two-Factor Authentication</div>
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="px-4 py-3 {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %} rounded" role="alert">
+          <span class="block sm:inline">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" @submit="isLoading = true">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-4">
+          <label class="block text-neutral-800 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+          {{ field|add_class:"shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" }}
+          {% if field.errors %}
+            {% for error in field.errors %}
+              <p class="text-red-500 text-xs italic">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="flex items-center justify-between">
+        <button class="bg-purple-500 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" :disabled="isLoading">
+          <span x-show="!isLoading">Verify</span>
+          <span x-show="isLoading" class="inline-flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}
+
 
 # File: cs_nea/templates/components/loginlogoutbutton.html
 
@@ -820,11 +1302,13 @@ from django.contrib import admin
 # File: cs_nea/scheduling/views.py
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import LessonRequestForm, OtherEventForm, LessonForm
-from .models import Student, Teacher
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .calendar_utils import LessonCalendar
 from django.http import JsonResponse
+from datetime import date
+from .forms import LessonRequestForm, OtherEventForm, LessonForm
+from .models import Student, Teacher, Lesson, OtherEvent
+from .calendar_utils import LessonCalendar
+
 
 # Predefined functions to check user type
 def is_student(user):
@@ -923,12 +1407,25 @@ def get_calendar_data(request):
     month = int(request.GET.get('month'))
     view_type = request.GET.get('view_type', 'month')
     
+    # Fetch events for the entire month
+    start_date = date(year, month, 1)
+    end_date = date(year, month + 1, 1) if month < 12 else date(year + 1, 1, 1)
+    
+    lessons = Lesson.objects.filter(
+        start_datetime__gte=start_date,
+        start_datetime__lt=end_date
+    )
+    other_events = OtherEvent.objects.filter(
+        start_datetime__gte=start_date,
+        start_datetime__lt=end_date
+    )
+    
     if view_type == 'month':
-        cal = LessonCalendar(year, month)
+        cal = LessonCalendar(year, month, lessons=lessons, other_events=other_events)
         html_cal = cal.formatmonth(withyear=True)
     else:  # week view
         week = int(request.GET.get('week', 1))
-        cal = LessonCalendar(year, month, week)
+        cal = LessonCalendar(year, month, week, lessons=lessons, other_events=other_events)
         html_cal = cal.formatweek_view()
     
     return JsonResponse({'calendar_html': html_cal})
@@ -1114,17 +1611,19 @@ from .models import Lesson, OtherEvent
 from django.utils import timezone
 
 class LessonCalendar(HTMLCalendar):
-    def __init__(self, year=None, month=None, week=None):
+    def __init__(self, year=None, month=None, week=None, lessons=None, other_events=None):
         self.year = year
         self.month = month
         self.week = week
+        self.lessons = lessons or []
+        self.other_events = other_events or []
         super(LessonCalendar, self).__init__()
 
-    def formatday(self, day, weekday, lessons, other_events):
+    def formatday(self, day, weekday):
         if day == 0:
             return '<td class="p-2 border border-gray-200 bg-gray-100"></td>'
         
-        today = timezone.now().date()
+        today = timezone.now().date()   
         try:
             date_obj = date(self.year, self.month, day)
         except ValueError:
@@ -1136,53 +1635,47 @@ class LessonCalendar(HTMLCalendar):
         elif date_obj < today:
             classes.append('bg-gray-50')
         
-        lessons_for_day = lessons.filter(start_datetime__date=date_obj)
-        events_for_day = other_events.filter(start_datetime__date=date_obj)
+        lessons_for_day = [lesson for lesson in self.lessons if lesson.start_datetime.date() == date_obj]
+        events_for_day = [event for event in self.other_events if event.start_datetime.date() == date_obj]
         
         d = f"<td class='{' '.join(classes)}'>"
         d += f"<div class='flex flex-col h-full'>"
-        d += f"<span class='text-sm font-semibold mb-1'>{day}</span>"  # Day number at the top
-        d += "<div class='flex-grow'>"  # Container for events
+        d += f"<span class='text-sm font-semibold mb-1'>{day}</span>"
+        d += "<div class='flex-grow'>"
         for lesson in lessons_for_day:
             d += f'<div class="text-xs p-1 bg-purple-200 rounded mb-1">{lesson.start_datetime.strftime("%H:%M")} - Lesson</div>'
         for event in events_for_day:
             d += f'<div class="text-xs p-1 bg-blue-200 rounded mb-1">{event.start_datetime.strftime("%H:%M")} - {event.event_description}</div>'
         d += "</div></div></td>"
         return d
-
-    def formatweek(self, theweek, lessons, other_events):
+    
+    def formatweek(self, theweek):
         week = ''
         for d, weekday in theweek:
-            week += self.formatday(d, weekday, lessons, other_events)
+            week += self.formatday(d, weekday)
         return f'<tr>{week}</tr>'
 
     def formatmonth(self, withyear=True):
-        lessons = Lesson.objects.filter(start_datetime__year=self.year, start_datetime__month=self.month)
-        other_events = OtherEvent.objects.filter(start_datetime__year=self.year, start_datetime__month=self.month)
-
         cal = f'<table class="calendar table-auto w-full border-collapse h-full">\n'
         cal += f'{self.formatmonthname(self.year, self.month, withyear=withyear)}\n'
         cal += f'{self.formatweekheader()}\n'
         for week in self.monthdays2calendar(self.year, self.month):
-            cal += f'{self.formatweek(week, lessons, other_events)}\n'
+            cal += f'{self.formatweek(week)}\n'
         return cal
-
+    
     def formatweek_view(self):
         month_calendar = self.monthdays2calendar(self.year, self.month)
         week_dates = month_calendar[self.week - 1]
-
-        lessons = Lesson.objects.filter(start_datetime__year=self.year, start_datetime__month=self.month)
-        other_events = OtherEvent.objects.filter(start_datetime__year=self.year, start_datetime__month=self.month)
 
         cal = f'<table class="calendar table-auto w-full border-collapse h-full">\n'
         cal += f'<tr><th colspan="7">{date(self.year, self.month, 1).strftime("%B %Y")} - Week {self.week}</th></tr>\n'
         
         # Add day names
         cal += '<tr>'
-        for day_name in weekheader(7).split():
-            cal += f'<th class="p-2 border border-gray-200">{day_name}</th>'
+        for day_name in weekheader(7).split():  # Use weekheader() function directly
+            cal += f'<th class="p-2 border border-gray-200">{day_name}</th>'    
         cal += '</tr>\n'
-        
+    
         # Add day numbers
         cal += '<tr>'
         for day, weekday in week_dates:
@@ -1197,8 +1690,8 @@ class LessonCalendar(HTMLCalendar):
         for day, weekday in week_dates:
             if day != 0:
                 date_obj = date(self.year, self.month, day)
-                lessons_for_day = lessons.filter(start_datetime__date=date_obj)
-                events_for_day = other_events.filter(start_datetime__date=date_obj)
+                lessons_for_day = [lesson for lesson in self.lessons if lesson.start_datetime.date() == date_obj]
+                events_for_day = [event for event in self.other_events if event.start_datetime.date() == date_obj]
                 
                 classes = ['p-2', 'border', 'border-gray-200', 'align-top']
                 if date_obj == timezone.now().date():
@@ -1228,14 +1721,32 @@ from django.contrib import admin
 
 
 # File: cs_nea/users/views.py
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
-from .forms import LoginForm, SignupForm, StudentSignupForm, TeacherSignupForm
-from .models import Student, Teacher
+from django.core.mail import send_mail
+from django.utils import timezone
+from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+from datetime import timedelta
+from .forms import (
+    LoginForm,
+    SignupForm,
+    StudentSignupForm,
+    TeacherSignupForm,
+    TwoFactorForm,
+    RetrieveAccountForm,
+    PasswordResetRequestForm,
+    PasswordResetForm,
+    UserSettingsForm,
+)
+from .models import Student, Teacher, User
+
 
 def index(request):
     return render(request, "index.html")
+
 
 def login(request):
     if request.method == "POST":
@@ -1245,15 +1756,146 @@ def login(request):
             password = form.cleaned_data.get("password")
             user = authenticate(request, username=email, password=password)
             if user is not None:
-                auth_login(request, user)
-                messages.success(request, "You have successfully logged in.")
-                return redirect('dashboard')
+                if user.two_factor_enabled:
+                    user.generate_two_factor_code()
+                    send_two_factor_code(user)
+                    request.session["user_id"] = user.id
+                    return redirect("two_factor_verify")
+                else:
+                    auth_login(request, user)
+                    messages.success(request, "You have successfully logged in.")
+                    return redirect("dashboard")
             else:
                 messages.error(request, "Invalid email or password")
     else:
         form = LoginForm()
 
     return render(request, "users/login.html", {"form": form})
+
+# 2 factor authentication views
+def two_factor_verify(request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("index")
+
+    user = User.objects.get(id=user_id)
+
+    if request.method == "POST":
+        form = TwoFactorForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data.get("code")
+            if (
+                user.two_factor_code == code
+                and user.two_factor_code_expiry > timezone.now()
+            ):
+                auth_login(request, user)
+                user.two_factor_code = None
+                user.two_factor_code_expiry = None
+                user.save()
+                messages.success(request, "You have successfully logged in.")
+                return redirect("dashboard")
+            else:
+                messages.error(request, "Invalid or expired code")
+    else:
+        form = TwoFactorForm()
+
+    return render(request, "users/two_factor_verify.html", {"form": form})
+
+
+def account_recovery(request):
+    if request.method == "POST":
+        form = RetrieveAccountForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get("email")
+            try:
+                user = User.objects.get(email=email)
+                send_password_reset_link(request, user)
+                messages.success(request, "A password reset link has been sent to your email.")
+                return redirect("index")
+            except User.DoesNotExist:
+                messages.error(request, "No account found with this email address.")
+    else:
+        form = RetrieveAccountForm()
+    
+    return render(request, "users/account_recovery.html", {"form": form})
+
+
+def send_two_factor_code(user):
+    subject = "Your Two-Factor Authentication Code"
+    message = f"Your two-factor authentication code is: {user.two_factor_code}"
+    send_mail(subject, message, "noreply@example.com", [user.email])
+
+
+# Account retrieval views
+def password_reset_request(request):
+    if request.method == "POST":
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get("email")
+            try:
+                user = User.objects.get(email=email)
+                user.generate_password_reset_token()
+                send_password_reset_link(request, user)
+                messages.success(request, "A password reset link has been sent to your email.")
+                return redirect("index")
+            except User.DoesNotExist:
+                messages.error(request, "No account found with this email address.")
+    else:
+        form = PasswordResetRequestForm()
+    
+    return render(request, "users/password_reset_request.html", {"form": form})
+
+def password_reset(request, token):
+    user = get_object_or_404(User, password_reset_token=token)  
+    
+    # Check if the token has expired (e.g., after 24 hours)
+    if user.password_reset_token_created_at < timezone.now() - timedelta(hours=24):
+        messages.error(request, "The password reset link has expired. Please request a new one.")
+        return redirect('password_reset_request')
+    
+    if request.method == "POST":
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data.get("new_password")
+            user.set_password(new_password)
+            user.password_reset_token = None
+            user.password_reset_token_created_at = None
+            user.save()
+            messages.success(request, "Your password has been reset successfully.")
+            return redirect("index")
+    else:
+        form = PasswordResetForm()
+    
+    return render(request, "users/password_reset.html", {"form": form})
+
+@login_required
+def enable_disable_2fa(request):
+    user = request.user
+    if request.method == "POST":
+        form = EnableDisable2FAForm(request.POST)
+        if form.is_valid():
+            enable_2fa = form.cleaned_data.get("enable_2fa")
+            user.two_factor_enabled = enable_2fa
+            user.save()
+            if enable_2fa:
+                messages.success(request, "Two-factor authentication has been enabled.")
+            else:
+                messages.success(request, "Two-factor authentication has been disabled.")
+            return redirect('settings')
+    else:
+        form = EnableDisable2FAForm(initial={"enable_2fa": user.two_factor_enabled})
+    
+    return render(request, "users/enable_disable_2fa.html", {"form": form})
+
+def send_password_reset_link(request, user):
+    user.generate_password_reset_token()
+    reset_link = request.build_absolute_uri(
+        reverse('password_reset', args=[user.password_reset_token])
+    )
+    subject = "Password Reset Link"
+    message = f"Click the following link to reset your password: {reset_link}"
+    send_mail(subject, message, "noreply@example.com", [user.email])
+
 
 def signup(request):
     if request.path == "/student/signup":
@@ -1263,7 +1905,7 @@ def signup(request):
         form_class = TeacherSignupForm
         user_type = 2
     else:
-        return redirect('index')  # handle this case as appropriate
+        return redirect("index")  # handle this case as appropriate
 
     if request.method == "POST":
         form = form_class(request.POST)
@@ -1276,13 +1918,13 @@ def signup(request):
             if isinstance(form, StudentSignupForm):
                 Student.objects.create(
                     user=user,
-                    grade_level=form.cleaned_data['grade_level'],
-                    extra_student_info=form.cleaned_data['extra_student_info']
+                    grade_level=form.cleaned_data["grade_level"],
+                    extra_student_info=form.cleaned_data["extra_student_info"],
                 )
             elif isinstance(form, TeacherSignupForm):
                 Teacher.objects.create(
                     user=user,
-                    extra_teacher_info=form.cleaned_data['extra_teacher_info']
+                    extra_teacher_info=form.cleaned_data["extra_teacher_info"],
                 )
 
             messages.success(request, "Your account has been successfully created!")
@@ -1297,15 +1939,38 @@ def signup(request):
 
     return render(request, "users/signup.html", {"form": form})
 
+
 def logout(request):
     auth_logout(request)
-    return redirect('index')
+    return redirect("index")
+
 
 def profile(request):
     return render(request, "users/profile.html")
 
+
+@login_required
 def settings(request):
-    return render(request, "users/settings.html")
+    user = request.user
+    if request.method == "POST":
+        form = UserSettingsForm(request.POST, instance=user)
+        if form.is_valid():
+            if form.cleaned_data.get('new_password'):
+                if user.check_password(form.cleaned_data.get('current_password')):
+                    user.set_password(form.cleaned_data.get('new_password'))
+                    update_session_auth_hash(request, user)  # Keep the user logged in
+                    messages.success(request, "Your password has been updated.")
+                else:
+                    messages.error(request, "Current password is incorrect.")
+                    return render(request, "users/settings.html", {"form": form})
+            
+            form.save()
+            messages.success(request, "Your settings have been updated.")
+            return redirect('settings')
+    else:
+        form = UserSettingsForm(instance=user)
+    
+    return render(request, "users/settings.html", {"form": form})
 
 # File: cs_nea/users/__init__.py
 
@@ -1324,6 +1989,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import RegexValidator, EmailValidator, MinLengthValidator
 from phonenumber_field.modelfields import PhoneNumberField
+from django.utils import timezone
+from django.utils.crypto import get_random_string
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -1347,7 +2014,7 @@ class User(AbstractBaseUser):
         default=1,
     )
     
-    email = models.EmailField(
+    email = models.EmailField(  
         "email address",
         max_length=255,
         unique=True,
@@ -1378,11 +2045,28 @@ class User(AbstractBaseUser):
     contact_number = PhoneNumberField()
     
     date_of_birth = models.DateField("date of birth")
+    
+    # Two-factor authentication fields
+    two_factor_enabled = models.BooleanField(default=False)
+    two_factor_code = models.CharField(max_length=6, blank=True, null=True)
+    two_factor_code_expiry = models.DateTimeField(blank=True, null=True)
+    password_reset_token = models.CharField(max_length=100, null=True, blank=True)
+    password_reset_token_created_at = models.DateTimeField(null=True, blank=True)
 
     objects = UserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["__all__"]
+    
+    def generate_password_reset_token(self):
+        self.password_reset_token = get_random_string(length=32)
+        self.password_reset_token_created_at = timezone.now()
+        self.save()
+        
+    def generate_two_factor_code(self):
+        self.two_factor_code = get_random_string(length=6, allowed_chars='0123456789')
+        self.two_factor_code_expiry = timezone.now() + timezone.timedelta(minutes=10)
+        self.save()
 
     def __str__(self):
         return self.email
@@ -1435,17 +2119,27 @@ from .models import User
 
 from phonenumber_field.formfields import SplitPhoneNumberField
 
+
 class LoginForm(forms.Form):
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput())
-    
+
+
 class SignupForm(forms.ModelForm):
     confirm_password = forms.CharField(widget=forms.PasswordInput())
     contact_number = SplitPhoneNumberField()
-    
+
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email", "password", "confirm_password", "contact_number", "date_of_birth"]
+        fields = [
+            "first_name",
+            "last_name",
+            "email",
+            "password",
+            "confirm_password",
+            "contact_number",
+            "date_of_birth",
+        ]
         widgets = {
             "password": forms.PasswordInput(),
             "date_of_birth": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
@@ -1462,35 +2156,39 @@ class SignupForm(forms.ModelForm):
             try:
                 validate_password(password)
             except forms.ValidationError as error:
-                self.add_error('password', error)
+                self.add_error("password", error)
 
         return cleaned_data
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
         if User.objects.filter(email=email).exists():
-             raise ValidationError("Email already exists")
+            raise ValidationError("Email already exists")
         return email
 
     def clean_date_of_birth(self):
         date_of_birth = self.cleaned_data.get("date_of_birth")
         if date_of_birth:
             from datetime import date
+
             age = (date.today() - date_of_birth).days // 365
             if age < 10:
-                raise ValidationError("You must be at least 10 years old to register. Please have your parent or guardian register for you.")
+                raise ValidationError(
+                    "You must be at least 10 years old to register. Please have your parent or guardian register for you."
+                )
         return date_of_birth
-    
+
+
 class StudentSignupForm(SignupForm):
     grade_level = forms.IntegerField(
         min_value=1,
         max_value=12,
-        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
         help_text="Enter a grade level between 1 and 12.",
-        label="Grade Level"
+        label="Grade Level",
     )
     extra_student_info = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        widget=forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
         required=False,
         label="Extra Information About You (Optional)",
     )
@@ -1499,9 +2197,10 @@ class StudentSignupForm(SignupForm):
         model = User
         fields = SignupForm.Meta.fields + ["grade_level", "extra_student_info"]
 
+
 class TeacherSignupForm(SignupForm):
     extra_teacher_info = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        widget=forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
         required=False,
         label="Extra Information About You (Optional)",
     )
@@ -1509,8 +2208,65 @@ class TeacherSignupForm(SignupForm):
     class Meta(SignupForm.Meta):
         model = User
         fields = SignupForm.Meta.fields + ["extra_teacher_info"]
-        
 
+
+# 2 factor authentication form
+class TwoFactorForm(forms.Form):
+    code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        widget=forms.TextInput(attrs={"autocomplete": "off"}),
+    )
+
+
+# Account retrieval forms
+class RetrieveAccountForm(forms.Form):
+    email = forms.EmailField()
+
+
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField()
+
+
+class PasswordResetForm(forms.Form):
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(), validators=[validate_password]
+    )
+    confirm_password = forms.CharField(widget=forms.PasswordInput())
+
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password = cleaned_data.get("new_password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if new_password and confirm_password:
+            if new_password != confirm_password:
+                raise forms.ValidationError("Passwords do not match")
+
+        return cleaned_data
+
+class UserSettingsForm(forms.ModelForm):
+    current_password = forms.CharField(widget=forms.PasswordInput(), required=False)
+    new_password = forms.CharField(widget=forms.PasswordInput(), required=False, validators=[validate_password])
+    confirm_new_password = forms.CharField(widget=forms.PasswordInput(), required=False)
+    
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'contact_number', 'two_factor_enabled']
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        current_password = cleaned_data.get("current_password")
+        new_password = cleaned_data.get("new_password")
+        confirm_new_password = cleaned_data.get("confirm_new_password")
+        
+        if new_password:
+            if not current_password:
+                raise forms.ValidationError("Current password is required to set a new password")
+            if new_password != confirm_new_password:
+                raise forms.ValidationError("New passwords do not match")
+        
+        return cleaned_data
 
 # File: cs_nea/users/tests.py
 from django.test import TestCase
@@ -1519,8 +2275,21 @@ from django.test import TestCase
 
 
 # File: cs_nea/users/urls.py
+# users/urls.py
+
 from django.urls import path
-from .views import index, login, signup, logout, profile, settings
+from .views import (
+    index,
+    login,
+    signup,
+    logout,
+    profile,
+    settings,
+    two_factor_verify,
+    account_recovery,
+    password_reset_request,
+    password_reset,
+)
 
 urlpatterns = [
     path("", index, name="index"),
@@ -1530,7 +2299,15 @@ urlpatterns = [
     path("student/signup", signup, name="student_signup"),
     path("teacher/signup", signup, name="teacher_signup"),
     path("profile", profile, name="user_profile"),
-    path("settings", settings, name="settings")
+    path("settings", settings, name="settings"),
+    # URL for two-factor authentication verification before login, only if 2FA activated in settings
+    path("two_factor_verify", two_factor_verify, name="two_factor_verify"),
+    path("account_recovery", account_recovery, name="account_recovery"),
+    path(
+        "password_reset_request", password_reset_request, name="password_reset_request"
+    ),
+    # Password reset token is passed as a URL parameter, URL only accessed through emailed link
+    path('password_reset/<str:token>/', password_reset, name='password_reset'),
 ]
 
 
@@ -1701,8 +2478,18 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-LOGIN_URL = "login"
+LOGIN_URL = "index"
 LOGIN_REDIRECT_URL = "dashboard"
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Replace with your SMTP server address
+EMAIL_PORT = 587  # Replace with your SMTP port number
+EMAIL_USE_TLS = True  # Set to True if your SMTP server requires TLS
+EMAIL_HOST_USER = 'zhaojin.chu07@gmail.com'  # Replace with your SMTP username
+EMAIL_HOST_PASSWORD = 'wxwk ximf qxzy oiyl'  # Replace with your SMTP password
+DEFAULT_FROM_EMAIL = 'zhaojin.chu07@gmail.com'  # Replace with your default from email address
+
+
 
 # File: cs_nea/cs_nea/wsgi.py
 """
