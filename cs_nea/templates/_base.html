@@ -17,7 +17,7 @@
         <div class="flex fixed top-0 py-2 w-full items-center justify-between bg-neutral-800 bg-opacity-95 backdrop-blur shadow-md">
           <!-- Left -->
           <div class="flex flex-grow gap-x-10 px-10 text-lg text-white py-2.5">
-            {% if "home" in request.path %}
+            {% if "home" or "password_reset" in request.path %}
             <div class="flex font-semibold">
               <a href="{% url 'index' %}" class="hover:text-purple-400">Home</a>
             </div>

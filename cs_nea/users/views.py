@@ -129,7 +129,7 @@ def password_reset_request(request):
     return render(request, "users/password_reset_request.html", {"form": form})
 
 def password_reset(request, token):
-    user = get_object_or_404(User, password_reset_token=token)
+    user = get_object_or_404(User, password_reset_token=token)  
     
     # Check if the token has expired (e.g., after 24 hours)
     if user.password_reset_token_created_at < timezone.now() - timedelta(hours=24):
@@ -145,7 +145,7 @@ def password_reset(request, token):
             user.password_reset_token_created_at = None
             user.save()
             messages.success(request, "Your password has been reset successfully.")
-            return redirect('login')
+            return redirect("index")
     else:
         form = PasswordResetForm()
     
