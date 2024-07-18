@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "users",
     "dashboard",
     "scheduling",
+    "communications",    
 ]
 
 AUTH_USER_MODEL = "users.User"

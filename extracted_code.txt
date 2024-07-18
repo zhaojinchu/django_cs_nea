@@ -130,74 +130,75 @@ if __name__ == '__main__':
                             }, 300);
                         }
                     </script>
-                </div>
-                <!-- Right -->
-                <div class="flex gap-x-6 px-6">
-                    {% block navright %}{% endblock navright %} 
-                    {% if user.is_authenticated %}
-                    <div
-                        x-data="{ open: false }"
-                        class="relative inline-block text-left mr-4"
-                    >
-                        <div>
-                            <button
-                                @click="open = !open"
-                                type="button"
-                                class="inline-flex justify-center w-full rounded-md shadow-sm px-4 py-2 bg-purple-500 text-sm font-medium text-white hover:bg-purple-600 ring-purple-800"
-                                id="options-menu"
-                                aria-haspopup="true"
-                                x-bind:aria-expanded="open"
-                            >
-                                {{ user.first_name }} {{ user.last_name }}
-                                <svg
-                                    class="-mr-1 ml-2 h-5 w-5"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                        clip-rule="evenodd"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-
+                
+                    <!-- Right -->
+                    <div class="flex gap-x-6 px-6">
+                        {% block navright %}{% endblock navright %} 
+                        {% if user.is_authenticated %}
                         <div
-                            x-show="open"
-                            @click.away="open = false"
-                            class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-neutral-100"
+                            x-data="{ open: false }"
+                            class="relative inline-block text-left mr-4"
                         >
+                            <div>
+                                <button
+                                    @click="open = !open"
+                                    type="button"
+                                    class="inline-flex justify-center w-full rounded-md shadow-sm px-4 py-2 bg-purple-500 text-sm font-medium text-white hover:bg-purple-600 ring-purple-800"
+                                    id="options-menu"
+                                    aria-haspopup="true"
+                                    x-bind:aria-expanded="open"
+                                >
+                                    {{ user.first_name }} {{ user.last_name }}
+                                    <svg
+                                        class="-mr-1 ml-2 h-5 w-5"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+
                             <div
-                                class="py-1"
-                                role="menu"
-                                aria-orientation="vertical"
-                                aria-labelledby="options-menu"
+                                x-show="open"
+                                @click.away="open = false"
+                                class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-neutral-100"
                             >
-                                <a
-                                    href="{% url 'settings' %}"
-                                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
-                                    role="menuitem"
-                                    >Settings</a
+                                <div
+                                    class="py-1"
+                                    role="menu"
+                                    aria-orientation="vertical"
+                                    aria-labelledby="options-menu"
                                 >
-                                <a
-                                    href="{% url 'user_profile' %}"
-                                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
-                                    role="menuitem"
-                                    >Profile</a
-                                >
-                                <a
-                                    href="{% url 'logout' %}"
-                                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
-                                    role="menuitem"
-                                    >Log out</a
-                                >
+                                    <a
+                                        href="{% url 'settings' %}"
+                                        class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                                        role="menuitem"
+                                        >Settings</a
+                                    >
+                                    <a
+                                        href="{% url 'user_profile' %}"
+                                        class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                                        role="menuitem"
+                                        >Profile</a
+                                    >
+                                    <a
+                                        href="{% url 'logout' %}"
+                                        class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                                        role="menuitem"
+                                        >Log out</a
+                                    >
+                                </div>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </header>
 
@@ -734,25 +735,6 @@ function calendarData() {
 </form>
 {% endblock %}
 
-# File: cs_nea/templates/users/student_teachers.html
-{% extends "_dashboard.html" %}
-
-{% block content %}
-<h2>My Teachers</h2>
-{% if teachers %}
-    <ul>
-    {% for teacher in teachers %}
-        <li>
-            {{ teacher.user.get_full_name }} ({{ teacher.user.email }})
-            <p>Extra Info: {{ teacher.extra_info }}</p>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>You don't have any teachers yet.</p>
-{% endif %}
-{% endblock %}
-
 # File: cs_nea/templates/users/signup.html
 {% extends "_base.html" %} {% load widget_tweaks %} {% block content %}
 
@@ -1054,51 +1036,6 @@ function calendarData() {
 </div>
 {% endblock %}
 
-# File: cs_nea/templates/users/teacher_students.html
-{% extends "_dashboard.html" %}
-
-{% block content %}
-<h2>My Students</h2>
-{% if students %}
-    <ul>
-    {% for student in students %}
-        <li>
-            {{ student.user.get_full_name }} ({{ student.user.email }})
-            <p>Grade: {{ student.grade_level }}</p>
-            <p>Extra Info: {{ student.extra_info }}</p>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>You don't have any students yet.</p>
-{% endif %}
-<a href="{% url 'invite_student' %}">Invite New Student</a>
-{% endblock %}
-
-
-
-# File: cs_nea/templates/users/student_invites.html
-{% extends "_dashboard.html" %}
-
-{% block content %}
-<h2>Pending Invites</h2>
-{% if invites %}
-    <ul>
-    {% for invite in invites %}
-        <li>
-            Invite from {{ invite.teacher.user.get_full_name }}
-            <p>{{ invite.message }}</p>
-            <a href="{% url 'accept_invite' invite.id %}">Accept</a>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No pending invites.</p>
-{% endif %}
-{% endblock %}
-
-
-
 # File: cs_nea/templates/users/account_recovery_2fa.html
 {% extends "_base.html" %}
 {% load widget_tweaks %}
@@ -1221,7 +1158,6 @@ function calendarData() {
         Sign up
     </button>
 </a>
-
 <!-- Teacher specific login and signups -->
 {% elif 'teacher/login' in request.path %}
 <a href="{% url 'teacher_login' %}">
@@ -1241,20 +1177,6 @@ function calendarData() {
     </button>
 </a>
 {% endif %} {% endblock navright %}
-
-
-# File: cs_nea/templates/users/invite_student.html
-{% extends "_dashboard.html" %}
-
-{% block content %}
-<h2>Invite Student</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Send Invite</button>
-</form>
-{% endblock %}
-
 
 
 # File: cs_nea/templates/users/profile.html
@@ -1329,6 +1251,95 @@ function calendarData() {
 </div>
 {% endblock content %}
 
+
+# File: cs_nea/templates/users/student_templates/student_teachers.html
+{% extends "dashboard/student_dashboard.html" %}
+
+{% block content %}
+<h2>My Teachers</h2>
+{% if teachers %}
+    <ul>
+    {% for teacher in teachers %}
+        <li>
+            {{ teacher.user.get_full_name }} ({{ teacher.user.email }})
+            <p>Extra Info: {{ teacher.extra_teacher_info }}</p>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>You don't have any teachers yet.</p>
+{% endif %}
+{% endblock %}
+
+# File: cs_nea/templates/users/student_templates/student_invites.html
+{% extends "dashboard/student_dashboard.html" %}
+
+{% block content %}
+<h2>Pending Invites</h2>
+{% if invites %}
+    <ul>
+    {% for invite in invites %}
+        <li>
+            Invite from 
+            {% if invite.teacher.user %}
+                {{ invite.teacher.user.get_full_name }}
+            {% else %}
+                Unknown Teacher
+            {% endif %}
+            <p>{{ invite.message }}</p>
+            <a href="{% url 'accept_invite' invite.id %}">Accept</a>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No pending invites.</p>
+{% endif %}
+{% endblock %}
+
+# File: cs_nea/templates/users/teacher_templates/teacher_students.html
+{% extends "dashboard/teacher_dashboard.html" %}
+
+{% block content %}
+<h2>My Students</h2>
+{% if students %}
+    <ul>
+    {% for student in students %}
+        <li>
+            {{ student.user.get_full_name }} ({{ student.user.email }})
+            <p>Grade: {{ student.grade_level }}</p>
+            <p>Extra Info: {{ student.extra_student_info }}</p>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>You don't have any students yet.</p>
+{% endif %}
+<a href="{% url 'invite_student' %}">Invite New Student</a>
+{% endblock %}
+
+
+
+# File: cs_nea/templates/users/teacher_templates/invite_student.html
+{% extends "dashboard/teacher_dashboard.html" %}
+
+{% block content %}
+<h2>Invite Student</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="form-group">
+        {{ form.student_email.errors }}
+        <label for="{{ form.student_email.id_for_label }}">Student's Email:</label>
+        {{ form.student_email }}
+    </div>
+    <div class="form-group">
+        {{ form.message.errors }}
+        <label for="{{ form.message.id_for_label }}">Message (optional):</label>
+        {{ form.message }}
+    </div>
+    <button type="submit">Send Invite</button>
+</form>
+{% endblock %}
 
 # File: cs_nea/templates/components/loginlogoutbutton.html
 
@@ -1853,6 +1864,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
+from django.db import transaction
 from datetime import timedelta
 from .forms import (
     LoginForm,
@@ -2034,6 +2046,8 @@ def send_password_reset_link(request, user):
     send_mail(subject, message, "noreply@example.com", [user.email])
 
 
+
+
 def signup(request):
     if request.path == "/student/signup":
         form_class = StudentSignupForm
@@ -2042,30 +2056,34 @@ def signup(request):
         form_class = TeacherSignupForm
         user_type = 2
     else:
-        return redirect("index")  # handle this case as appropriate
+        return redirect("index")
 
     if request.method == "POST":
         form = form_class(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data["password"])
-            user.user_type = user_type
-            user.save()
+            try:
+                with transaction.atomic():
+                    user = form.save(commit=False)
+                    user.set_password(form.cleaned_data["password"])
+                    user.user_type = user_type
+                    user.save()
 
-            if user_type == 1:  # Student
-                Student.objects.create(
-                    user=user,
-                    grade_level=form.cleaned_data["grade_level"],
-                    extra_student_info=form.cleaned_data.get("extra_student_info", "")
-                )
-            elif user_type == 2:  # Teacher
-                Teacher.objects.create(
-                    user=user,
-                    extra_teacher_info=form.cleaned_data.get("extra_teacher_info", "")
-                )
+                    if user_type == 1:  # Student
+                        Student.objects.create(
+                            user=user,
+                            grade_level=form.cleaned_data["grade_level"],
+                            extra_student_info=form.cleaned_data.get("extra_student_info", "")
+                        )
+                    elif user_type == 2:  # Teacher
+                        Teacher.objects.create(
+                            user=user,
+                            extra_teacher_info=form.cleaned_data.get("extra_teacher_info", "")
+                        )
 
-            messages.success(request, "Your account has been successfully created!")
-            return redirect("student_login" if user_type == 1 else "teacher_login")
+                messages.success(request, "Your account has been successfully created!")
+                return redirect("student_login" if user_type == 1 else "teacher_login")
+            except Exception as e:
+                messages.error(request, f"An error occurred during signup: {str(e)}")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
@@ -2110,12 +2128,15 @@ def settings(request):
 @login_required
 @user_passes_test(lambda u: u.user_type == 2)
 def invite_student(request):
+    teacher = request.user.teacher
     if request.method == "POST":
-        form = InviteForm(request.POST)
+        form = InviteForm(request.POST, teacher=teacher)
         if form.is_valid():
-            student = form.cleaned_data["student"]
+            student_email = form.cleaned_data["student_email"]
             message = form.cleaned_data["message"]
-            teacher = request.user.teacher
+            
+            student_user = User.objects.get(email=student_email, user_type=1)
+            student = student_user.student
 
             invite, created = Invite.objects.get_or_create(
                 student=student,
@@ -2124,23 +2145,22 @@ def invite_student(request):
             )
 
             if created:
-                messages.success(request, f"Invite sent to {student.user.email}")
+                messages.success(request, f"Invite sent to {student_email}")
             else:
-                messages.info(request, f"Invite already sent to {student.user.email}")
+                messages.info(request, f"Invite already sent to {student_email}")
 
             return redirect("teacher_dashboard")
     else:
-        form = InviteForm()
+        form = InviteForm(teacher=teacher)
 
-    return render(request, "users/invite_student.html", {"form": form})
-
+    return render(request, "users/teacher_templates/invite_student.html", {"form": form})
 
 @login_required
 @user_passes_test(lambda u: u.user_type == 1)
 def student_invites(request):
     student = request.user.student
     pending_invites = Invite.objects.filter(student=student, status="pending")
-    return render(request, "users/student_invites.html", {"invites": pending_invites})
+    return render(request, "users/student_templates/student_invites.html", {"invites": pending_invites})
 
 
 @login_required
@@ -2163,7 +2183,7 @@ def teacher_students(request):
     teacher = request.user.teacher
     accepted_invites = Invite.objects.filter(teacher=teacher, status="accepted")
     students = [invite.student for invite in accepted_invites]
-    return render(request, "users/teacher_students.html", {"students": students})
+    return render(request, "users/teacher_templates/teacher_students.html", {"students": students})
 
 
 @login_required
@@ -2172,7 +2192,7 @@ def student_teachers(request):
     student = request.user.student
     accepted_invites = Invite.objects.filter(student=student, status="accepted")
     teachers = [invite.teacher for invite in accepted_invites]
-    return render(request, "users/student_teachers.html", {"teachers": teachers})
+    return render(request, "users/student_templates/student_teachers.html", {"teachers": teachers})
 
 
 # File: cs_nea/users/__init__.py
@@ -2267,6 +2287,7 @@ class User(AbstractBaseUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["__all__"]
 
+    # Account authentication and retrival methods
     def generate_password_reset_token(self):
         self.password_reset_token = get_random_string(length=32)
         self.password_reset_token_created_at = timezone.now()
@@ -2276,7 +2297,16 @@ class User(AbstractBaseUser):
         self.two_factor_code = get_random_string(length=6, allowed_chars="0123456789")
         self.two_factor_code_expiry = timezone.now() + timezone.timedelta(minutes=10)
         self.save()
+        
+    # Full name quick access method
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"
+    
+    # First name quick access method
+    def get_first_name(self):
+        return self.first_name
 
+    # String representation of the user - method is used for all Django models below
     def __str__(self):
         return self.email
 
@@ -2290,9 +2320,10 @@ class Teacher(models.Model):
         blank=True,  # This field is optional
         null=True,
     )
-
+    
     def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name}"
+        return f"{self.user.get_first_name()} ({self.user.email})"
+
 
 
 class Student(models.Model):
@@ -2310,9 +2341,10 @@ class Student(models.Model):
             RegexValidator(r"^\d+$", "Enter a valid grade level between 1 and 12.")
         ],
     )
-
+    
     def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name}"
+        return f"{self.user.get_first_name()} ({self.user.email})"
+
 
 
 class Invite(models.Model):
@@ -2500,16 +2532,31 @@ class UserSettingsForm(forms.ModelForm):
     
 # Invite form
 class InviteForm(forms.Form):
-    student = forms.ModelChoiceField(queryset=Student.objects.all())
+    student_email = forms.EmailField(label="Student's Email")
     message = forms.CharField(widget=forms.Textarea, max_length=500, required=False)
 
+    def __init__(self, *args, **kwargs):
+        self.teacher = kwargs.pop('teacher', None)
+        super(InviteForm, self).__init__(*args, **kwargs)
+
+    def clean_student_email(self):
+        email = self.cleaned_data['student_email']
+        try:
+            user = User.objects.get(email=email, user_type=1)  # 1 is for Student
+            student = user.student
+            
+            # Check if an invite from this teacher already exists
+            existing_invite = Invite.objects.filter(student=student, teacher=self.teacher).first()
+            if existing_invite:
+                if existing_invite.status == "accepted":
+                    raise ValidationError("You are already connected with this student.")
+                elif existing_invite.status == "pending":
+                    raise ValidationError("You have already sent an invite to this student.")
+        except User.DoesNotExist:
+            raise ValidationError("No student account found with this email address.")
+        return email
 
 
-
-# File: cs_nea/users/tests.py
-from django.test import TestCase
-
-# Create your tests here.
 
 
 # File: cs_nea/users/urls.py

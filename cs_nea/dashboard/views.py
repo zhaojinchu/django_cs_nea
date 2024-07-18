@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
-
+from communications.models import Notification
 
 # Predefined functions to check user type
 def is_student(user):
@@ -14,10 +14,18 @@ def is_teacher(user):
 # Dashboard redirect to teacher or student dashboard
 @login_required
 def dashboard(request):
+    notifications = Notification.objects.filter(
+        receiver=request.user, is_read=False
+    ).order_by("-timestamp")[:20]
+
+    context = {
+        "notifications": notifications,
+    }
+
     if request.user.user_type == 1:  # Student
-        return redirect("student_dashboard")
+        return render(request, "dashboard/student_dashboard.html", context)
     elif request.user.user_type == 2:  # Teacher
-        return redirect("teacher_dashboard")
+        return render(request, "dashboard/teacher_dashboard.html", context)
     else:
         # Handle unexpected user type
         return redirect("home")
