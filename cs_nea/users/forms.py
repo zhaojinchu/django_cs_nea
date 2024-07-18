@@ -154,9 +154,30 @@ class UserSettingsForm(forms.ModelForm):
         
         return cleaned_data
     
-# 
+# Invite form
 class InviteForm(forms.Form):
-    student = forms.ModelChoiceField(queryset=Student.objects.all())
+    student_email = forms.EmailField(label="Student's Email")
     message = forms.CharField(widget=forms.Textarea, max_length=500, required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.teacher = kwargs.pop('teacher', None)
+        super(InviteForm, self).__init__(*args, **kwargs)
+
+    def clean_student_email(self):
+        email = self.cleaned_data['student_email']
+        try:
+            user = User.objects.get(email=email, user_type=1)  # 1 is for Student
+            student = user.student
+            
+            # Check if an invite from this teacher already exists
+            existing_invite = Invite.objects.filter(student=student, teacher=self.teacher).first()
+            if existing_invite:
+                if existing_invite.status == "accepted":
+                    raise ValidationError("You are already connected with this student.")
+                elif existing_invite.status == "pending":
+                    raise ValidationError("You have already sent an invite to this student.")
+        except User.DoesNotExist:
+            raise ValidationError("No student account found with this email address.")
+        return email
 
 

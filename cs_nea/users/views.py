@@ -270,12 +270,15 @@ def settings(request):
 @login_required
 @user_passes_test(lambda u: u.user_type == 2)
 def invite_student(request):
+    teacher = request.user.teacher
     if request.method == "POST":
-        form = InviteForm(request.POST)
+        form = InviteForm(request.POST, teacher=teacher)
         if form.is_valid():
-            student = form.cleaned_data["student"]
+            student_email = form.cleaned_data["student_email"]
             message = form.cleaned_data["message"]
-            teacher = request.user.teacher
+            
+            student_user = User.objects.get(email=student_email, user_type=1)
+            student = student_user.student
 
             invite, created = Invite.objects.get_or_create(
                 student=student,
@@ -284,16 +287,15 @@ def invite_student(request):
             )
 
             if created:
-                messages.success(request, f"Invite sent to {student.user.email}")
+                messages.success(request, f"Invite sent to {student_email}")
             else:
-                messages.info(request, f"Invite already sent to {student.user.email}")
+                messages.info(request, f"Invite already sent to {student_email}")
 
             return redirect("teacher_dashboard")
     else:
-        form = InviteForm()
+        form = InviteForm(teacher=teacher)
 
     return render(request, "users/teacher_templates/invite_student.html", {"form": form})
-
 
 @login_required
 @user_passes_test(lambda u: u.user_type == 1)

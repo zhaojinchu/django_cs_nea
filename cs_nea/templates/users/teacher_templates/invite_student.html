@@ -4,8 +4,17 @@
 <h2>Invite Student</h2>
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ form.non_field_errors }}
+    <div class="form-group">
+        {{ form.student_email.errors }}
+        <label for="{{ form.student_email.id_for_label }}">Student's Email:</label>
+        {{ form.student_email }}
+    </div>
+    <div class="form-group">
+        {{ form.message.errors }}
+        <label for="{{ form.message.id_for_label }}">Message (optional):</label>
+        {{ form.message }}
+    </div>
     <button type="submit">Send Invite</button>
 </form>
 {% endblock %}
-

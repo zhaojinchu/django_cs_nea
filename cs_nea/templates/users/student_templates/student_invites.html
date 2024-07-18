@@ -6,7 +6,12 @@
     <ul>
     {% for invite in invites %}
         <li>
-            Invite from {{ invite.teacher.user.get_full_name }}
+            Invite from 
+            {% if invite.teacher.user %}
+                {{ invite.teacher.user.get_full_name }}
+            {% else %}
+                Unknown Teacher
+            {% endif %}
             <p>{{ invite.message }}</p>
             <a href="{% url 'accept_invite' invite.id %}">Accept</a>
         </li>
@@ -16,4 +21,3 @@
     <p>No pending invites.</p>
 {% endif %}
 {% endblock %}
-

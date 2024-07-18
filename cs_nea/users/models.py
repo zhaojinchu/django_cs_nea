@@ -77,6 +77,7 @@ class User(AbstractBaseUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["__all__"]
 
+    # Account authentication and retrival methods
     def generate_password_reset_token(self):
         self.password_reset_token = get_random_string(length=32)
         self.password_reset_token_created_at = timezone.now()
@@ -86,7 +87,16 @@ class User(AbstractBaseUser):
         self.two_factor_code = get_random_string(length=6, allowed_chars="0123456789")
         self.two_factor_code_expiry = timezone.now() + timezone.timedelta(minutes=10)
         self.save()
+        
+    # Full name quick access method
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"
+    
+    # First name quick access method
+    def get_first_name(self):
+        return self.first_name
 
+    # String representation of the user - method is used for all Django models below
     def __str__(self):
         return self.email
 
@@ -100,9 +110,10 @@ class Teacher(models.Model):
         blank=True,  # This field is optional
         null=True,
     )
-
+    
     def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name}"
+        return f"{self.user.get_first_name()} ({self.user.email})"
+
 
 
 class Student(models.Model):
@@ -120,9 +131,10 @@ class Student(models.Model):
             RegexValidator(r"^\d+$", "Enter a valid grade level between 1 and 12.")
         ],
     )
-
+    
     def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name}"
+        return f"{self.user.get_first_name()} ({self.user.email})"
+
 
 
 class Invite(models.Model):
