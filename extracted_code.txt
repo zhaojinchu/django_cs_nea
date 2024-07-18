@@ -337,68 +337,12 @@ if __name__ == '__main__':
           <!-- Right -->
           <div class="flex gap-x-6 px-6">
             {% block navright %} {% endblock navright %} {% if user.is_authenticated %}
-            <div
-              x-data="{ open: false }"
-              class="relative inline-block text-left mr-4"
-            >
-              <div>
-                <button
-                  @click="open = !open"
-                  type="button"
-                  class="inline-flex justify-center w-full rounded-md shadow-sm px-4 py-2 bg-purple-500 text-sm font-medium text-white hover:bg-purple-600 ring-purple-800"
-                  id="options-menu"
-                  aria-haspopup="true"
-                  x-bind:aria-expanded="open"
-                >
-                  {{ user.first_name }} {{ user.last_name }}
-                  <svg
-                    class="-mr-1 ml-2 h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
 
-              <div
-                x-show="open"
-                @click.away="open = false"
-                class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-neutral-100"
-              >
-                <div
-                  class="py-1"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="options-menu"
-                >
-                  <a
-                    href="{% url 'settings' %}"
-                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
-                    role="menuitem"
-                    >Settings</a
-                  >
-                  <a
-                    href="{% url 'user_profile' %}"
-                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
-                    role="menuitem"
-                    >Profile</a
-                  >
-                  <a
-                    href="{% url 'logout' %}"
-                    class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
-                    role="menuitem"
-                    >Log out</a
-                  >
-                </div>
-              </div>
-            </div>
+            <!-- Notification component -->
+            {% include "components/notification.html" %}
+
+            <!-- Current user component -->
+            {% include "components/current_user.html" %}
             {% endif %}
           </div>
         </div>
@@ -1341,10 +1285,149 @@ function calendarData() {
 </form>
 {% endblock %}
 
-# File: cs_nea/templates/components/loginlogoutbutton.html
+# File: cs_nea/templates/components/notification.html
+{% load static %}
+<div x-data="notificationComponent()" class="relative inline-block text-left mr-4">
+    <button @click="toggleNotifications" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-500 text-white focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+    </button>
 
+    <div x-show="isOpen" @click.away="isOpen = false" class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+        <div class="py-1 max-h-80 overflow-y-auto" role="none">
+            <template x-for="notification in notifications" :key="notification.id">
+                <div class="flex items-center px-4 py-3 hover:bg-gray-100">
+                    <div class="flex-grow">
+                        <p x-text="notification.content" class="text-sm text-gray-700"></p>
+                        <p x-text="notification.timestamp" class="text-xs text-gray-500"></p>
+                    </div>
+                    <button @click="dismissNotification(notification.id)" class="ml-2 text-gray-400 hover:text-gray-600">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </template>
+            <div x-show="notifications.length === 0" class="px-4 py-3 text-sm text-gray-700">
+                No new notifications
+            </div>
+        </div>
+    </div>
+</div>
 
+<script>
+function notificationComponent() {
+    return {
+        isOpen: false,
+        notifications: [],
+        toggleNotifications() {
+            this.isOpen = !this.isOpen;
+            if (this.isOpen) {
+                this.fetchNotifications();
+            }
+        },
+        fetchNotifications() {
+            fetch('/communications/get-notifications/')
+                .then(response => response.json())
+                .then(data => {
+                    this.notifications = data;
+                });
+        },
+        dismissNotification(id) {
+            fetch(`/communications/mark-notification-read/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.notifications = this.notifications.filter(n => n.id !== id);
+                }
+            });
+        }
+    }
+}
 
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+# File: cs_nea/templates/components/current_user.html
+{% load static %}
+<div x-data="{ open: false }" class="relative inline-block text-left mr-4">
+    <div>
+        <button
+            @click="open = !open"
+            type="button"
+            class="inline-flex justify-center w-full rounded-md shadow-sm px-4 py-2 bg-purple-500 text-sm font-medium text-white hover:bg-purple-600 ring-purple-800"
+            id="options-menu"
+            aria-haspopup="true"
+            x-bind:aria-expanded="open"
+        >
+            {{ user.first_name }} {{ user.last_name }}
+            <svg
+                class="-mr-1 ml-2 h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+            >
+                <path
+                    fill-rule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                />
+            </svg>
+        </button>
+    </div>
+
+    <div
+        x-show="open"
+        @click.away="open = false"
+        class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-neutral-100"
+    >
+        <div
+            class="py-1"
+            role="menu"
+            aria-orientation="vertical"
+            aria-labelledby="options-menu"
+        >
+            <a
+                href="{% url 'settings' %}"
+                class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                role="menuitem"
+                >Settings</a
+            >
+            <a
+                href="{% url 'user_profile' %}"
+                class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                role="menuitem"
+                >Profile</a
+            >
+            <a
+                href="{% url 'logout' %}"
+                class="block px-4 py-2 text-sm hover:bg-neutral-200 text-neutral-800"
+                role="menuitem"
+                >Log out</a
+            >
+        </div>
+    </div>
+</div>
 
 
 # File: cs_nea/dashboard/admin.py
@@ -1356,7 +1439,7 @@ from django.contrib import admin
 # File: cs_nea/dashboard/views.py
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
-
+from communications.models import Notification
 
 # Predefined functions to check user type
 def is_student(user):
@@ -1370,10 +1453,18 @@ def is_teacher(user):
 # Dashboard redirect to teacher or student dashboard
 @login_required
 def dashboard(request):
+    notifications = Notification.objects.filter(
+        receiver=request.user, is_read=False
+    ).order_by("-timestamp")[:20]
+
+    context = {
+        "notifications": notifications,
+    }
+
     if request.user.user_type == 1:  # Student
-        return redirect("student_dashboard")
+        return render(request, "dashboard/student_dashboard.html", context)
     elif request.user.user_type == 2:  # Teacher
-        return redirect("teacher_dashboard")
+        return render(request, "dashboard/teacher_dashboard.html", context)
     else:
         # Handle unexpected user type
         return redirect("home")
@@ -1848,6 +1939,122 @@ class LessonCalendar(HTMLCalendar):
         
         cal += '</table>'
         return cal
+
+# File: cs_nea/communications/views.py
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from .models import Notification
+
+@login_required
+def get_notifications(request):
+    notifications = Notification.objects.filter(receiver=request.user, is_read=False).order_by('-timestamp')[:20]
+    data = [{
+        'id': notif.id,
+        'content': notif.content,
+        'timestamp': notif.timestamp.strftime('%Y-%m-%d %H:%M')
+    } for notif in notifications]
+    return JsonResponse(data, safe=False)
+
+@require_POST
+@login_required
+def mark_notification_read(request, notification_id):
+    try:
+        notification = Notification.objects.get(id=notification_id, receiver=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'status': 'success'})
+    except Notification.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Notification not found'}, status=404)
+
+# File: cs_nea/communications/__init__.py
+
+
+# File: cs_nea/communications/apps.py
+from django.apps import AppConfig
+
+
+class CommunicationsConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'communications'
+
+
+# File: cs_nea/communications/models.py
+from django.db import models
+from django.contrib.auth import get_user_model
+
+# Linking to user models in other app
+User = get_user_model()
+
+
+# Notification config and settings model
+class NotificationConfig(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    receive_notification = models.BooleanField(default=True)
+    lesson_reminder = models.BooleanField(default=True)
+    assignment_notification = models.BooleanField(default=True)
+    message_notification = models.BooleanField(default=True)
+    attendance_notification = models.BooleanField(default=True)
+    t2r_requests = models.BooleanField(default=True)
+    cancellation_notification = models.BooleanField(default=True)
+
+
+# Notification model
+class Notification(models.Model):
+    receiver = models.ForeignKey(
+        User, related_name="received_notifications", on_delete=models.CASCADE
+    )
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"Notification for {self.receiver.username}: {self.content[:50]}..."
+
+
+# Message model
+class Message(models.Model):
+    sender = models.ForeignKey(
+        User, related_name="sent_messages", on_delete=models.CASCADE
+    )
+    receiver = models.ForeignKey(
+        User, related_name="received_messages", on_delete=models.CASCADE
+    )
+    message_content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_edited = models.BooleanField(default=False)
+
+
+# Message config and settings model
+class MessageConfig(models.Model):
+    student = models.ForeignKey(
+        User, related_name="student_message_config", on_delete=models.CASCADE
+    )
+    teacher = models.ForeignKey(
+        User, related_name="teacher_message_config", on_delete=models.CASCADE
+    )
+    read_only = models.BooleanField(default=False)
+
+
+# File: cs_nea/communications/tests.py
+from django.test import TestCase
+
+# Create your tests here.
+
+
+# File: cs_nea/communications/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('get-notifications/', views.get_notifications, name='get_notifications'),
+    path('mark-notification-read/<int:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
+]
+
+
 
 # File: cs_nea/users/admin.py
 from django.contrib import admin
@@ -2507,6 +2714,8 @@ class PasswordResetForm(forms.Form):
 
         return cleaned_data
 
+
+# FIXME: Some fields should be greyed out and non-editable
 class UserSettingsForm(forms.ModelForm):
     current_password = forms.CharField(widget=forms.PasswordInput(), required=False)
     new_password = forms.CharField(widget=forms.PasswordInput(), required=False, validators=[validate_password])
@@ -2680,6 +2889,7 @@ INSTALLED_APPS = [
     "users",
     "dashboard",
     "scheduling",
+    "communications",    
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -2833,6 +3043,7 @@ urlpatterns = [
     path("", include("users.urls")),
     path("", include("dashboard.urls")),
     path("", include("scheduling.urls")),
+    path("communications/", include("communications.urls")),
     path("__reload__/", include("django_browser_reload.urls")),
     
 ]

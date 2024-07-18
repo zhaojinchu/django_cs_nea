@@ -16,6 +16,10 @@ class LessonRequest(models.Model):
     request_reason = models.CharField(max_length=255)
     duration = models.DurationField()
     recurring_amount = models.IntegerField()
+    
+    # Additional fields from iteration 2
+    is_sent_by_teacher = models.BooleanField(default=False)
+    is_recurring = models.BooleanField(default=False)
 
     def clean(self):
         if self.requested_datetime <= timezone.now():
@@ -24,8 +28,8 @@ class LessonRequest(models.Model):
             raise ValidationError("Request reason cannot be empty or just whitespace.")
         if self.duration < timedelta(minutes=15) or self.duration > timedelta(hours=3):
             raise ValidationError("Duration must be between 15 minutes and 3 hours.")
-        if self.recurring_amount < 1 or self.recurring_amount > 52:
-            raise ValidationError("Recurring amount must be between 1 and 52.")
+        if self.is_recurring and (self.recurring_amount < 1 or self.recurring_amount > 52):
+            raise ValidationError("For recurring lessons, recurring amount must be between 1 and 52.")
 
 # Lesson model, used store scheduled lessons
 class Lesson(models.Model):

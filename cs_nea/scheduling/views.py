@@ -1,11 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from datetime import date
-from .forms import LessonRequestForm, OtherEventForm, LessonForm
-from .models import Student, Teacher, Lesson, OtherEvent
+from .forms import StudentLessonRequestForm, TeacherLessonRequestForm, OtherEventForm, LessonForm
+from .models import Student, Teacher, Lesson, OtherEvent, LessonRequest
 from .calendar_utils import LessonCalendar
+from communications.models import Notification
 
 
 # Predefined functions to check user type
@@ -15,47 +16,69 @@ def is_student(user):
 def is_teacher(user):
     return user.user_type == 2
 
-# Lesson request view for students
+# Student lesson request form
 @login_required
 @user_passes_test(is_student)
-def lesson_request(request):
+def student_lesson_request(request):
     if request.method == "POST":
-        form = LessonRequestForm(request.POST)
+        form = StudentLessonRequestForm(request.POST)
         if form.is_valid():
             lesson_request = form.save(commit=False)
-            lesson_request.student = Student.objects.get(
-                user=request.user
-            )  # Assuming the logged-in user is a student
+            lesson_request.student = request.user.student
             lesson_request.save()
+            
+            if lesson_request.teacher.user.notification_preferences.lesson_requests:
+                Notification.objects.create(
+                    receiver=lesson_request.teacher.user,
+                    content=f"New lesson request from {request.user.get_full_name()}"
+                )
+            
             messages.success(request, "Lesson request submitted successfully!")
-            return redirect(
-                "dashboard"
-            )  # Or wherever you want to redirect after successful submission
+            return redirect("dashboard")
     else:
-        form = LessonRequestForm()
+        form = StudentLessonRequestForm()
 
-    return render(request, "scheduling/schedule_lesson.html", {"form": form})
+    return render(request, "scheduling/student_schedule_lesson.html", {"form": form})
 
-# Lesson request view for teachers
+# Teacher lesson request form
 @login_required
 @user_passes_test(is_teacher)
-def lesson_request(request):
+def teacher_lesson_request(request):
     if request.method == "POST":
-        form = LessonRequestForm(request.POST)
+        form = TeacherLessonRequestForm(request.POST)
         if form.is_valid():
             lesson_request = form.save(commit=False)
-            lesson_request.student = Student.objects.get(
-                user=request.user
-            )  # Assuming the logged-in user is a student
-            lesson_request.save()
-            messages.success(request, "Lesson request submitted successfully!")
-            return redirect(
-                "dashboard"
-            )  # Or wherever you want to redirect after successful submission
+            lesson_request.teacher = request.user.teacher
+            lesson_request.is_sent_by_teacher = True
+            
+            if form.cleaned_data['send_request']:
+                lesson_request.save()
+                if lesson_request.student.user.notification_preferences.lesson_requests:
+                    Notification.objects.create(
+                        receiver=lesson_request.student.user,
+                        content=f"New lesson request from {request.user.get_full_name()}"
+                    )
+                messages.success(request, "Lesson request sent to student.")
+            else:
+                lesson = Lesson.objects.create(
+                    student=lesson_request.student,
+                    teacher=request.user.teacher,
+                    start_datetime=lesson_request.requested_datetime,
+                    end_datetime=lesson_request.requested_datetime + lesson_request.duration,
+                    is_recurring=lesson_request.is_recurring
+                )
+                if lesson_request.student.user.notification_preferences.lessons:
+                    Notification.objects.create(
+                        receiver=lesson_request.student.user,
+                        content=f"New lesson scheduled with {request.user.get_full_name()}"
+                    )
+                messages.success(request, "Lesson scheduled successfully.")
+            
+            return redirect("dashboard")
     else:
-        form = LessonRequestForm()
+        form = TeacherLessonRequestForm()
 
-    return render(request, "scheduling/schedule_lesson.html", {"form": form})
+    return render(request, "scheduling/teacher_schedule_lesson.html", {"form": form})
 
 # Create lesson view
 def create_lesson(request):
@@ -91,6 +114,10 @@ def create_other_event(request):
         form = OtherEventForm()
 
     return render(request, "scheduling/create_other_event.html", {"form": form})
+
+
+
+
 
 
 # Calendar views

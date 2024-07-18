@@ -2,40 +2,32 @@ from django import forms
 from .models import LessonRequest, Lesson, OtherEvent
 from django.utils import timezone
 from datetime import timedelta
+from users.models import Teacher, Student
 
-# Corresponding Django form for the LessonRequest model
-class LessonRequestForm(forms.ModelForm):
+# Lesson request form for students
+class StudentLessonRequestForm(forms.ModelForm):
+    teacher = forms.ModelChoiceField(queryset=Teacher.objects.all())
+
     class Meta:
         model = LessonRequest
-        fields = ['teacher', 'requested_datetime', 'is_rescheduling', 'request_reason', 'duration', 'recurring_amount']
+        fields = ['teacher', 'requested_datetime', 'request_reason', 'duration', 'is_recurring', 'recurring_amount']
         widgets = {
             'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'duration': forms.TimeInput(attrs={'type': 'time'}),
         }
 
-    def clean_requested_datetime(self):
-        requested_datetime = self.cleaned_data.get('requested_datetime')
-        if requested_datetime <= timezone.now():
-            raise forms.ValidationError("Requested datetime must be in the future.")
-        return requested_datetime
+# Lesson request form for teachers
+class TeacherLessonRequestForm(forms.ModelForm):
+    student = forms.ModelChoiceField(queryset=Student.objects.all())
+    send_request = forms.BooleanField(required=False, initial=True)
 
-    def clean_request_reason(self):
-        request_reason = self.cleaned_data.get('request_reason')
-        if not request_reason.strip():
-            raise forms.ValidationError("Request reason cannot be empty or just whitespace.")
-        return request_reason
-
-    def clean_duration(self):
-        duration = self.cleaned_data.get('duration')
-        if duration < timedelta(minutes=15) or duration > timedelta(hours=3):
-            raise forms.ValidationError("Duration must be between 15 minutes and 3 hours.")
-        return duration
-
-    def clean_recurring_amount(self):
-        recurring_amount = self.cleaned_data.get('recurring_amount')
-        if recurring_amount < 1 or recurring_amount > 52:
-            raise forms.ValidationError("Recurring amount must be between 1 and 52.")
-        return recurring_amount
+    class Meta:
+        model = LessonRequest
+        fields = ['student', 'requested_datetime', 'request_reason', 'duration', 'is_recurring', 'recurring_amount']
+        widgets = {
+            'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'duration': forms.TimeInput(attrs={'type': 'time'}),
+        }
     
 # Corresponding Django form for the Lesson model
 class LessonForm(forms.ModelForm):
