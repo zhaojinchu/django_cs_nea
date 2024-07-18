@@ -154,7 +154,7 @@ class UserSettingsForm(forms.ModelForm):
         
         return cleaned_data
     
-# Invite form
+# 
 class InviteForm(forms.Form):
     student = forms.ModelChoiceField(queryset=Student.objects.all())
     message = forms.CharField(widget=forms.Textarea, max_length=500, required=False)

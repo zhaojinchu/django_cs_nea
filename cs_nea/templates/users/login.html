@@ -1,4 +1,6 @@
-{% extends "_base.html" %} {% load widget_tweaks %} {% block content %}
+{% extends "_base.html" %} {% load widget_tweaks %} 
+
+{% block content %}
 <form class="flex pt-28 justify-center" method="post">
     {% csrf_token %}
     <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
@@ -45,7 +47,12 @@
         </div>
     </div>
 </form>
-{% endblock content %} {% block navright %} {% if request.path == "/student/login" %}
+{% endblock content %} 
+
+
+{% block navright %} 
+<!-- Student specific login and signups -->
+{% if 'student/login' in request.path %}
 <a href="{% url 'student_login' %}">
     <button
         type="button"
@@ -62,7 +69,8 @@
         Sign up
     </button>
 </a>
-{% endif %} {% if request.path == "/teacher/login" %}
+<!-- Teacher specific login and signups -->
+{% elif 'teacher/login' in request.path %}
 <a href="{% url 'teacher_login' %}">
     <button
         type="button"

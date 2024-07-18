@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
+from django.db import transaction
 from datetime import timedelta
 from .forms import (
     LoginForm,
@@ -187,6 +188,8 @@ def send_password_reset_link(request, user):
     send_mail(subject, message, "noreply@example.com", [user.email])
 
 
+
+
 def signup(request):
     if request.path == "/student/signup":
         form_class = StudentSignupForm
@@ -195,30 +198,34 @@ def signup(request):
         form_class = TeacherSignupForm
         user_type = 2
     else:
-        return redirect("index")  # handle this case as appropriate
+        return redirect("index")
 
     if request.method == "POST":
         form = form_class(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data["password"])
-            user.user_type = user_type
-            user.save()
+            try:
+                with transaction.atomic():
+                    user = form.save(commit=False)
+                    user.set_password(form.cleaned_data["password"])
+                    user.user_type = user_type
+                    user.save()
 
-            if user_type == 1:  # Student
-                Student.objects.create(
-                    user=user,
-                    grade_level=form.cleaned_data["grade_level"],
-                    extra_student_info=form.cleaned_data.get("extra_student_info", "")
-                )
-            elif user_type == 2:  # Teacher
-                Teacher.objects.create(
-                    user=user,
-                    extra_teacher_info=form.cleaned_data.get("extra_teacher_info", "")
-                )
+                    if user_type == 1:  # Student
+                        Student.objects.create(
+                            user=user,
+                            grade_level=form.cleaned_data["grade_level"],
+                            extra_student_info=form.cleaned_data.get("extra_student_info", "")
+                        )
+                    elif user_type == 2:  # Teacher
+                        Teacher.objects.create(
+                            user=user,
+                            extra_teacher_info=form.cleaned_data.get("extra_teacher_info", "")
+                        )
 
-            messages.success(request, "Your account has been successfully created!")
-            return redirect("student_login" if user_type == 1 else "teacher_login")
+                messages.success(request, "Your account has been successfully created!")
+                return redirect("student_login" if user_type == 1 else "teacher_login")
+            except Exception as e:
+                messages.error(request, f"An error occurred during signup: {str(e)}")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
@@ -285,7 +292,7 @@ def invite_student(request):
     else:
         form = InviteForm()
 
-    return render(request, "users/invite_student.html", {"form": form})
+    return render(request, "users/teacher_templates/invite_student.html", {"form": form})
 
 
 @login_required
@@ -293,7 +300,7 @@ def invite_student(request):
 def student_invites(request):
     student = request.user.student
     pending_invites = Invite.objects.filter(student=student, status="pending")
-    return render(request, "users/student_invites.html", {"invites": pending_invites})
+    return render(request, "users/student_templates/student_invites.html", {"invites": pending_invites})
 
 
 @login_required
@@ -316,7 +323,7 @@ def teacher_students(request):
     teacher = request.user.teacher
     accepted_invites = Invite.objects.filter(teacher=teacher, status="accepted")
     students = [invite.student for invite in accepted_invites]
-    return render(request, "users/teacher_students.html", {"students": students})
+    return render(request, "users/teacher_templates/teacher_students.html", {"students": students})
 
 
 @login_required
@@ -325,4 +332,4 @@ def student_teachers(request):
     student = request.user.student
     accepted_invites = Invite.objects.filter(student=student, status="accepted")
     teachers = [invite.teacher for invite in accepted_invites]
-    return render(request, "users/student_teachers.html", {"teachers": teachers})
+    return render(request, "users/student_templates/student_teachers.html", {"teachers": teachers})
