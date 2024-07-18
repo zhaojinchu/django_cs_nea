@@ -131,6 +131,8 @@ class PasswordResetForm(forms.Form):
 
         return cleaned_data
 
+
+# FIXME: Some fields should be greyed out and non-editable
 class UserSettingsForm(forms.ModelForm):
     current_password = forms.CharField(widget=forms.PasswordInput(), required=False)
     new_password = forms.CharField(widget=forms.PasswordInput(), required=False, validators=[validate_password])
