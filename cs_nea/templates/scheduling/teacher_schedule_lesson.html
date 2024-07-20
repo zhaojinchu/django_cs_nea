@@ -1,5 +1,44 @@
 {% extends "_dashboard.html" %}{% load widget_tweaks %}
+{% block sidemenu %}
+{% if user.user_type == 1 %}
+<a
+  href="{% url 'student_invites' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+>
+  <span class="mx-3">View Invites</span>
+</a>
 
+<a
+  href="{% url 'student_teachers' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+  ><span class="mx-3">My Teachers</span></a
+>
+
+<a
+  href="{% url 'student_lesson_request' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+>
+  <span class="mx-3">Schedule with a teacher</span>
+</a>
+{% elif user.user_type == 2 %}
+<a
+  href="{% url 'invite_student' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+  ><span class="mx-3">Invite Student</span></a
+>
+<a
+  href="{% url 'teacher_students' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+  ><span class="mx-3">My Students</span></a
+>
+<a
+  href="{% url 'teacher_lesson_request' %}"
+  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+>
+  <span class="mx-3">Schedule with a student</span>
+</a>
+{% endif %}
+{% endblock %}
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-2xl font-bold mb-4">Schedule or Request a Lesson</h1>
