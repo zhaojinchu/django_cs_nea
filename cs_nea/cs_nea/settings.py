@@ -36,6 +36,11 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    
+    # Additional apps for real time messaging - these two must come before staticfiles
+    "daphne",
+    "channels",
+    
     "django.contrib.staticfiles",
     # Additional apps
     "tailwind",
@@ -43,6 +48,7 @@ INSTALLED_APPS = [
     "django_browser_reload",
     "widget_tweaks",
     "phonenumber_field",
+    
     # My django apps
     "users",
     "dashboard",
@@ -154,3 +160,12 @@ EMAIL_HOST_USER = 'zhaojin.chu07@gmail.com'  # Replace with your SMTP username
 EMAIL_HOST_PASSWORD = 'wxwk ximf qxzy oiyl'  # Replace with your SMTP password
 DEFAULT_FROM_EMAIL = 'zhaojin.chu07@gmail.com'  # Replace with your default from email address
 
+# Settings for real time messaging
+ASGI_APPLICATION = "cs_nea.asgi.application"
+
+# Uses the in-memory channel layer  
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}

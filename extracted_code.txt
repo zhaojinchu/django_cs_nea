@@ -364,17 +364,55 @@ if __name__ == '__main__':
               <span class="mx-3">Home</span>
             </a>
             <a
-              href="#"
+              href="{% url 'user_profile' %}"
               class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
             >
               <span class="mx-3">Profile</span>
             </a>
             <a
-              href="#"
+              href="{% url 'settings' %}"
               class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
             >
               <span class="mx-3">Settings</span>
             </a>
+            {% if user.user_type == 1 %}
+            <a
+              href="{% url 'student_invites' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">View Invites</span>
+            </a>
+
+            <a
+              href="{% url 'student_teachers' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              ><span class="mx-3">My Teachers</span></a
+            >
+
+            <a
+              href="{% url 'student_lesson_request' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Schedule with a teacher</span>
+            </a>
+            {% elif user.user_type == 2 %}
+            <a
+              href="{% url 'invite_student' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              ><span class="mx-3">Invite Student</span></a
+            >
+            <a
+              href="{% url 'teacher_students' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              ><span class="mx-3">My Students</span></a
+            >
+            <a
+              href="{% url 'teacher_lesson_request' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Schedule with a student</span>
+            </a>
+            {% endif %}
             {% block sidemenu %}{% endblock %}
           </div>
 
@@ -448,28 +486,9 @@ if __name__ == '__main__':
 
 
 # File: cs_nea/templates/dashboard/student_dashboard.html
-{% extends "_dashboard.html" %} {% block name %} Student Dashboard {% endblock %} {% block sidemenu %}
-<a
-  href="{% url 'student_invites' %}"
-  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
->
-  <span class="mx-3">View Invites</span>
-</a>
+{% extends "_dashboard.html" %} {% block name %} Student Dashboard {% endblock %} 
 
-<a
-  href="{% url 'student_teachers' %}"
-  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-  ><span class="mx-3">My Teachers</span></a
->
-
-<a
-  href="{% url 'lesson_request' %}"
-  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
->
-  <span class="mx-3">Schedule with a teacher</span>
-</a>
-
-{% endblock %} {% block content %}
+{% block content %}
 <h2>Calendar</h2>
 <div class="calendar">
   <h3>Lessons</h3>
@@ -500,25 +519,8 @@ if __name__ == '__main__':
 
 
 # File: cs_nea/templates/dashboard/teacher_dashboard.html
-{% extends "_dashboard.html" %} {% block name %} Teacher Dashboard {% endblock %} {% block sidemenu %}
-<a
-  href="{% url 'invite_student' %}"
-  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-  ><span class="mx-3">Invite Student</span></a
->
-<a
-  href="{% url 'teacher_students' %}"
-  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-  ><span class="mx-3">My Students</span></a
->
-<a
-  href="{% url 'lesson_request' %}"
-  class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
->
-  <span class="mx-3">Schedule with a student</span>
-</a>
-
-{% endblock %} {% block content %}
+{% extends "_dashboard.html" %} {% block name %} Teacher Dashboard {% endblock %} 
+{% block content %}
 <div class="pt-16">
   <h2>Calendar</h2>
   <div class="calendar">
@@ -643,16 +645,36 @@ function calendarData() {
 </script>
 {% endblock content %}
 
-# File: cs_nea/templates/scheduling/schedule_lesson.html
-{% extends "_dashboard.html" %}
+# File: cs_nea/templates/scheduling/teacher_schedule_lesson.html
+{% extends "_dashboard.html" %}{% load widget_tweaks %}
 
 {% block content %}
-<h2>Schedule a Lesson</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Submit Request</button>
-</form>
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-4">Schedule or Request a Lesson</h1>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ field.label }}
+                </label>
+                <div class="mt-1">
+                    {% render_field field class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                </div>
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div>
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Submit
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}
 
 # File: cs_nea/templates/scheduling/create_lesson.html
@@ -667,9 +689,42 @@ function calendarData() {
 </form>
 {% endblock %}
 
+# File: cs_nea/templates/scheduling/student_schedule_lesson.html
+{% extends "_dashboard.html" %}{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-4">Request a Lesson</h1>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ field.label }}
+                </label>
+                <div class="mt-1">
+                    {% render_field field class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                </div>
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div>
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Submit Request
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
 # File: cs_nea/templates/scheduling/create_other_event.html
 {% extends "_dashboard.html" %}
 
+{% endblock %}
 {% block content %}
 <h2>Create Other Event</h2>
 <form method="post">
@@ -677,6 +732,51 @@ function calendarData() {
     {{ form.as_p }}
     <button type="submit">Create Event</button>
 </form>
+{% endblock %}
+
+# File: cs_nea/templates/communications/chat_room.html
+{% extends "_dashboard.html" %}
+
+{% block content %}
+
+<textarea id="chat-log" cols="100" rows="20"></textarea><br>
+<input id="chat-message-input" type="text" size="100"><br>
+<input id="chat-message-submit" type="button" value="Send">
+
+<script>
+    const roomName = {{ room_name_json }};
+
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/chat/' + roomName + '/'
+    );
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        document.querySelector('#chat-log').value += (data.message + '\n');
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    document.querySelector('#chat-message-input').focus();
+    document.querySelector('#chat-message-input').onkeyup = function(e) {
+        if (e.keyCode === 13) {  // enter, return
+            document.querySelector('#chat-message-submit').click();
+        }
+    };
+
+    document.querySelector('#chat-message-submit').onclick = function(e) {
+        const messageInputDom = document.querySelector('#chat-message-input');
+        const message = messageInputDom.value;
+        chatSocket.send(JSON.stringify({
+            'message': message
+        }));
+        messageInputDom.value = '';
+    };
+</script>
+
 {% endblock %}
 
 # File: cs_nea/templates/users/signup.html
@@ -1124,7 +1224,7 @@ function calendarData() {
 
 
 # File: cs_nea/templates/users/profile.html
-{% extends "_base.html" %}
+{% extends "_dashboard.html" %}
 
 {% block content %}
   <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
@@ -1526,14 +1626,15 @@ from django.contrib import admin
 
 
 # File: cs_nea/scheduling/views.py
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from datetime import date
-from .forms import LessonRequestForm, OtherEventForm, LessonForm
-from .models import Student, Teacher, Lesson, OtherEvent
+from .forms import StudentLessonRequestForm, TeacherLessonRequestForm, OtherEventForm, LessonForm
+from .models import Student, Teacher, Lesson, OtherEvent, LessonRequest
 from .calendar_utils import LessonCalendar
+from communications.models import Notification
 
 
 # Predefined functions to check user type
@@ -1543,47 +1644,69 @@ def is_student(user):
 def is_teacher(user):
     return user.user_type == 2
 
-# Lesson request view for students
+# Student lesson request form
 @login_required
 @user_passes_test(is_student)
-def lesson_request(request):
+def student_lesson_request(request):
     if request.method == "POST":
-        form = LessonRequestForm(request.POST)
+        form = StudentLessonRequestForm(request.POST)
         if form.is_valid():
             lesson_request = form.save(commit=False)
-            lesson_request.student = Student.objects.get(
-                user=request.user
-            )  # Assuming the logged-in user is a student
+            lesson_request.student = request.user.student
             lesson_request.save()
+            
+            if lesson_request.teacher.user.notification_preferences.lesson_requests:
+                Notification.objects.create(
+                    receiver=lesson_request.teacher.user,
+                    content=f"New lesson request from {request.user.get_full_name()}"
+                )
+            
             messages.success(request, "Lesson request submitted successfully!")
-            return redirect(
-                "dashboard"
-            )  # Or wherever you want to redirect after successful submission
+            return redirect("dashboard")
     else:
-        form = LessonRequestForm()
+        form = StudentLessonRequestForm()
 
-    return render(request, "scheduling/schedule_lesson.html", {"form": form})
+    return render(request, "scheduling/student_schedule_lesson.html", {"form": form})
 
-# Lesson request view for teachers
+# Teacher lesson request form
 @login_required
 @user_passes_test(is_teacher)
-def lesson_request(request):
+def teacher_lesson_request(request):
     if request.method == "POST":
-        form = LessonRequestForm(request.POST)
+        form = TeacherLessonRequestForm(request.POST)
         if form.is_valid():
             lesson_request = form.save(commit=False)
-            lesson_request.student = Student.objects.get(
-                user=request.user
-            )  # Assuming the logged-in user is a student
-            lesson_request.save()
-            messages.success(request, "Lesson request submitted successfully!")
-            return redirect(
-                "dashboard"
-            )  # Or wherever you want to redirect after successful submission
+            lesson_request.teacher = request.user.teacher
+            lesson_request.is_sent_by_teacher = True
+            
+            if form.cleaned_data['send_request']:
+                lesson_request.save()
+                if lesson_request.student.user.notification_preferences.lesson_requests:
+                    Notification.objects.create(
+                        receiver=lesson_request.student.user,
+                        content=f"New lesson request from {request.user.get_full_name()}"
+                    )
+                messages.success(request, "Lesson request sent to student.")
+            else:
+                lesson = Lesson.objects.create(
+                    student=lesson_request.student,
+                    teacher=request.user.teacher,
+                    start_datetime=lesson_request.requested_datetime,
+                    end_datetime=lesson_request.requested_datetime + lesson_request.duration,
+                    is_recurring=lesson_request.is_recurring
+                )
+                if lesson_request.student.user.notification_preferences.lessons:
+                    Notification.objects.create(
+                        receiver=lesson_request.student.user,
+                        content=f"New lesson scheduled with {request.user.get_full_name()}"
+                    )
+                messages.success(request, "Lesson scheduled successfully.")
+            
+            return redirect("dashboard")
     else:
-        form = LessonRequestForm()
+        form = TeacherLessonRequestForm()
 
-    return render(request, "scheduling/schedule_lesson.html", {"form": form})
+    return render(request, "scheduling/teacher_schedule_lesson.html", {"form": form})
 
 # Create lesson view
 def create_lesson(request):
@@ -1619,6 +1742,10 @@ def create_other_event(request):
         form = OtherEventForm()
 
     return render(request, "scheduling/create_other_event.html", {"form": form})
+
+
+
+
 
 
 # Calendar views
@@ -1687,6 +1814,10 @@ class LessonRequest(models.Model):
     request_reason = models.CharField(max_length=255)
     duration = models.DurationField()
     recurring_amount = models.IntegerField()
+    
+    # Additional fields from iteration 2
+    is_sent_by_teacher = models.BooleanField(default=False)
+    is_recurring = models.BooleanField(default=False)
 
     def clean(self):
         if self.requested_datetime <= timezone.now():
@@ -1695,8 +1826,8 @@ class LessonRequest(models.Model):
             raise ValidationError("Request reason cannot be empty or just whitespace.")
         if self.duration < timedelta(minutes=15) or self.duration > timedelta(hours=3):
             raise ValidationError("Duration must be between 15 minutes and 3 hours.")
-        if self.recurring_amount < 1 or self.recurring_amount > 52:
-            raise ValidationError("Recurring amount must be between 1 and 52.")
+        if self.is_recurring and (self.recurring_amount < 1 or self.recurring_amount > 52):
+            raise ValidationError("For recurring lessons, recurring amount must be between 1 and 52.")
 
 # Lesson model, used store scheduled lessons
 class Lesson(models.Model):
@@ -1738,40 +1869,32 @@ from django import forms
 from .models import LessonRequest, Lesson, OtherEvent
 from django.utils import timezone
 from datetime import timedelta
+from users.models import Teacher, Student
 
-# Corresponding Django form for the LessonRequest model
-class LessonRequestForm(forms.ModelForm):
+# Lesson request form for students
+class StudentLessonRequestForm(forms.ModelForm):
+    teacher = forms.ModelChoiceField(queryset=Teacher.objects.all())
+
     class Meta:
         model = LessonRequest
-        fields = ['teacher', 'requested_datetime', 'is_rescheduling', 'request_reason', 'duration', 'recurring_amount']
+        fields = ['teacher', 'requested_datetime', 'request_reason', 'duration', 'is_recurring', 'recurring_amount']
         widgets = {
             'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'duration': forms.TimeInput(attrs={'type': 'time'}),
         }
 
-    def clean_requested_datetime(self):
-        requested_datetime = self.cleaned_data.get('requested_datetime')
-        if requested_datetime <= timezone.now():
-            raise forms.ValidationError("Requested datetime must be in the future.")
-        return requested_datetime
+# Lesson request form for teachers
+class TeacherLessonRequestForm(forms.ModelForm):
+    student = forms.ModelChoiceField(queryset=Student.objects.all())
+    send_request = forms.BooleanField(required=False, initial=True)
 
-    def clean_request_reason(self):
-        request_reason = self.cleaned_data.get('request_reason')
-        if not request_reason.strip():
-            raise forms.ValidationError("Request reason cannot be empty or just whitespace.")
-        return request_reason
-
-    def clean_duration(self):
-        duration = self.cleaned_data.get('duration')
-        if duration < timedelta(minutes=15) or duration > timedelta(hours=3):
-            raise forms.ValidationError("Duration must be between 15 minutes and 3 hours.")
-        return duration
-
-    def clean_recurring_amount(self):
-        recurring_amount = self.cleaned_data.get('recurring_amount')
-        if recurring_amount < 1 or recurring_amount > 52:
-            raise forms.ValidationError("Recurring amount must be between 1 and 52.")
-        return recurring_amount
+    class Meta:
+        model = LessonRequest
+        fields = ['student', 'requested_datetime', 'request_reason', 'duration', 'is_recurring', 'recurring_amount']
+        widgets = {
+            'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'duration': forms.TimeInput(attrs={'type': 'time'}),
+        }
     
 # Corresponding Django form for the Lesson model
 class LessonForm(forms.ModelForm):
@@ -1822,12 +1945,16 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("lesson_request", views.lesson_request, name="lesson_request"),
     path("create_lesson", views.create_lesson, name="create_lesson"),
     path("create_other_event", views.create_other_event, name="create_other_event"),
     path("calendar/", views.calendar_view, name="calendar"),
     path('get_calendar_data/', views.get_calendar_data, name='get_calendar_data'),
+    
+    path('student/request_lesson/', views.student_lesson_request, name='student_lesson_request'),
+    path('teacher/request_lesson/', views.teacher_lesson_request, name='teacher_lesson_request'),
 ]
+
+
 
 
 # File: cs_nea/scheduling/calendar_utils.py
@@ -1942,10 +2069,12 @@ class LessonCalendar(HTMLCalendar):
 
 # File: cs_nea/communications/views.py
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .models import Notification
 
+# Notification views - only JSON responses
 @login_required
 def get_notifications(request):
     notifications = Notification.objects.filter(receiver=request.user, is_read=False).order_by('-timestamp')[:20]
@@ -1966,6 +2095,61 @@ def mark_notification_read(request, notification_id):
         return JsonResponse({'status': 'success'})
     except Notification.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Notification not found'}, status=404)
+    
+# Real time messaging view
+@login_required
+def chat_room(request, room_name):
+    return render(request, 'chat_room.html', {
+        'room_name': room_name
+    })
+
+# File: cs_nea/communications/consumers.py
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+# Code for asyncronous websocket real time messaging
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_name = self.scope['url_route']['kwargs']['room_name']
+        self.room_group_name = f'chat_{self.room_name}'
+
+        # Join room group
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+
+        # Send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': message
+            }
+        )
+
+    # Receive message from room group
+    async def chat_message(self, event):
+        message = event['message']
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'message': message
+        }))
 
 # File: cs_nea/communications/__init__.py
 
@@ -2039,11 +2223,13 @@ class MessageConfig(models.Model):
     read_only = models.BooleanField(default=False)
 
 
-# File: cs_nea/communications/tests.py
-from django.test import TestCase
+# File: cs_nea/communications/routing.py
+from django.urls import re_path
+from . import consumers
 
-# Create your tests here.
-
+websocket_urlpatterns = [
+    re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer.as_asgi()),
+]
 
 # File: cs_nea/communications/urls.py
 from django.urls import path
@@ -2818,23 +3004,22 @@ urlpatterns = [
 
 
 # File: cs_nea/cs_nea/asgi.py
-"""
-ASGI config for cs_nea project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
-"""
-
 import os
-
 from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+import communication.routing  # you'll create this in step 6
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cs_nea.settings')
 
-application = get_asgi_application()
-
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),
+    "websocket": AuthMiddlewareStack(
+        URLRouter(
+            communication.routing.websocket_urlpatterns
+        )
+    ),
+})
 
 # File: cs_nea/cs_nea/__init__.py
 
@@ -2878,6 +3063,11 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    
+    # Additional apps for real time messaging - these two must come before staticfiles
+    "daphne",
+    "channels",
+    
     "django.contrib.staticfiles",
     # Additional apps
     "tailwind",
@@ -2885,6 +3075,7 @@ INSTALLED_APPS = [
     "django_browser_reload",
     "widget_tweaks",
     "phonenumber_field",
+    
     # My django apps
     "users",
     "dashboard",
@@ -2996,7 +3187,15 @@ EMAIL_HOST_USER = 'zhaojin.chu07@gmail.com'  # Replace with your SMTP username
 EMAIL_HOST_PASSWORD = 'wxwk ximf qxzy oiyl'  # Replace with your SMTP password
 DEFAULT_FROM_EMAIL = 'zhaojin.chu07@gmail.com'  # Replace with your default from email address
 
+# Settings for real time messaging
+ASGI_APPLICATION = "cs_nea.asgi.application"
 
+# Uses the in-memory channel layer  
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 # File: cs_nea/cs_nea/wsgi.py
 """

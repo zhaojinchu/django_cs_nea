@@ -33,21 +33,18 @@ class Notification(models.Model):
         return f"Notification for {self.receiver.username}: {self.content[:50]}..."
 
 
-# Message model
+# Models for messages
 class Message(models.Model):
-    sender = models.ForeignKey(
-        User, related_name="sent_messages", on_delete=models.CASCADE
-    )
-    receiver = models.ForeignKey(
-        User, related_name="received_messages", on_delete=models.CASCADE
-    )
-    message_content = models.TextField()
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_edited = models.BooleanField(default=False)
 
-
-# Message config and settings model
 class MessageConfig(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_message_configs')
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher_message_configs')
+    read_only = models.BooleanField(default=False)
     student = models.ForeignKey(
         User, related_name="student_message_config", on_delete=models.CASCADE
     )

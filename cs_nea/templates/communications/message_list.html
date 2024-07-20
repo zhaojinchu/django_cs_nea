@@ -1,0 +1,18 @@
+{% extends "_dashboard.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-4">Messages</h2>
+    <ul class="space-y-2">
+        {% for user in users %}
+            <li>
+                <a href="{% url 'direct_message' user.id %}" class="text-blue-500 hover:underline">
+                    {{ user.get_full_name }}
+                </a>
+            </li>
+        {% empty %}
+            <li>No users available to message.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
