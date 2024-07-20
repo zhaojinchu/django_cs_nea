@@ -6,6 +6,7 @@ from django.contrib import messages
 from .models import Notification, Assignment
 from django.contrib.auth import get_user_model
 from .forms import AssignmentForm
+from django.utils import timezone
 
 
 User = get_user_model()
@@ -47,10 +48,10 @@ def mark_notification_read(request, notification_id):
 # Real time messaging view
 @login_required
 def message_list(request):
-    if request.user.user_type == 1:  # Student
-        users = User.objects.filter(user_type=2)  # Teachers
-    else:  # Teacher
-        users = User.objects.filter(user_type=1)  # Students
+    if request.user.user_type == 1: 
+        users = User.objects.filter(user_type=2)  
+    else:  
+        users = User.objects.filter(user_type=1) 
     return render(request, "communications/message_list.html", {"users": users})
 
 
@@ -67,7 +68,7 @@ def direct_message(request, user_id):
 @user_passes_test(lambda u: u.user_type == 2)
 def create_assignment(request):
     if request.method == "POST":
-        form = AssignmentForm(request.POST)
+        form = AssignmentForm(request.POST, teacher=request.user.teacher)
         if form.is_valid():
             assignment = form.save(commit=False)
             assignment.teacher = request.user.teacher
@@ -75,7 +76,7 @@ def create_assignment(request):
             messages.success(request, "Task created successfully.")
             return redirect("assignment_list")
     else:
-        form = AssignmentForm()
+        form = AssignmentForm(teacher=request.user.teacher)
     return render(request, "communications/create_assignment.html", {"form": form})
 
 

@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from users.models import Student, Teacher, User
 
 # Linking to user models in other app
-User = get_user_model() 
+User = get_user_model()
 
 
 # Notification config and settings model
@@ -36,15 +36,24 @@ class Notification(models.Model):
 
 # Models for messages
 class Message(models.Model):
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    sender = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="sent_messages"
+    )
+    receiver = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="received_messages"
+    )
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_edited = models.BooleanField(default=False)
 
+
 class MessageConfig(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_message_configs')
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher_message_configs')
+    student = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="student_message_configs"
+    )
+    teacher = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="teacher_message_configs"
+    )
     read_only = models.BooleanField(default=False)
     student = models.ForeignKey(
         User, related_name="student_message_config", on_delete=models.CASCADE
