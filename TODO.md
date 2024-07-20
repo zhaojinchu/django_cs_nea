@@ -8,3 +8,7 @@
 // TODO: FOR THE VERY END - fix all formating and frontend styling
 
 // TODO: Make sure that only students and teachers that have connected can message each other
+
+// TODO: Sort out styling of messages
+
+// TODO: Create notifications for all events that should have them

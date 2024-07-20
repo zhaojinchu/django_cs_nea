@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from users.models import Student, Teacher, User
 
 # Linking to user models in other app
-User = get_user_model()
+User = get_user_model() 
 
 
 # Notification config and settings model
@@ -52,3 +53,18 @@ class MessageConfig(models.Model):
         User, related_name="teacher_message_config", on_delete=models.CASCADE
     )
     read_only = models.BooleanField(default=False)
+
+
+# Models for assignments
+class Assignment(models.Model):
+    assignment_id = models.AutoField(primary_key=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    task_content = models.TextField()
+    due_date = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_completed = models.BooleanField(default=False)
+    completion_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Task for {self.student} by {self.teacher}"

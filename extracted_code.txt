@@ -413,6 +413,15 @@ if __name__ == '__main__':
               <span class="mx-3">Schedule with a student</span>
             </a>
             {% endif %}
+            
+            <a
+              href="{% url 'message_list' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Messages</span>
+            </a>
+            
+
             {% block sidemenu %}{% endblock %}
           </div>
 
@@ -734,49 +743,80 @@ function calendarData() {
 </form>
 {% endblock %}
 
-# File: cs_nea/templates/communications/chat_room.html
+# File: cs_nea/templates/communications/message_list.html
 {% extends "_dashboard.html" %}
 
 {% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-4">Messages</h2>
+    <ul class="space-y-2">
+        {% for user in users %}
+            <li>
+                <a href="{% url 'direct_message' user.id %}" class="text-blue-500 hover:underline">
+                    {{ user.get_full_name }}
+                </a>
+            </li>
+        {% empty %}
+            <li>No users available to message.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
 
-<textarea id="chat-log" cols="100" rows="20"></textarea><br>
-<input id="chat-message-input" type="text" size="100"><br>
-<input id="chat-message-submit" type="button" value="Send">
+# File: cs_nea/templates/communications/direct_message.html
+{% extends "_dashboard.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-4">Chat with {{ other_user.get_full_name }}</h2>
+    <div class="border rounded-lg p-4 mb-4 h-64 overflow-y-auto" id="chat-messages">
+        <!-- Messages will be displayed here -->
+    </div>
+    <div class="flex">
+        <input type="text" id="chat-message-input" class="flex-grow border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your message...">
+        <button id="chat-message-submit" class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Send</button>
+    </div>
+</div>
 
 <script>
-    const roomName = {{ room_name_json }};
-
+    const otherUserId = "{{ other_user.id }}";
     const chatSocket = new WebSocket(
         'ws://' + window.location.host +
-        '/ws/chat/' + roomName + '/'
+        '/ws/dm/' + otherUserId + '/'
     );
+
+    const messageInput = document.querySelector('#chat-message-input');
+    const messageSubmit = document.querySelector('#chat-message-submit');
+    const chatMessages = document.querySelector('#chat-messages');
 
     chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        document.querySelector('#chat-log').value += (data.message + '\n');
+        const messageElement = document.createElement('div');
+        messageElement.textContent = `${data.sender}: ${data.message}`;
+        messageElement.classList.add('mb-2');
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     };
 
     chatSocket.onclose = function(e) {
         console.error('Chat socket closed unexpectedly');
     };
 
-    document.querySelector('#chat-message-input').focus();
-    document.querySelector('#chat-message-input').onkeyup = function(e) {
-        if (e.keyCode === 13) {  // enter, return
-            document.querySelector('#chat-message-submit').click();
+    messageInput.focus();
+    messageInput.onkeyup = function(e) {
+        if (e.key === 'Enter') {
+            messageSubmit.click();
         }
     };
 
-    document.querySelector('#chat-message-submit').onclick = function(e) {
-        const messageInputDom = document.querySelector('#chat-message-input');
-        const message = messageInputDom.value;
+    messageSubmit.onclick = function(e) {
+        const message = messageInput.value;
         chatSocket.send(JSON.stringify({
             'message': message
         }));
-        messageInputDom.value = '';
+        messageInput.value = '';
     };
 </script>
-
 {% endblock %}
 
 # File: cs_nea/templates/users/signup.html
@@ -2073,47 +2113,80 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .models import Notification
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 # Notification views - only JSON responses
 @login_required
 def get_notifications(request):
-    notifications = Notification.objects.filter(receiver=request.user, is_read=False).order_by('-timestamp')[:20]
-    data = [{
-        'id': notif.id,
-        'content': notif.content,
-        'timestamp': notif.timestamp.strftime('%Y-%m-%d %H:%M')
-    } for notif in notifications]
+    notifications = Notification.objects.filter(
+        receiver=request.user, is_read=False
+    ).order_by("-timestamp")[:20]
+    data = [
+        {
+            "id": notif.id,
+            "content": notif.content,
+            "timestamp": notif.timestamp.strftime("%Y-%m-%d %H:%M"),
+        }
+        for notif in notifications
+    ]
     return JsonResponse(data, safe=False)
+
 
 @require_POST
 @login_required
 def mark_notification_read(request, notification_id):
     try:
-        notification = Notification.objects.get(id=notification_id, receiver=request.user)
+        notification = Notification.objects.get(
+            id=notification_id, receiver=request.user
+        )
         notification.is_read = True
         notification.save()
-        return JsonResponse({'status': 'success'})
+        return JsonResponse({"status": "success"})
     except Notification.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Notification not found'}, status=404)
-    
+        return JsonResponse(
+            {"status": "error", "message": "Notification not found"}, status=404
+        )
+
+
 # Real time messaging view
 @login_required
-def chat_room(request, room_name):
-    return render(request, 'chat_room.html', {
-        'room_name': room_name
-    })
+def message_list(request):
+    if request.user.user_type == 1:  # Student
+        users = User.objects.filter(user_type=2)  # Teachers
+    else:  # Teacher
+        users = User.objects.filter(user_type=1)  # Students
+    return render(request, "communications/message_list.html", {"users": users})
+
+
+@login_required
+def direct_message(request, user_id):
+    other_user = User.objects.get(id=user_id)
+    return render(
+        request, "communications/direct_message.html", {"other_user": other_user}
+    )
+
 
 # File: cs_nea/communications/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from django.contrib.auth import get_user_model
+from django.db import models
+from django.utils import timezone
+from .models import Message, MessageConfig
 
-# Code for asyncronous websocket real time messaging
-class ChatConsumer(AsyncWebsocketConsumer):
+User = get_user_model()
+
+class DirectMessageConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
+        self.user = self.scope["user"]
+        self.other_user_id = self.scope['url_route']['kwargs']['user_id']
+        self.room_name = f"dm_{min(self.user.id, int(self.other_user_id))}_{max(self.user.id, int(self.other_user_id))}"
         self.room_group_name = f'chat_{self.room_name}'
 
-        # Join room group
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
@@ -2121,35 +2194,88 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        previous_messages = await self.get_previous_messages()
+        for message in previous_messages:
+            message_data = await self.get_message_data(message)
+            await self.send(text_data=json.dumps(message_data))
+            
     async def disconnect(self, close_code):
-        # Leave room group
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
         )
 
-    # Receive message from WebSocket
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
 
-        # Send message to room group
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'message': message
-            }
-        )
+        if await self.can_send_message():
+            await self.save_message(message)
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': message,
+                    'sender': self.user.get_full_name(),
+                    'timestamp': timezone.now().isoformat()
+                }
+            )
 
-    # Receive message from room group
     async def chat_message(self, event):
-        message = event['message']
+        await self.send(text_data=json.dumps(event))
 
-        # Send message to WebSocket
-        await self.send(text_data=json.dumps({
-            'message': message
-        }))
+    @database_sync_to_async
+    def save_message(self, content):
+        other_user = User.objects.get(id=self.other_user_id)
+        Message.objects.create(sender=self.user, receiver=other_user, content=content)
+
+    @database_sync_to_async
+    def get_previous_messages(self):
+        other_user = User.objects.get(id=self.other_user_id)
+        return list(Message.objects.filter(
+            (models.Q(sender=self.user) & models.Q(receiver=other_user)) |
+            (models.Q(sender=other_user) & models.Q(receiver=self.user))
+        ).order_by('-timestamp')[:50][::-1])
+
+    @database_sync_to_async
+    def get_message_data(self, message):
+        return {
+            'message': message.content,
+            'sender': message.sender.get_full_name(),
+            'timestamp': message.timestamp.isoformat()
+        }
+
+    @database_sync_to_async
+    def can_send_message(self):
+        other_user = User.objects.get(id=self.other_user_id)
+        config = MessageConfig.objects.filter(
+            (models.Q(student=self.user) & models.Q(teacher=other_user)) |
+            (models.Q(student=other_user) & models.Q(teacher=self.user))
+        ).first()
+        return not config or not config.read_only
+
+    @database_sync_to_async
+    def save_message(self, content):
+        other_user = User.objects.get(id=self.other_user_id)
+        return Message.objects.create(sender=self.user, receiver=other_user, content=content)
+
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+
+        if await self.can_send_message():
+            saved_message = await self.save_message(message)
+            message_data = await self.get_message_data(saved_message)
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    **message_data
+                }
+            )
+
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps(event))
 
 # File: cs_nea/communications/__init__.py
 
@@ -2199,21 +2325,18 @@ class Notification(models.Model):
         return f"Notification for {self.receiver.username}: {self.content[:50]}..."
 
 
-# Message model
+# Models for messages
 class Message(models.Model):
-    sender = models.ForeignKey(
-        User, related_name="sent_messages", on_delete=models.CASCADE
-    )
-    receiver = models.ForeignKey(
-        User, related_name="received_messages", on_delete=models.CASCADE
-    )
-    message_content = models.TextField()
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_edited = models.BooleanField(default=False)
 
-
-# Message config and settings model
 class MessageConfig(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_message_configs')
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher_message_configs')
+    read_only = models.BooleanField(default=False)
     student = models.ForeignKey(
         User, related_name="student_message_config", on_delete=models.CASCADE
     )
@@ -2228,7 +2351,7 @@ from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer.as_asgi()),
+    re_path(r'ws/dm/(?P<user_id>\w+)/$', consumers.DirectMessageConsumer.as_asgi()),
 ]
 
 # File: cs_nea/communications/urls.py
@@ -2236,8 +2359,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Notification URLs
     path('get-notifications/', views.get_notifications, name='get_notifications'),
     path('mark-notification-read/<int:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
+    
+    # Messaging URLs
+    path('messages/', views.message_list, name='message_list'),
+    path('messages/<int:user_id>/', views.direct_message, name='direct_message'),
 ]
 
 
@@ -3008,7 +3136,7 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-import communication.routing  # you'll create this in step 6
+import communications.routing  # you'll create this in step 6
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cs_nea.settings')
 
@@ -3016,7 +3144,7 @@ application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            communication.routing.websocket_urlpatterns
+            communications.routing.websocket_urlpatterns
         )
     ),
 })
@@ -3242,7 +3370,7 @@ urlpatterns = [
     path("", include("users.urls")),
     path("", include("dashboard.urls")),
     path("", include("scheduling.urls")),
-    path("communications/", include("communications.urls")),
+    path("", include("communications.urls")),
     path("__reload__/", include("django_browser_reload.urls")),
     
 ]

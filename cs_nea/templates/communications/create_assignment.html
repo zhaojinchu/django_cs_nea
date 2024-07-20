@@ -1,0 +1,33 @@
+{% extends "_dashboard.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-6 text-gray-800">Create New Task</h2>
+    
+    <form method="post" class="bg-white shadow-md rounded-lg p-6">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label for="{{ form.student.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">Student</label>
+            {% render_field form.student class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+        </div>
+        <div class="mb-4">
+            <label for="{{ form.task_content.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">Task Content</label>
+            {% render_field form.task_content class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="4" %}
+        </div>
+        <div class="mb-6">
+            <label for="{{ form.due_date.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">Due Date</label>
+            {% render_field form.due_date class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+        </div>
+        <div class="flex items-center justify-between">
+            <button type="submit" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 ease-in-out">
+                Create Task
+            </button>
+            <a href="{% url 'assignment_list' %}" class="inline-block align-baseline font-bold text-sm text-purple-500 hover:text-purple-800">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

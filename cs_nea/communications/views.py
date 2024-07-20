@@ -1,9 +1,12 @@
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from .models import Notification
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from .models import Notification, Assignment
 from django.contrib.auth import get_user_model
+from .forms import AssignmentForm
+
 
 User = get_user_model()
 
@@ -57,3 +60,61 @@ def direct_message(request, user_id):
     return render(
         request, "communications/direct_message.html", {"other_user": other_user}
     )
+
+
+# Assignments views
+@login_required
+@user_passes_test(lambda u: u.user_type == 2)
+def create_assignment(request):
+    if request.method == "POST":
+        form = AssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.teacher = request.user.teacher
+            assignment.save()
+            messages.success(request, "Task created successfully.")
+            return redirect("assignment_list")
+    else:
+        form = AssignmentForm()
+    return render(request, "communications/create_assignment.html", {"form": form})
+
+
+@login_required
+def assignment_list(request):
+    if request.user.user_type == 1:  # Student
+        assignments = Assignment.objects.filter(student=request.user.student)
+    else:  # Teacher
+        assignments = Assignment.objects.filter(teacher=request.user.teacher)
+    return render(
+        request, "communications/assignment_list.html", {"assignments": assignments}
+    )
+
+
+@login_required
+def assignment_detail(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    if request.user.user_type == 1 and assignment.student != request.user.student:
+        messages.error(request, "You do not have permission to view this task.")
+        return redirect("assignment_list")
+    if request.user.user_type == 2 and assignment.teacher != request.user.teacher:
+        messages.error(request, "You do not have permission to view this task.")
+        return redirect("assignment_list")
+    return render(
+        request, "communications/assignment_detail.html", {"assignment": assignment}
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 1)
+def mark_completed(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    if assignment.student != request.user.student:
+        messages.error(request, "You do not have permission to mark this task.")
+        return redirect("assignment_list")
+
+    assignment.is_completed = True
+    assignment.completion_date = timezone.now()
+    assignment.save()
+
+    messages.success(request, "Task marked as completed.")
+    return redirect("assignment_list")
