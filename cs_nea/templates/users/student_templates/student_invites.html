@@ -1,23 +1,40 @@
-{% extends "dashboard/student_dashboard.html" %}
-
+{% extends "_dashboard.html" %}
+{% load static %}
+{% block name %}Pending Invites{% endblock %}
 {% block content %}
-<h2>Pending Invites</h2>
-{% if invites %}
-    <ul>
-    {% for invite in invites %}
-        <li>
-            Invite from 
-            {% if invite.teacher.user %}
-                {{ invite.teacher.user.get_full_name }}
-            {% else %}
-                Unknown Teacher
+
+<div class="container mx-auto py-6 pr-4">
+    {% if invites %}
+    <div class="space-y-6">
+        {% for invite in invites %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-semibold text-gray-800">
+                        {% if invite.teacher.user %}
+                            {{ invite.teacher.user.get_full_name }}
+                        {% else %}
+                            Unknown Teacher
+                        {% endif %}
+                    </h3>
+                    <p class="text-gray-600">{{ invite.teacher.user.email }}</p>
+                </div>
+                <a href="{% url 'accept_invite' invite.id %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    Accept Invite
+                </a>
+            </div>
+            {% if invite.message %}
+            <div class="mt-4 p-4 bg-gray-100 rounded-md">
+                <h4 class="font-semibold mb-2">Message:</h4>
+                <p class="text-gray-700">{{ invite.message }}</p>
+            </div>
             {% endif %}
-            <p>{{ invite.message }}</p>
-            <a href="{% url 'accept_invite' invite.id %}">Accept</a>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No pending invites.</p>
-{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-lg text-gray-600">No pending invites.</p>
+    {% endif %}
+</div>
+
 {% endblock %}

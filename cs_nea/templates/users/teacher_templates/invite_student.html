@@ -1,20 +1,43 @@
-{% extends "dashboard/teacher_dashboard.html" %}
+{% extends "_dashboard.html" %}
+{% load widget_tweaks %}
+
+{% block name %}Invite Student{% endblock %}
 
 {% block content %}
-<h2>Invite Student</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    <div class="form-group">
-        {{ form.student_email.errors }}
-        <label for="{{ form.student_email.id_for_label }}">Student's Email:</label>
-        {{ form.student_email }}
-    </div>
-    <div class="form-group">
-        {{ form.message.errors }}
-        <label for="{{ form.message.id_for_label }}">Message (optional):</label>
-        {{ form.message }}
-    </div>
-    <button type="submit">Send Invite</button>
-</form>
-{% endblock %}
+<div class="container mx-auto py-8">
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="w-full">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+                {{ field|add_class:"shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" }}
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <p class="text-red-500 text-xs italic mt-1">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="mt-6">
+            <button
+                type="submit"
+                class="bg-purple-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:bg-purple-600 transition duration-300"
+            >
+                Send Invite
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock content %}
