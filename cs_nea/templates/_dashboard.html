@@ -216,20 +216,19 @@
             class="flex-1 flex flex-col overflow-hidden"
             :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}"
           >
-            <main
-              class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 pt-20"
-              role="main"
+            <div
+              class="flex-1 flex flex-col overflow-hidden bg-gray-200 pt-28"  
             >
-              <div class="container mx-auto py-8">
-                <div class="mx-4">
-                  <h3 class="text-neutral-800 text-3xl font-medium">
-                    {% block name %}{% endblock %}
-                  </h3>
-                  <!-- Add dashboard content here... -->
-                  {% block content %}{% endblock %}
-                </div>
+              <div class="flex-1 flex flex-col overflow-hidden container mx-auto px-4">  
+                <h3 class="text-neutral-800 text-3xl font-medium mb-4">
+                  {% block name %}{% endblock %}
+                </h3>
+                <!-- Add dashboard content here... -->
+                <div class="flex-1 overflow-y-auto">
+                {% block content %}{% endblock %}
+                 </div>
               </div>
-            </main>
+            </div>
           </div>
         </div>
       </main>

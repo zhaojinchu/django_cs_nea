@@ -1,16 +1,18 @@
 {% extends "_dashboard.html" %}
-
+{% block name %}Chat with {{ other_user.get_full_name }}{% endblock %}
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-bold mb-4">Chat with {{ other_user.get_full_name }}</h2>
-    <div class="border rounded-lg p-4 mb-4 h-64 overflow-y-auto" id="chat-messages">
+
+<div class="flex flex-col h-full">
+    <div id="chat-messages" class="flex-1 overflow-y-auto border rounded-lg p-4">
         <!-- Messages will be displayed here -->
     </div>
-    <div class="flex">
+    
+    <div class="flex pb-4 pt-2">
         <input type="text" id="chat-message-input" class="flex-grow border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your message...">
         <button id="chat-message-submit" class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Send</button>
     </div>
 </div>
+
 
 <script>
     const otherUserId = "{{ other_user.id }}";
