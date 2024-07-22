@@ -1,10 +1,10 @@
 {% extends "_dashboard.html" %}
 {% load static %}
 
-{% block content %}
-<div class="container mx-auto px-4 py-8 h-screen flex flex-col">
-    <h1 class="text-3xl font-bold mb-6 text-neutral-800">Calendar</h1>
+{% block name %}Calendar{% endblock %}
 
+{% block content %}
+<div class="container mx-auto py-8 h-screen flex flex-col">
     <div class="bg-white shadow-md rounded-lg overflow-hidden flex-grow flex flex-col">
         <div class="p-4 flex flex-col h-full" x-data="calendarData()">
             <div class="flex justify-between items-center mb-4">

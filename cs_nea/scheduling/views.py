@@ -81,16 +81,24 @@ def teacher_lesson_request(request):
 
             if form.cleaned_data["send_request"]:
                 lesson_request.save()
-                if lesson_request.student.user.notification_preferences.lesson_requests:
+                student = lesson_request.student
+                
+                # Get or create NotificationConfig for the teacher
+                notification_config, created = NotificationConfig.objects.get_or_create(
+                    user=student.user
+                )
+
+                if notification_config.receive_notification:
                     recurring_text = (
                         f" (recurring {lesson_request.recurring_amount} times)"
                         if lesson_request.recurring_amount > 1
                         else ""
                     )
                     Notification.objects.create(
-                        receiver=lesson_request.student.user,
+                        receiver=student.user,
                         content=f"New lesson request from {request.user.get_full_name()}{recurring_text}",
                     )
+                    
                 messages.success(request, "Lesson request sent to student.")
             else:
                 # Create multiple lessons based on recurring amount
