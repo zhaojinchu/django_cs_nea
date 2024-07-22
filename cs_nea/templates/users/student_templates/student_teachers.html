@@ -1,17 +1,30 @@
 {% extends "_dashboard.html" %}
-
+{% load static %}
+{% block name %}Teachers{% endblock %}
 {% block content %}
-<h2>My Teachers</h2>
-{% if teachers %}
-    <ul>
-    {% for teacher in teachers %}
-        <li>
-            {{ teacher.user.get_full_name }} ({{ teacher.user.email }})
-            <p>Extra Info: {{ teacher.extra_teacher_info }}</p>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>You don't have any teachers yet.</p>
-{% endif %}
+
+<div class="container mx-auto py-6 pr-4">
+    {% if teachers %}
+    <div class="grid grid-cols-1 gap-6">
+        {% for teacher in teachers %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex flex-col lg:flex-row">
+                <div class="w-full lg:w-1/2 pr-0 lg:pr-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ teacher.user.get_full_name }}</h3>
+                    <p class="mb-1"><span class="font-semibold">Email:</span> {{ teacher.user.email }}</p>
+                    <p class="mb-1"><span class="font-semibold">Phone Number:</span> {{ teacher.user.contact_number }}</p>
+                </div>
+                <div class="w-full lg:w-1/2 mt-4 lg:mt-0 lg:border-l lg:border-gray-200 lg:pl-4">
+                    <h4 class="font-semibold mb-2">Extra Information:</h4>
+                    <p class="text-gray-600">{{ teacher.extra_teacher_info|default:"No additional information provided." }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-lg text-gray-600">You don't have any teachers yet.</p>
+    {% endif %}
+</div>
+
 {% endblock %}

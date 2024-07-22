@@ -1439,6 +1439,11 @@ select {
   padding-bottom: 1.5rem;
 }
 
+.py-64 {
+  padding-top: 16rem;
+  padding-bottom: 16rem;
+}
+
 .pt-14 {
   padding-top: 3.5rem;
 }
@@ -1976,7 +1981,20 @@ select {
     flex-direction: row;
   }
 
+  .lg\:border-l {
+    border-left-width: 1px;
+  }
+
+  .lg\:border-gray-200 {
+    --tw-border-opacity: 1;
+    border-color: rgb(229 231 235 / var(--tw-border-opacity));
+  }
+
   .lg\:pr-4 {
     padding-right: 1rem;
+  }
+
+  .lg\:pl-4 {
+    padding-left: 1rem;
   }
 }
