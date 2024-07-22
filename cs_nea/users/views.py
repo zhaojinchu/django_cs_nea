@@ -37,6 +37,15 @@ def login(request):
             password = form.cleaned_data.get("password")
             user = authenticate(request, username=email, password=password)
             if user is not None:
+                if 'teacher/login' in request.path:
+                    if not user.user_type == 2:
+                        messages.error(request, "This is not a teacher account")
+                        return redirect("teacher_login")
+                elif 'student/login' in request.path:
+                    if not user.user_type == 1:
+                        messages.error(request, "This is not a student account")
+                        return redirect("student_login")
+
                 if user.two_factor_enabled:
                     user.generate_two_factor_code()
                     send_two_factor_code(user)
