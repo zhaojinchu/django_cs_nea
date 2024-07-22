@@ -11,25 +11,24 @@ class LessonRequest(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     requested_datetime = models.DateTimeField()
     is_approved = models.BooleanField(default=False)
-    is_rescheduling = models.BooleanField()
+    is_rescheduling = models.BooleanField(default=False)
     original_lesson = models.ForeignKey('Lesson', on_delete=models.SET_NULL, null=True, blank=True)
-    request_reason = models.CharField(max_length=255)
-    duration = models.DurationField()
-    recurring_amount = models.IntegerField()
+    request_reason = models.CharField(max_length=255)   
+    end_datetime = models.DateTimeField(default=1)
+    recurring_amount = models.IntegerField(default=False)
     
     # Additional fields from iteration 2
     is_sent_by_teacher = models.BooleanField(default=False)
-    is_recurring = models.BooleanField(default=False)
 
     def clean(self):
         if self.requested_datetime <= timezone.now():
             raise ValidationError("Requested datetime must be in the future.")
         if not self.request_reason.strip():
             raise ValidationError("Request reason cannot be empty or just whitespace.")
-        if self.duration < timedelta(minutes=15) or self.duration > timedelta(hours=3):
-            raise ValidationError("Duration must be between 15 minutes and 3 hours.")
-        if self.is_recurring and (self.recurring_amount < 1 or self.recurring_amount > 52):
-            raise ValidationError("For recurring lessons, recurring amount must be between 1 and 52.")
+        if self.end_datetime <= self.requested_datetime:
+            raise ValidationError("End datetime must be after the requested datetime.")
+        if self.recurring_amount < 1 or self.recurring_amount > 52:
+            raise ValidationError("Recurring amount must be between 1 and 52.")
 
 # Lesson model, used store scheduled lessons
 class Lesson(models.Model):
@@ -38,7 +37,7 @@ class Lesson(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     request = models.ForeignKey(LessonRequest, on_delete=models.SET_NULL, null=True)
     start_datetime = models.DateTimeField()
-    student_attendance = models.BooleanField()
+    student_attendance = models.BooleanField(default=False)
     end_datetime = models.DateTimeField()
 
     def clean(self):

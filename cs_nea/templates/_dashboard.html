@@ -141,19 +141,7 @@
               class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
             >
               <span class="mx-3">Home</span>
-            </a>
-            <a
-              href="{% url 'user_profile' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Profile</span>
-            </a>
-            <a
-              href="{% url 'settings' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Settings</span>
-            </a>
+            </a>  
             {% if user.user_type == 1 %}
             <a
               href="{% url 'student_invites' %}"
@@ -192,7 +180,13 @@
               <span class="mx-3">Schedule with a student</span>
             </a>
             {% endif %}
-            
+            <a
+              href="{% url 'reschedule_lesson' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Reschedule a lesson</span>
+            </a>
+
             <a
               href="{% url 'message_list' %}"
               class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
@@ -205,6 +199,13 @@
               class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
             >
               <span class="mx-3">Assignments</span>
+            </a>
+
+            <a 
+              href="{% url 'lesson_requests' %}" 
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Lesson Requests</span>
             </a>
 
             {% block sidemenu %}{% endblock %}

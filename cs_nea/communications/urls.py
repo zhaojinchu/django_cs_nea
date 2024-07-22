@@ -3,9 +3,9 @@ from . import views
 
 urlpatterns = [
     # Notification URLs
-    path("get-notifications/", views.get_notifications, name="get_notifications"),
+    path("get_notifications/", views.get_notifications, name="get_notifications"),
     path(
-        "mark-notification-read/<int:notification_id>/",
+        "mark_notification_read/<int:notification_id>/",
         views.mark_notification_read,
         name="mark_notification_read",
     ),

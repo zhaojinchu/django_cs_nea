@@ -17,6 +17,8 @@ class NotificationConfig(models.Model):
     t2r_requests = models.BooleanField(default=True)
     cancellation_notification = models.BooleanField(default=True)
 
+    def __str__(self):
+        return f"Notification Config for {self.user.username}"
 
 # Notification model
 class Notification(models.Model):

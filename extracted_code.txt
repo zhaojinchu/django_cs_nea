@@ -421,6 +421,12 @@ if __name__ == '__main__':
               <span class="mx-3">Messages</span>
             </a>
             
+            <a
+              href="{% url 'assignment_list' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Assignments</span>
+            </a>
 
             {% block sidemenu %}{% endblock %}
           </div>
@@ -758,6 +764,116 @@ function calendarData() {
             </li>
         {% empty %}
             <li>No users available to message.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+
+# File: cs_nea/templates/communications/assignment_detail.html
+{% extends "_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-6 text-gray-800">Assignment Details</h2>
+    
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h3 class="text-2xl font-semibold text-gray-800 mb-4">{{ assignment.task_content }}</h3>
+        <p class="text-gray-600 mb-2">Assigned by: {{ assignment.teacher.user.get_full_name }}</p>
+        <p class="text-gray-600 mb-2">Assigned to: {{ assignment.student.user.get_full_name }}</p>
+        <p class="text-gray-600 mb-2">Due: {{ assignment.due_date|date:"F d, Y H:i" }}</p>
+        <p class="text-gray-600 mb-4">Status: 
+            <span class="{% if assignment.is_completed %}text-green-500{% else %}text-yellow-500{% endif %}">
+                {% if assignment.is_completed %}Completed{% else %}Pending{% endif %}
+            </span>
+        </p>
+        
+        {% if user.user_type == 1 and not assignment.is_completed %}
+        <form method="post" action="{% url 'mark_completed' assignment.assignment_id %}">
+            {% csrf_token %}
+            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
+                Mark as Completed
+            </button>
+        </form>
+        {% endif %}
+        
+        <a href="{% url 'assignment_list' %}" class="mt-4 inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
+            Back to Assignments
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+# File: cs_nea/templates/communications/create_assignment.html
+{% extends "_dashboard.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-6 text-gray-800">Create New Assignment</h2>
+    
+    <form method="post" class="bg-white shadow-md rounded-lg p-6">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label for="{{ form.student.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">Student</label>
+            {% render_field form.student class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+        </div>
+        <div class="mb-4">
+            <label for="{{ form.task_content.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">Task Content</label>
+            {% render_field form.task_content class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="4" %}
+        </div>
+        <div class="mb-6">
+            <label for="{{ form.due_date.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">Due Date</label>
+            {% render_field form.due_date class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" %}
+        </div>
+        <div class="flex items-center justify-between">
+            <button type="submit" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 ease-in-out">
+                Create Task
+            </button>
+            <a href="{% url 'assignment_list' %}" class="inline-block align-baseline font-bold text-sm text-purple-500 hover:text-purple-800">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+# File: cs_nea/templates/communications/assignment_list.html
+{% extends "_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-6 text-gray-800">Assignments</h2>
+    
+    {% if user.user_type == 2 %}
+    <a href="{% url 'create_assignment' %}" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded mb-6 inline-block transition duration-300 ease-in-out">
+        Create New Assignment
+    </a>
+    {% endif %}
+    
+    <ul class="space-y-4">
+        {% for assignment in assignments %}
+        <li class="bg-white shadow-md rounded-lg p-6 transition duration-300 ease-in-out hover:shadow-lg">
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ assignment.task_content }}</h3>
+            <p class="text-gray-600 mb-2">Due: {{ assignment.due_date|date:"F d, Y H:i" }}</p>
+            <p class="text-gray-600 mb-4">Status: 
+                <span class="{% if assignment.is_completed %}text-green-500{% else %}text-yellow-500{% endif %}">
+                    {% if assignment.is_completed %}Completed{% else %}Pending{% endif %}
+                </span>
+            </p>
+            {% if user.user_type == 1 and not assignment.is_completed %}
+            <form method="post" action="{% url 'mark_completed' assignment.assignment_id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
+                    Mark as Completed
+                </button>
+            </form>
+            {% endif %}
+        </li>
+        {% empty %}
+        <li class="text-gray-600">No tasks available.</li>
         {% endfor %}
     </ul>
 </div>
@@ -2109,11 +2225,15 @@ class LessonCalendar(HTMLCalendar):
 
 # File: cs_nea/communications/views.py
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from .models import Notification
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from .models import Notification, Assignment
 from django.contrib.auth import get_user_model
+from .forms import AssignmentForm
+from django.utils import timezone
+
 
 User = get_user_model()
 
@@ -2154,10 +2274,10 @@ def mark_notification_read(request, notification_id):
 # Real time messaging view
 @login_required
 def message_list(request):
-    if request.user.user_type == 1:  # Student
-        users = User.objects.filter(user_type=2)  # Teachers
-    else:  # Teacher
-        users = User.objects.filter(user_type=1)  # Students
+    if request.user.user_type == 1: 
+        users = User.objects.filter(user_type=2)  
+    else:  
+        users = User.objects.filter(user_type=1) 
     return render(request, "communications/message_list.html", {"users": users})
 
 
@@ -2167,6 +2287,64 @@ def direct_message(request, user_id):
     return render(
         request, "communications/direct_message.html", {"other_user": other_user}
     )
+
+
+# Assignments views
+@login_required
+@user_passes_test(lambda u: u.user_type == 2)
+def create_assignment(request):
+    if request.method == "POST":
+        form = AssignmentForm(request.POST, teacher=request.user.teacher)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.teacher = request.user.teacher
+            assignment.save()
+            messages.success(request, "Task created successfully.")
+            return redirect("assignment_list")
+    else:
+        form = AssignmentForm(teacher=request.user.teacher)
+    return render(request, "communications/create_assignment.html", {"form": form})
+
+
+@login_required
+def assignment_list(request):
+    if request.user.user_type == 1:  # Student
+        assignments = Assignment.objects.filter(student=request.user.student)
+    else:  # Teacher
+        assignments = Assignment.objects.filter(teacher=request.user.teacher)
+    return render(
+        request, "communications/assignment_list.html", {"assignments": assignments}
+    )
+
+
+@login_required
+def assignment_detail(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    if request.user.user_type == 1 and assignment.student != request.user.student:
+        messages.error(request, "You do not have permission to view this task.")
+        return redirect("assignment_list")
+    if request.user.user_type == 2 and assignment.teacher != request.user.teacher:
+        messages.error(request, "You do not have permission to view this task.")
+        return redirect("assignment_list")
+    return render(
+        request, "communications/assignment_detail.html", {"assignment": assignment}
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 1)
+def mark_completed(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    if assignment.student != request.user.student:
+        messages.error(request, "You do not have permission to mark this task.")
+        return redirect("assignment_list")
+
+    assignment.is_completed = True
+    assignment.completion_date = timezone.now()
+    assignment.save()
+
+    messages.success(request, "Task marked as completed.")
+    return redirect("assignment_list")
 
 
 # File: cs_nea/communications/consumers.py
@@ -2180,17 +2358,15 @@ from .models import Message, MessageConfig
 
 User = get_user_model()
 
+
 class DirectMessageConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user = self.scope["user"]
-        self.other_user_id = self.scope['url_route']['kwargs']['user_id']
+        self.other_user_id = self.scope["url_route"]["kwargs"]["user_id"]
         self.room_name = f"dm_{min(self.user.id, int(self.other_user_id))}_{max(self.user.id, int(self.other_user_id))}"
-        self.room_group_name = f'chat_{self.room_name}'
+        self.room_group_name = f"chat_{self.room_name}"
 
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
         await self.accept()
 
@@ -2198,27 +2374,24 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
         for message in previous_messages:
             message_data = await self.get_message_data(message)
             await self.send(text_data=json.dumps(message_data))
-            
+
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        message = text_data_json['message']
+        message = text_data_json["message"]
 
         if await self.can_send_message():
             await self.save_message(message)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
-                    'type': 'chat_message',
-                    'message': message,
-                    'sender': self.user.get_full_name(),
-                    'timestamp': timezone.now().isoformat()
-                }
+                    "type": "chat_message",
+                    "message": message,
+                    "sender": self.user.get_full_name(),
+                    "timestamp": timezone.now().isoformat(),
+                },
             )
 
     async def chat_message(self, event):
@@ -2232,50 +2405,51 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_previous_messages(self):
         other_user = User.objects.get(id=self.other_user_id)
-        return list(Message.objects.filter(
-            (models.Q(sender=self.user) & models.Q(receiver=other_user)) |
-            (models.Q(sender=other_user) & models.Q(receiver=self.user))
-        ).order_by('-timestamp')[:50][::-1])
+        return list(
+            Message.objects.filter(
+                (models.Q(sender=self.user) & models.Q(receiver=other_user))
+                | (models.Q(sender=other_user) & models.Q(receiver=self.user))
+            ).order_by("-timestamp")[:50][::-1]
+        )
 
     @database_sync_to_async
     def get_message_data(self, message):
         return {
-            'message': message.content,
-            'sender': message.sender.get_full_name(),
-            'timestamp': message.timestamp.isoformat()
+            "message": message.content,
+            "sender": message.sender.get_full_name(),
+            "timestamp": message.timestamp.isoformat(),
         }
 
     @database_sync_to_async
     def can_send_message(self):
         other_user = User.objects.get(id=self.other_user_id)
         config = MessageConfig.objects.filter(
-            (models.Q(student=self.user) & models.Q(teacher=other_user)) |
-            (models.Q(student=other_user) & models.Q(teacher=self.user))
+            (models.Q(student=self.user) & models.Q(teacher=other_user))
+            | (models.Q(student=other_user) & models.Q(teacher=self.user))
         ).first()
         return not config or not config.read_only
 
     @database_sync_to_async
     def save_message(self, content):
         other_user = User.objects.get(id=self.other_user_id)
-        return Message.objects.create(sender=self.user, receiver=other_user, content=content)
+        return Message.objects.create(
+            sender=self.user, receiver=other_user, content=content
+        )
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        message = text_data_json['message']
+        message = text_data_json["message"]
 
         if await self.can_send_message():
             saved_message = await self.save_message(message)
             message_data = await self.get_message_data(saved_message)
             await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'chat_message',
-                    **message_data
-                }
+                self.room_group_name, {"type": "chat_message", **message_data}
             )
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps(event))
+
 
 # File: cs_nea/communications/__init__.py
 
@@ -2285,13 +2459,14 @@ from django.apps import AppConfig
 
 
 class CommunicationsConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'communications'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "communications"
 
 
 # File: cs_nea/communications/models.py
 from django.db import models
 from django.contrib.auth import get_user_model
+from users.models import Student, Teacher, User
 
 # Linking to user models in other app
 User = get_user_model()
@@ -2327,15 +2502,24 @@ class Notification(models.Model):
 
 # Models for messages
 class Message(models.Model):
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    sender = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="sent_messages"
+    )
+    receiver = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="received_messages"
+    )
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_edited = models.BooleanField(default=False)
 
+
 class MessageConfig(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_message_configs')
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher_message_configs')
+    student = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="student_message_configs"
+    )
+    teacher = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="teacher_message_configs"
+    )
     read_only = models.BooleanField(default=False)
     student = models.ForeignKey(
         User, related_name="student_message_config", on_delete=models.CASCADE
@@ -2346,13 +2530,52 @@ class MessageConfig(models.Model):
     read_only = models.BooleanField(default=False)
 
 
+# Models for assignments
+class Assignment(models.Model):
+    assignment_id = models.AutoField(primary_key=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    task_content = models.TextField()
+    due_date = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_completed = models.BooleanField(default=False)
+    completion_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Task for {self.student} by {self.teacher}"
+
+
 # File: cs_nea/communications/routing.py
 from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r'ws/dm/(?P<user_id>\w+)/$', consumers.DirectMessageConsumer.as_asgi()),
+    re_path(r"ws/dm/(?P<user_id>\w+)/$", consumers.DirectMessageConsumer.as_asgi()),
 ]
+
+
+# File: cs_nea/communications/forms.py
+from django import forms
+from .models import Assignment
+from users.models import Student
+
+
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = ["student", "task_content", "due_date"]
+        widgets = {
+            "due_date": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.teacher = kwargs.pop("teacher", None)
+        super().__init__(*args, **kwargs)
+        if self.teacher:
+            self.fields["student"].queryset = Student.objects.filter(
+                invites__teacher=self.teacher, invites__status="accepted"
+            )
+
 
 # File: cs_nea/communications/urls.py
 from django.urls import path
@@ -2360,14 +2583,29 @@ from . import views
 
 urlpatterns = [
     # Notification URLs
-    path('get-notifications/', views.get_notifications, name='get_notifications'),
-    path('mark-notification-read/<int:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
-    
+    path("get-notifications/", views.get_notifications, name="get_notifications"),
+    path(
+        "mark-notification-read/<int:notification_id>/",
+        views.mark_notification_read,
+        name="mark_notification_read",
+    ),
     # Messaging URLs
-    path('messages/', views.message_list, name='message_list'),
-    path('messages/<int:user_id>/', views.direct_message, name='direct_message'),
+    path("messages/", views.message_list, name="message_list"),
+    path("messages/<int:user_id>/", views.direct_message, name="direct_message"),
+    # Assignment URLs
+    path("assignments/", views.assignment_list, name="assignment_list"),
+    path("assignments/create/", views.create_assignment, name="create_assignment"),
+    path(
+        "assignments/<int:assignment_id>/",
+        views.assignment_detail,
+        name="assignment_detail",
+    ),
+    path(
+        "assignments/<int:assignment_id>/complete/",
+        views.mark_completed,
+        name="mark_completed",
+    ),
 ]
-
 
 
 # File: cs_nea/users/admin.py

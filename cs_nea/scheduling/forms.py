@@ -6,27 +6,24 @@ from users.models import Teacher, Student
 
 # Lesson request form for students
 class StudentLessonRequestForm(forms.ModelForm):
-    teacher = forms.ModelChoiceField(queryset=Teacher.objects.all())
-
     class Meta:
         model = LessonRequest
-        fields = ['teacher', 'requested_datetime', 'request_reason', 'duration', 'is_recurring', 'recurring_amount']
+        fields = ['teacher', 'requested_datetime', 'end_datetime', 'request_reason', 'recurring_amount']
         widgets = {
             'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'duration': forms.TimeInput(attrs={'type': 'time'}),
+            'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
 
 # Lesson request form for teachers
 class TeacherLessonRequestForm(forms.ModelForm):
-    student = forms.ModelChoiceField(queryset=Student.objects.all())
-    send_request = forms.BooleanField(required=False, initial=True)
+    send_request = forms.BooleanField(required=True, initial=True)
 
     class Meta:
         model = LessonRequest
-        fields = ['student', 'requested_datetime', 'request_reason', 'duration', 'is_recurring', 'recurring_amount']
+        fields = ['student', 'requested_datetime', 'end_datetime', 'request_reason', 'recurring_amount']
         widgets = {
             'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'duration': forms.TimeInput(attrs={'type': 'time'}),
+            'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
     
 # Corresponding Django form for the Lesson model
@@ -34,6 +31,10 @@ class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson
         fields = ['student', 'teacher', 'start_datetime', 'end_datetime', 'student_attendance']
+        widgets = {
+            'start_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
 
     def clean(self):
         cleaned_data = super().clean()
@@ -44,6 +45,8 @@ class LessonForm(forms.ModelForm):
             raise forms.ValidationError("Start datetime must be in the future.")
         if start_datetime and end_datetime and end_datetime <= start_datetime:
             raise forms.ValidationError("End datetime must be after the start datetime.")
+
+        return cleaned_data
 
 # Corresponding Django form for the OtherEvent model
 class OtherEventForm(forms.ModelForm):
@@ -66,3 +69,24 @@ class OtherEventForm(forms.ModelForm):
             raise forms.ValidationError("Event description cannot be empty or just whitespace.")
         if recurring_amount and (recurring_amount < 1 or recurring_amount > 52):
             raise forms.ValidationError("Recurring amount must be between 1 and 52.")
+        
+# Reschedule lesson form        
+class RescheduleLessonForm(forms.ModelForm):
+    lesson = forms.ModelChoiceField(queryset=None, label="Select Lesson to Reschedule")
+
+    class Meta:
+        model = LessonRequest
+        fields = ['lesson', 'requested_datetime', 'end_datetime', 'request_reason']
+        widgets = {
+            'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super(RescheduleLessonForm, self).__init__(*args, **kwargs)
+        if user:
+            if user.user_type == 1: 
+                self.fields['lesson'].queryset = Lesson.objects.filter(student=user.student)
+            else:
+                self.fields['lesson'].queryset = Lesson.objects.filter(teacher=user.teacher)
