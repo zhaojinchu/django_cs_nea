@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .models import User, Student, Teacher, Invite
-
+from communications.models import Note
 from phonenumber_field.formfields import SplitPhoneNumberField
 
 
@@ -183,3 +183,10 @@ class InviteForm(forms.Form):
         return email
 
 
+class NoteForm(forms.ModelForm):
+    class Meta:
+        model = Note
+        fields = ['note_content']
+        widgets = {
+            'note_content': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        }

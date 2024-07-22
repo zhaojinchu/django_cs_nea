@@ -24,5 +24,5 @@ urlpatterns = [
         "assignments/<int:assignment_id>/complete/",
         views.mark_completed,
         name="mark_completed",
-    ),
+    ), 
 ]

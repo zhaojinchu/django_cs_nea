@@ -1,20 +1,89 @@
-{% extends "dashboard/teacher_dashboard.html" %}
+{% extends "_dashboard.html" %}
+{% load static %}
+
+{% block name %}Students{% endblock %}
 
 {% block content %}
-<h2>My Students</h2>
-{% if students %}
-    <ul>
-    {% for student in students %}
-        <li>
-            {{ student.user.get_full_name }} ({{ student.user.email }})
-            <p>Grade: {{ student.grade_level }}</p>
-            <p>Extra Info: {{ student.extra_student_info }}</p>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>You don't have any students yet.</p>
-{% endif %}
-<a href="{% url 'invite_student' %}">Invite New Student</a>
-{% endblock %}
+<div class="container mx-auto py-6 pr-4">
+    {% if students %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {% for student in students %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex flex-col lg:flex-row">
+                <div class="w-full lg:w-1/2 pr-0 lg:pr-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ student.user.get_full_name }}</h3>
+                    <p>Email: {{ student.user.email }}</p>
+                    <p>Phone Number: {{ student.user.contact_number }}</p>
+                    <p>Grade: {{ student.grade_level }}</p>
+                    <p>Extra Information: {{ student.extra_student_info }}</p>
+                    <button onclick="toggleNotes('notes-{{ student.student_id }}')" class="mt-2 bg-green-500 text-white px-4 py-2 rounded">Toggle Notes</button>
+                </div>
 
+                <div class="w-full lg:w-1/2 mt-4 lg:mt-0">
+                    <div id="notes-{{ student.student_id }}" class="hidden bg-yellow-100 p-4 rounded-md">
+                        <h4 class="font-semibold mb-2">Notes:</h4>
+                        {% for note in notes %}
+                            {% if note.student == student %}
+                            <div class="mb-2 p-2 bg-white rounded">
+                                <p>{{ note.note_content }}</p>
+                                <p class="text-sm text-gray-500">Created: {{ note.created_at|date:"F d, Y, h:i a" }}</p>
+                                <div class="mt-2">
+                                    <button onclick="showEditForm('{{ note.note_id }}')" class="text-blue-500">Edit</button>
+                                    <form method="post" class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_note">
+                                        <input type="hidden" name="note_id" value="{{ note.note_id }}">
+                                        <button type="submit" class="text-red-500 ml-2">Delete</button>
+                                    </form>
+                                </div>
+                                <div id="edit-form-{{ note.note_id }}" class="hidden mt-2">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="edit_note">
+                                        <input type="hidden" name="note_id" value="{{ note.note_id }}">
+                                        <textarea name="note_content" class="w-full p-2 border rounded">{{ note.note_content }}</textarea>
+                                        <button type="submit" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Update Note</button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        <form method="post" class="mt-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add_note">
+                            <input type="hidden" name="student_id" value="{{ student.student_id }}">
+                            {{ form.note_content }}
+                            <button type="submit" class="mt-2 bg-green-500 text-white px-4 py-2 rounded">Add Note</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>You don't have any students yet.</p>
+    {% endif %}
+
+    <div class="mt-8">
+        <a href="{% url 'invite_student' %}" class="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition duration-300">Invite New Student</a>
+    </div>
+</div>
+
+<script>
+function toggleExtraInfo(id) {
+    var element = document.getElementById(id);
+    element.classList.toggle('hidden');
+}
+
+function toggleNotes(id) {
+    var element = document.getElementById(id);
+    element.classList.toggle('hidden');
+}
+
+function showEditForm(noteId) {
+    var editForm = document.getElementById('edit-form-' + noteId);
+    editForm.classList.toggle('hidden');
+}
+</script>
+{% endblock %}

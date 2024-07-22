@@ -79,3 +79,14 @@ class Assignment(models.Model):
 
     def __str__(self):
         return f"Task for {self.student} by {self.teacher}"
+
+# Model for student notes
+class Note(models.Model):
+    note_id = models.AutoField(primary_key=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    note_content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Note for {self.student} by {self.teacher}"

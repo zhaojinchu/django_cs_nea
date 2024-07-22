@@ -41,6 +41,7 @@ urlpatterns = [
     path('invite_student/', invite_student, name='invite_student'),
     path('student_invites/', student_invites, name='student_invites'),
     path('accept_invite/<int:invite_id>/', accept_invite, name='accept_invite'),
+    # Notes URLs         
     path('teacher_students/', teacher_students, name='teacher_students'),
     path('student_teachers/', student_teachers, name='student_teachers'),
 ]

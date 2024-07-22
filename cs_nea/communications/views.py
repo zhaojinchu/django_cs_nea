@@ -3,10 +3,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from .models import Notification, Assignment
+from .models import Notification, Assignment, Note
 from django.contrib.auth import get_user_model
 from .forms import AssignmentForm
 from django.utils import timezone
+from users.models import Student
 
 
 User = get_user_model()

@@ -19,8 +19,10 @@ from .forms import (
     PasswordResetForm,
     UserSettingsForm,
     InviteForm,
+    NoteForm,
 )
 from .models import Student, Teacher, User, Invite
+from communications.models import Note
 
 
 def index(request):
@@ -188,8 +190,6 @@ def send_password_reset_link(request, user):
     send_mail(subject, message, "noreply@example.com", [user.email])
 
 
-
-
 def signup(request):
     if request.path == "/student/signup":
         form_class = StudentSignupForm
@@ -319,15 +319,7 @@ def accept_invite(request, invite_id):
     return redirect("student_dashboard")
 
 
-@login_required
-@user_passes_test(lambda u: u.user_type == 2)
-def teacher_students(request):
-    teacher = request.user.teacher
-    accepted_invites = Invite.objects.filter(teacher=teacher, status="accepted")
-    students = [invite.student for invite in accepted_invites]
-    return render(request, "users/teacher_templates/teacher_students.html", {"students": students})
-
-
+# Views for notes
 @login_required
 @user_passes_test(lambda u: u.user_type == 1)
 def student_teachers(request):
@@ -335,3 +327,51 @@ def student_teachers(request):
     accepted_invites = Invite.objects.filter(student=student, status="accepted")
     teachers = [invite.teacher for invite in accepted_invites]
     return render(request, "users/student_templates/student_teachers.html", {"teachers": teachers})
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 2)
+def teacher_students(request):
+    teacher = request.user.teacher
+    accepted_invites = Invite.objects.filter(teacher=teacher, status="accepted")
+    students = [invite.student for invite in accepted_invites]
+    notes = Note.objects.filter(teacher=teacher)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add_note':
+            form = NoteForm(request.POST)
+            if form.is_valid():
+                note = form.save(commit=False)
+                note.teacher = teacher
+                note.student_id = request.POST.get('student_id')
+                note.save()
+                messages.success(request, 'Note added successfully.')
+            else:
+                messages.error(request, 'Error adding note. Please try again.')
+        elif action == 'edit_note':
+            note_id = request.POST.get('note_id')
+            note = get_object_or_404(Note, note_id=note_id, teacher=teacher)
+            form = NoteForm(request.POST, instance=note)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Note updated successfully.')
+            else:
+                messages.error(request, 'Error updating note. Please try again.')
+        elif action == 'delete_note':
+            note_id = request.POST.get('note_id')
+            note = get_object_or_404(Note, note_id=note_id, teacher=teacher)
+            note.delete()
+            messages.success(request, 'Note deleted successfully.')
+
+        return redirect('teacher_students')
+
+    context = {
+        'students': students,
+        'notes': notes,
+        'form': NoteForm(),
+    }
+    return render(request, 'users/teacher_templates/teacher_students.html', context)
+
+
+
+

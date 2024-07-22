@@ -2,7 +2,6 @@ from django import forms
 from .models import Assignment
 from users.models import Student
 
-
 class AssignmentForm(forms.ModelForm):
     class Meta:
         model = Assignment
@@ -18,3 +17,4 @@ class AssignmentForm(forms.ModelForm):
             self.fields["student"].queryset = Student.objects.filter(
                 invites__teacher=self.teacher, invites__status="accepted"
             )
+
