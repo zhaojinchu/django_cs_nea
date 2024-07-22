@@ -2,9 +2,10 @@
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
 
+{% block name %}User Settings{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-3xl font-semibold mb-6">User Settings</h2>
+<div class="container mx-auto">
     
     {% if messages %}
     <div class="mb-4">
