@@ -3,54 +3,129 @@
 {% block content %}
 
 <div class="flex flex-col h-full">
-    <div id="chat-messages" class="flex-1 overflow-y-auto border rounded-lg p-4">
-        <!-- Messages will be displayed here -->
+    <div id="chat-messages" class="flex-1 overflow-y-auto border rounded-lg p-4 space-y-4">
+        <!-- Messages will be displayed here dynamically -->
     </div>
-    
+
     <div class="flex pb-4 pt-2">
         <input type="text" id="chat-message-input" class="flex-grow border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your message...">
         <button id="chat-message-submit" class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Send</button>
     </div>
 </div>
 
-
 <script>
-    const otherUserId = "{{ other_user.id }}";
     const chatSocket = new WebSocket(
-        'ws://' + window.location.host +
-        '/ws/dm/' + otherUserId + '/'
+        'ws://' + window.location.host + '/ws/dm/{{ other_user.id }}/'
     );
 
     const messageInput = document.querySelector('#chat-message-input');
     const messageSubmit = document.querySelector('#chat-message-submit');
     const chatMessages = document.querySelector('#chat-messages');
 
+    let isConnected = false;
+    let messageQueue = [];
+
+    chatSocket.onopen = function(e) {
+        isConnected = true;
+        console.log("WebSocket connection established");
+        sendQueuedMessages();
+    };
+
     chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        const messageElement = document.createElement('div');
-        messageElement.textContent = `${data.sender}: ${data.message}`;
-        messageElement.classList.add('mb-2');
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    };
-
-    chatSocket.onclose = function(e) {
-        console.error('Chat socket closed unexpectedly');
-    };
-
-    messageInput.focus();
-    messageInput.onkeyup = function(e) {
-        if (e.key === 'Enter') {
-            messageSubmit.click();
+        if (data.error) {
+            showError(data.error);
+        } else {
+            addMessageToChat(data.sender, data.message, data.timestamp);
         }
     };
 
-    messageSubmit.onclick = function(e) {
-        const message = messageInput.value;
-        chatSocket.send(JSON.stringify({
-            'message': message
-        }));
-        messageInput.value = '';
+    chatSocket.onclose = function(e) {
+        isConnected = false;
+        console.error("WebSocket connection closed unexpectedly");
+        showError("Connection lost. Please refresh the page.");
     };
+
+    messageSubmit.onclick = sendMessage;
+
+    messageInput.onkeyup = function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    };
+
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message) {
+            if (message.length > 1000) {
+                showError("Message is too long. Please limit to 1000 characters.");
+                return;
+            }
+            if (isConnected) {
+                chatSocket.send(JSON.stringify({ 'message': message }));
+            } else {
+                messageQueue.push(message);
+                showError("Connection lost. Message will be sent when reconnected.");
+            }
+            messageInput.value = '';
+        } else {
+            showError("Please enter a message before sending.");
+        }
+    }
+
+    function sendQueuedMessages() {
+        while (messageQueue.length > 0) {
+            const message = messageQueue.shift();
+            chatSocket.send(JSON.stringify({ 'message': message }));
+        }
+    }
+
+    function addMessageToChat(sender, message, timestamp) {
+        const messageElement = document.createElement('div');
+        const isCurrentUser = sender === "{{ user.get_full_name }}";
+        
+        messageElement.className = isCurrentUser ? 'flex flex-col items-end' : 'flex flex-col items-start';
+        
+        const dateTime = new Date(timestamp).toLocaleString();
+        
+        messageElement.innerHTML = `
+            <div class="text-xs text-gray-500 mb-1">${sender} • ${dateTime}</div>
+            <div class="bg-white rounded-lg p-3 shadow max-w-xs lg:max-w-md">
+                <div class="text-sm">${escapeHTML(message)}</div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showError(message) {
+        const errorElement = document.createElement('div');
+        errorElement.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4';
+        errorElement.role = 'alert';
+        errorElement.innerHTML = `
+            <strong class="font-bold">Error:</strong>
+            <span class="block sm:inline">${message}</span>
+        `;
+        chatMessages.appendChild(errorElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        setTimeout(() => {
+            errorElement.remove();
+        }, 5000);
+    }   
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
+    }
 </script>
+
 {% endblock %}
