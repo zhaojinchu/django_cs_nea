@@ -4,11 +4,11 @@
 {% block content %}
 
 <div class="container mx-auto py-8" x-data="{ showModal: false }">
-    <form method="post" class="bg-white rounded-lg shadow-md p-6" @submit.prevent="showModal = true">
+    <form method="post" class="flex flex-col bg-white rounded-lg shadow-md p-6 gap-4" @submit.prevent="showModal = true">
         {% csrf_token %}
         {% for field in form %}
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+            <div class="justify-center w-full">
+                <label class="block text-gray-700 text-sm font-bold" for="{{ field.id_for_label }}">
                     {{ field.label }}
                 </label>
                 {% render_field field class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" %}
