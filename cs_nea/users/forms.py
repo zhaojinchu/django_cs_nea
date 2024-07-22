@@ -135,49 +135,86 @@ class PasswordResetForm(forms.Form):
 # FIXME: Some fields should be greyed out and non-editable
 class UserSettingsForm(forms.ModelForm):
     current_password = forms.CharField(widget=forms.PasswordInput(), required=False)
-    new_password = forms.CharField(widget=forms.PasswordInput(), required=False, validators=[validate_password])
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(), required=False, validators=[validate_password]
+    )
     confirm_new_password = forms.CharField(widget=forms.PasswordInput(), required=False)
-    
+
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'contact_number', 'two_factor_enabled']
-        
+        fields = [
+            "first_name",
+            "last_name",
+            "email",
+            "contact_number",
+            "two_factor_enabled",
+        ]
+        widgets = {
+            "email": forms.EmailInput(
+                attrs={
+                    "disabled": "disabled",
+                    "class": "bg-neutral-200"
+                }
+            ),
+            "first_name": forms.TextInput(
+                attrs={
+                    "disabled": "disabled",
+                    "class": "bg-neutral-200"
+                }
+            ),
+            "last_name": forms.TextInput(
+                attrs={
+                    "disabled": "disabled",
+                    "class": "bg-neutral-200"
+                }
+            ),
+        }
+
     def clean(self):
         cleaned_data = super().clean()
         current_password = cleaned_data.get("current_password")
         new_password = cleaned_data.get("new_password")
         confirm_new_password = cleaned_data.get("confirm_new_password")
-        
+
         if new_password:
             if not current_password:
-                raise forms.ValidationError("Current password is required to set a new password")
+                raise forms.ValidationError(
+                    "Current password is required to set a new password"
+                )
             if new_password != confirm_new_password:
                 raise forms.ValidationError("New passwords do not match")
-        
+
         return cleaned_data
-    
+
+
 # Invite form
 class InviteForm(forms.Form):
     student_email = forms.EmailField(label="Student's Email")
     message = forms.CharField(widget=forms.Textarea, max_length=500, required=False)
 
     def __init__(self, *args, **kwargs):
-        self.teacher = kwargs.pop('teacher', None)
+        self.teacher = kwargs.pop("teacher", None)
         super(InviteForm, self).__init__(*args, **kwargs)
 
     def clean_student_email(self):
-        email = self.cleaned_data['student_email']
+        email = self.cleaned_data["student_email"]
         try:
             user = User.objects.get(email=email, user_type=1)  # 1 is for Student
             student = user.student
-            
+
             # Check if an invite from this teacher already exists
-            existing_invite = Invite.objects.filter(student=student, teacher=self.teacher).first()
+            existing_invite = Invite.objects.filter(
+                student=student, teacher=self.teacher
+            ).first()
             if existing_invite:
                 if existing_invite.status == "accepted":
-                    raise ValidationError("You are already connected with this student.")
+                    raise ValidationError(
+                        "You are already connected with this student."
+                    )
                 elif existing_invite.status == "pending":
-                    raise ValidationError("You have already sent an invite to this student.")
+                    raise ValidationError(
+                        "You have already sent an invite to this student."
+                    )
         except User.DoesNotExist:
             raise ValidationError("No student account found with this email address.")
         return email
@@ -186,7 +223,7 @@ class InviteForm(forms.Form):
 class NoteForm(forms.ModelForm):
     class Meta:
         model = Note
-        fields = ['note_content']
+        fields = ["note_content"]
         widgets = {
-            'note_content': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            "note_content": forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
         }
