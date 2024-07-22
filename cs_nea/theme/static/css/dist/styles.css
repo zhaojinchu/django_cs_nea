@@ -849,6 +849,11 @@ select {
   margin-right: 0.75rem;
 }
 
+.mx-4 {
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -1436,10 +1441,6 @@ select {
   padding-right: 1rem;
 }
 
-.pt-14 {
-  padding-top: 3.5rem;
-}
-
 .pt-16 {
   padding-top: 4rem;
 }
@@ -1450,6 +1451,14 @@ select {
 
 .pt-28 {
   padding-top: 7rem;
+}
+
+.pt-6 {
+  padding-top: 1.5rem;
+}
+
+.pt-20 {
+  padding-top: 5rem;
 }
 
 .text-left {

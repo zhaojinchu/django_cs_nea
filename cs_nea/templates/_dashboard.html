@@ -217,15 +217,17 @@
             :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}"
           >
             <main
-              class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 pt-14"
+              class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 pt-20"
               role="main"
             >
               <div class="container mx-auto py-8">
-                <h3 class="text-neutral-800 text-3xl font-medium">
-                  {% block name %}{% endblock %}
-                </h3>
-                <!-- Add dashboard content here... -->
-                {% block content %}{% endblock %}
+                <div class="mx-4">
+                  <h3 class="text-neutral-800 text-3xl font-medium">
+                    {% block name %}{% endblock %}
+                  </h3>
+                  <!-- Add dashboard content here... -->
+                  {% block content %}{% endblock %}
+                </div>
               </div>
             </main>
           </div>
