@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Lesson, CalendarEvent
 from django.shortcuts import get_object_or_404, render
 from django.utils.dateparse import parse_datetime
+from django.core.serializers.json import DjangoJSONEncoder
 
 @login_required
 def calendar_view(request):
@@ -39,13 +40,13 @@ def get_calendar_data(request):
             'editable': True,
         })
     
-    return JsonResponse(events, safe=False)
+    return JsonResponse(events, safe=False, encoder=DjangoJSONEncoder)
 
 # Calendar views for AJAX requests to create, update, and delete events
 @login_required
 @require_POST
 def create_event(request):
-    if request.user.user_type != 2:  # Ensure only teachers can create events
+    if request.user.user_type != 2:
         return JsonResponse({'error': 'Only teachers can create events'}, status=403)
 
     title = request.POST.get('title')
@@ -66,6 +67,8 @@ def create_event(request):
         'title': event.title,
         'start': event.start_datetime.isoformat(),
         'end': event.end_datetime.isoformat(),
+        'color': 'green',
+        'editable': True,
     })
 
 @login_required
