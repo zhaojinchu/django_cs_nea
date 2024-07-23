@@ -55,23 +55,28 @@ class Lesson(models.Model):
         
     
 # Other event model, used to schedule events that are not lessons
-class OtherEvent(models.Model):
+class CalendarEvent(models.Model):
+    EVENT_TYPES = (
+        ('personal', 'Personal'),
+        ('work', 'Work'),
+        ('other', 'Other'),
+    )
+
     event_id = models.AutoField(primary_key=True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
     start_datetime = models.DateTimeField()
-    end_datetime = models.DateTimeField()
-    event_description = models.CharField(max_length=255)
-    recurring_amount = models.IntegerField()
+    end_datetime = models.DateTimeField()           
+    event_type = models.CharField(max_length=10, choices=EVENT_TYPES, default='other')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def clean(self):
-        if self.start_datetime <= timezone.now():
-            raise ValidationError("Start datetime must be in the future.")
-        if self.end_datetime <= self.start_datetime:
-            raise ValidationError("End datetime must be after the start datetime.")
-        if not self.event_description.strip():
-            raise ValidationError("Event description cannot be empty or just whitespace.")
-        if self.recurring_amount < 1 or self.recurring_amount > 52:
-            raise ValidationError("Recurring amount must be between 1 and 52.")
+    def __str__(self):
+        return f"{self.title} - {self.teacher.user.get_full_name()}"
+
+    class Meta:
+        ordering = ['start_datetime']
         
 
 # Rescheduling request model, used to request a rescheduling of a lesson

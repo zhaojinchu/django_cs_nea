@@ -1,9 +1,6 @@
 from django import forms
-from .models import LessonRequest, Lesson, OtherEvent, ReschedulingRequest
+from .models import LessonRequest, Lesson, ReschedulingRequest
 from django.utils import timezone
-from datetime import timedelta
-from users.models import Teacher, Student
-
 
 # Lesson request form for students
 class StudentLessonRequestForm(forms.ModelForm):
@@ -70,40 +67,6 @@ class LessonForm(forms.ModelForm):
             )
 
         return cleaned_data
-
-
-# Corresponding Django form for the OtherEvent model
-class OtherEventForm(forms.ModelForm):
-    class Meta:
-        model = OtherEvent
-        fields = [
-            "teacher",
-            "start_datetime",
-            "end_datetime",
-            "event_description",
-            "recurring_amount",
-        ]
-
-    def clean(self):
-        cleaned_data = super().clean()
-        start_datetime = cleaned_data.get("start_datetime")
-        end_datetime = cleaned_data.get("end_datetime")
-        event_description = cleaned_data.get("event_description")
-        recurring_amount = cleaned_data.get("recurring_amount")
-
-        if start_datetime and start_datetime <= timezone.now():
-            raise forms.ValidationError("Start datetime must be in the future.")
-        if start_datetime and end_datetime and end_datetime <= start_datetime:
-            raise forms.ValidationError(
-                "End datetime must be after the start datetime."
-            )
-        if not event_description or not event_description.strip():
-            raise forms.ValidationError(
-                "Event description cannot be empty or just whitespace."
-            )
-        if recurring_amount and (recurring_amount < 1 or recurring_amount > 52):
-            raise forms.ValidationError("Recurring amount must be between 1 and 52.")
-
 
 # Reschedule lesson form
 class RescheduleLessonForm(forms.ModelForm):

@@ -1,189 +1,99 @@
 {% extends "_dashboard.html" %}
 {% load static %}
 
+{% block extra_js %}<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>{% endblock %}
+
 {% block name %}Calendar{% endblock %}
 
 {% block content %}
 <div class="container mx-auto p-4">
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <div class="p-4">
-            <div class="flex justify-between items-center mb-4">
-                <button id="prevBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Previous
-                </button>
-                <h2 id="currentMonth" class="text-xl font-semibold"></h2>
-                <button id="nextBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Next
-                </button>
-            </div>
-            <div class="mb-4">
-                <button id="toggleViewBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                    Switch to Week View
-                </button>
-            </div>
-            <div id="calendar" class="grid grid-cols-7 gap-1">
-                <!-- Calendar populated here -->
-            </div>
-        </div>
+        <div id='calendar'></div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let currentDate = new Date();
-    let currentView = 'month';
-
-    const calendar = document.getElementById('calendar');
-    const currentMonthEl = document.getElementById('currentMonth');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const toggleViewBtn = document.getElementById('toggleViewBtn');
-
-    function renderCalendar() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-
-        currentMonthEl.textContent = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
-
-        fetchEvents(year, month + 1).then(events => {
-            if (currentView === 'month') {
-                renderMonthView(year, month, events);
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: '/get_calendar_data/',
+        editable: true,
+        selectable: true,
+        select: function(info) {
+            var title = prompt('Enter event title:');
+            if (title) {
+                $.ajax({
+                    url: '/create_event/',
+                    type: 'POST',
+                    data: {
+                        title: title,
+                        start: info.startStr,
+                        end: info.endStr,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        calendar.addEvent(response);
+                    }
+                });
+            }
+            calendar.unselect();
+        },
+        eventDrop: function(info) {
+            if (info.event.id.startsWith('event_')) {
+                updateEvent(info.event);
             } else {
-                renderWeekView(currentDate, events);
+                info.revert();
+            }
+        },
+        eventResize: function(info) {
+            if (info.event.id.startsWith('event_')) {
+                updateEvent(info.event);
+            } else {
+                info.revert();
+            }
+        },
+        eventClick: function(info) {
+            if (info.event.id.startsWith('event_')) {
+                if (confirm("Are you sure you want to delete this event?")) {
+                    $.ajax({
+                        url: '/delete_event/',
+                        type: 'POST',
+                        data: {
+                            id: info.event.id,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        },
+                        success: function(response) {
+                            info.event.remove();
+                        }
+                    });
+                }
+            }
+        }
+    });
+    calendar.render();
+
+    function updateEvent(event) {
+        $.ajax({
+            url: '/update_event/',
+            type: 'POST',
+            data: {
+                id: event.id,
+                title: event.title,
+                start: event.start.toISOString(),
+                end: event.end.toISOString(),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            error: function() {
+                calendar.refetchEvents();
             }
         });
     }
-
-    function renderMonthView(year, month, events) {
-        calendar.innerHTML = '';
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const firstDayOfMonth = new Date(year, month, 1).getDay();
-
-        // Add day labels
-        const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        dayLabels.forEach(day => {
-            const dayEl = document.createElement('div');
-            dayEl.textContent = day;
-            dayEl.className = 'font-bold text-center p-2 bg-gray-200';
-            calendar.appendChild(dayEl);
-        });
-
-        // Add blank cells for days before the first of the month
-        for (let i = 0; i < firstDayOfMonth; i++) {
-            const blankDay = document.createElement('div');
-            blankDay.className = 'bg-gray-100 p-2 h-32';
-            calendar.appendChild(blankDay);
-        }
-
-        // Add days of the month
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month, day);
-            const dayEl = document.createElement('div');
-            dayEl.className = 'bg-white p-2 h-32 border border-gray-200 overflow-y-auto';
-            dayEl.innerHTML = `<div class="font-semibold">${day}</div>`;
-
-            // Add events for this day
-            const dayEvents = events.filter(event => {
-                const eventDate = new Date(event.start);
-                return eventDate.getDate() === day && eventDate.getMonth() === month && eventDate.getFullYear() === year;
-            });
-
-            dayEvents.forEach(event => {
-                const eventEl = document.createElement('div');
-                eventEl.className = `text-xs p-1 mb-1 rounded text-white ${event.type === 'lesson' ? 'bg-purple-500' : 'bg-blue-500'}`;
-                eventEl.textContent = event.title;
-                dayEl.appendChild(eventEl);
-            });
-
-            calendar.appendChild(dayEl);
-        }
-    }
-
-    function renderWeekView(date, events) {
-        calendar.innerHTML = '';
-        const startOfWeek = new Date(date);
-        startOfWeek.setDate(date.getDate() - date.getDay());
-
-        // Add time labels
-        const timeLabels = document.createElement('div');
-        timeLabels.className = 'w-16 border-r border-gray-200 sticky left-0 bg-white z-10';
-        for (let hour = 0; hour < 24; hour++) {
-            const timeLabel = document.createElement('div');
-            timeLabel.className = 'h-16 border-t border-gray-200 text-xs sm:text-sm text-gray-500 text-right pr-1 mt-9 w-8 sm:w-12'; // Added -mt-2 for negative top margin
-            timeLabel.textContent = `${hour.toString().padStart(2, '0')}:00`;
-            timeLabels.appendChild(timeLabel);
-        }
-        calendar.appendChild(timeLabels);
-
-        // Add days of the week
-        for (let i = 0; i < 7; i++) {
-            const day = new Date(startOfWeek);
-            day.setDate(startOfWeek.getDate() + i);
-
-            const dayColumn = document.createElement('div');
-            dayColumn.className = 'flex-grow flex flex-col';
-
-            const dayHeader = document.createElement('div');
-            dayHeader.className = 'text-center p-2 border-b border-gray-200 font-semibold';
-            dayHeader.textContent = day.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
-            dayColumn.appendChild(dayHeader);
-
-            const dayEvents = document.createElement('div');
-            dayEvents.className = 'flex-grow relative';
-
-            // Add events for this day
-            events.filter(event => {
-                const eventDate = new Date(event.start);
-                return eventDate.toDateString() === day.toDateString();
-            }).forEach(event => {
-                const eventEl = document.createElement('div');
-                eventEl.className = `absolute left-0.5 right-0.5 p-1 text-xs overflow-hidden rounded text-white ${event.type === 'lesson' ? 'bg-purple-500' : 'bg-blue-500'}`;
-                const eventStart = new Date(event.start);
-                const eventEnd = new Date(event.end);
-                const top = (eventStart.getHours() + eventStart.getMinutes() / 60) * 64; // 16px per hour * 4
-                const height = (eventEnd - eventStart) / (1000 * 60 * 60) * 64;
-                eventEl.style.top = `${top}px`;
-                eventEl.style.height = `${height}px`;
-                eventEl.innerHTML = `<div class="font-bold">${eventStart.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div><div>${event.title}</div>`;
-                dayEvents.appendChild(eventEl);
-            });
-
-            dayColumn.appendChild(dayEvents);
-            calendar.appendChild(dayColumn);
-        }
-    }
-
-    async function fetchEvents(year, month) {
-        const response = await fetch(`/get_calendar_data?year=${year}&month=${month}`);
-        const data = await response.json();
-        return data.events;
-    }
-
-    prevBtn.addEventListener('click', () => {
-        if (currentView === 'month') {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-        } else {
-            currentDate.setDate(currentDate.getDate() - 7);
-        }
-        renderCalendar();
-    });
-
-    nextBtn.addEventListener('click', () => {
-        if (currentView === 'month') {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-        } else {
-            currentDate.setDate(currentDate.getDate() + 7);
-        }
-        renderCalendar();
-    });
-
-    toggleViewBtn.addEventListener('click', () => {
-        currentView = currentView === 'month' ? 'week' : 'month';
-        toggleViewBtn.textContent = `Switch to ${currentView === 'month' ? 'Week' : 'Month'} View`;
-        renderCalendar();
-    });
-
-    renderCalendar();
 });
 </script>
 {% endblock %}
