@@ -22,7 +22,7 @@
                 </button>
             </div>
             <div id="calendar" class="grid grid-cols-7 gap-1">
-                <!-- Calendar will be populated here -->
+                <!-- Calendar populated here -->
             </div>
         </div>
     </div>
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
         timeLabels.className = 'w-16 border-r border-gray-200 sticky left-0 bg-white z-10';
         for (let hour = 0; hour < 24; hour++) {
             const timeLabel = document.createElement('div');
-            timeLabel.className = 'h-16 border-t border-gray-200 text-xs text-gray-500 text-right pr-1';
+            timeLabel.className = 'h-16 border-t border-gray-200 text-xs sm:text-sm text-gray-500 text-right pr-1 mt-9 w-8 sm:w-12'; // Added -mt-2 for negative top margin
             timeLabel.textContent = `${hour.toString().padStart(2, '0')}:00`;
             timeLabels.appendChild(timeLabel);
         }

@@ -946,6 +946,14 @@ select {
   margin-top: 2rem;
 }
 
+.-mt-2 {
+  margin-top: -0.5rem;
+}
+
+.mt-9 {
+  margin-top: 2.25rem;
+}
+
 .block {
   display: block;
 }
@@ -1064,6 +1072,10 @@ select {
 
 .w-full {
   width: 100%;
+}
+
+.w-8 {
+  width: 2rem;
 }
 
 .max-w-md {
@@ -2009,6 +2021,10 @@ select {
 @media (min-width: 640px) {
   .sm\:inline {
     display: inline;
+  }
+
+  .sm\:w-12 {
+    width: 3rem;
   }
 
   .sm\:text-sm {
