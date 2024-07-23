@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
-from datetime import date
 from .forms import (
     StudentLessonRequestForm,
     TeacherLessonRequestForm,
@@ -18,11 +17,12 @@ from .models import (
     LessonRequest,
     ReschedulingRequest,
 )
-from .calendar_utils import LessonCalendar
 from communications.models import Notification
 from datetime import timedelta
 from django.db import transaction
 from communications.models import Notification, NotificationConfig
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 
 def is_teacher(user):
@@ -296,17 +296,17 @@ def decline_lesson_request(request, request_id):
 def calendar_view(request):
     return render(request, "scheduling/calendar.html")
 
-
-# Calendar refresh view
+# To fetch data from DB for the calendar
 @login_required
 def get_calendar_data(request):
     year = int(request.GET.get("year"))
     month = int(request.GET.get("month"))
-    view_type = request.GET.get("view_type", "month")
-
-    # Fetch events for the entire month
-    start_date = date(year, month, 1)
-    end_date = date(year, month + 1, 1) if month < 12 else date(year + 1, 1, 1)
+    
+    start_date = timezone.make_aware(datetime(year, month, 1))
+    if month == 12:
+        end_date = timezone.make_aware(datetime(year + 1, 1, 1))
+    else:
+        end_date = timezone.make_aware(datetime(year, month + 1, 1))
 
     lessons = Lesson.objects.filter(
         start_datetime__gte=start_date, start_datetime__lt=end_date
@@ -315,18 +315,25 @@ def get_calendar_data(request):
         start_datetime__gte=start_date, start_datetime__lt=end_date
     )
 
-    if view_type == "month":
-        cal = LessonCalendar(year, month, lessons=lessons, other_events=other_events)
-        html_cal = cal.formatmonth(withyear=True)
-    else:  # week view
-        week = int(request.GET.get("week", 1))
-        cal = LessonCalendar(
-            year, month, week, lessons=lessons, other_events=other_events
-        )
-        html_cal = cal.formatweek_view()
+    events = []
+    for lesson in lessons:
+        events.append({
+            "id": lesson.lesson_id,
+            "type": "lesson",
+            "title": f"Lesson with {lesson.student.user.get_full_name()}",
+            "start": lesson.start_datetime.isoformat(),
+            "end": lesson.end_datetime.isoformat(),
+        })
+    for event in other_events:
+        events.append({
+            "id": event.event_id,
+            "type": "other",
+            "title": event.event_description,
+            "start": event.start_datetime.isoformat(),
+            "end": event.end_datetime.isoformat(),
+        })
 
-    return JsonResponse({"calendar_html": html_cal})
-
+    return JsonResponse({"events": events})
 
 # Reschedule lesson view
 @login_required
