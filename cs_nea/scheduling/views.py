@@ -349,7 +349,7 @@ def reschedule_lesson(request):
 @login_required
 def accept_rescheduling_request(request, rescheduling_request_id):
     rescheduling_request = get_object_or_404(
-        ReschedulingRequest, id=rescheduling_request_id
+        ReschedulingRequest, rescheduling_id=rescheduling_request_id
     )
 
     if request.user.user_type == 1:  # Student
@@ -384,7 +384,7 @@ def accept_rescheduling_request(request, rescheduling_request_id):
 @login_required
 def decline_rescheduling_request(request, rescheduling_request_id):
     rescheduling_request = get_object_or_404(
-        ReschedulingRequest, id=rescheduling_request_id
+        ReschedulingRequest, rescheduling_id=rescheduling_request_id
     )
 
     if request.user.user_type == 1:  # Student

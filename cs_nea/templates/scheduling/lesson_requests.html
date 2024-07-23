@@ -21,10 +21,10 @@
                     <p>Recurring: {{ request.recurring_amount }} time(s)</p>
                     <p>Reason: {{ request.request_reason }}</p>
                     <div class="flex justify-between mt-4">
-                        <button @click="showAcceptModal = true; selectedRequest = '{{ request.request_id }}'; requestType = 'schedule'" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                        <button @click="showAcceptModal = true; selectedRequest = '{{ request.rescheduling_id }}'; requestType = 'reschedule'" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
                             Accept
                         </button>
-                        <button @click="showDeclineModal = true; selectedRequest = '{{ request.request_id }}'; requestType = 'schedule'" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                        <button @click="showDeclineModal = true; selectedRequest = '{{ request.rescheduling_id }}'; requestType = 'reschedule'" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
                             Decline
                         </button>
                     </div>
