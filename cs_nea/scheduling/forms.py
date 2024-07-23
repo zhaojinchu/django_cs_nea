@@ -1,5 +1,5 @@
 from django import forms
-from .models import LessonRequest, Lesson, OtherEvent
+from .models import LessonRequest, Lesson, OtherEvent, ReschedulingRequest
 from django.utils import timezone
 from datetime import timedelta
 from users.models import Teacher, Student
@@ -110,33 +110,42 @@ class RescheduleLessonForm(forms.ModelForm):
     lesson = forms.ModelChoiceField(
         queryset=None,
         label="Select Lesson to Reschedule",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
 
     class Meta:
-        model = LessonRequest
-        fields = ["lesson", "requested_datetime", "end_datetime", "request_reason"]
+        model = ReschedulingRequest
+        fields = ['lesson', 'requested_datetime', 'end_datetime', 'request_reason']
         widgets = {
-            "requested_datetime": forms.DateTimeInput(
-                attrs={"type": "datetime-local", "class": "form-control"}
+            'requested_datetime': forms.DateTimeInput(
+                attrs={'type': 'datetime-local', 'class': 'form-control'},
+                format='%Y-%m-%dT%H:%M'
             ),
-            "end_datetime": forms.DateTimeInput(
-                attrs={"type": "datetime-local", "class": "form-control"}
+            'end_datetime': forms.DateTimeInput(
+                attrs={'type': 'datetime-local', 'class': 'form-control'},
+                format='%Y-%m-%dT%H:%M'
             ),
-            "request_reason": forms.Textarea(
-                attrs={"class": "form-control", "rows": 3}
-            ),
+            'request_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop("user", None)
+        self.user = kwargs.pop('user', None)
         super(RescheduleLessonForm, self).__init__(*args, **kwargs)
-        if user:
-            if user.user_type == 1:  # Student
-                self.fields["lesson"].queryset = Lesson.objects.filter(
-                    student=user.student
-                ).order_by("start_datetime")
-            else:  # Teacher
-                self.fields["lesson"].queryset = Lesson.objects.filter(
-                    teacher=user.teacher
-                ).order_by("start_datetime")
+        if self.user:
+            if self.user.user_type == 1:  
+                self.fields['lesson'].queryset = Lesson.objects.filter(student=self.user.student, is_rescheduled=False).order_by('start_datetime')
+            else:   
+                self.fields['lesson'].queryset = Lesson.objects.filter(teacher=self.user.teacher, is_rescheduled=False).order_by('start_datetime')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        requested_datetime = cleaned_data.get('requested_datetime')
+        end_datetime = cleaned_data.get('end_datetime')
+
+        if requested_datetime and requested_datetime <= timezone.now():
+            raise forms.ValidationError("Requested datetime must be in the future.")
+
+        if end_datetime and requested_datetime and end_datetime <= requested_datetime:
+            raise forms.ValidationError("End datetime must be after the requested datetime.")
+
+        return cleaned_data

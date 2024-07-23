@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 from users.models import Student, Teacher
+from django.db import transaction
+from communications.models import Notification
 
 # Lesson request model, used to request a lesson with a teacher
 class LessonRequest(models.Model):
@@ -11,8 +13,6 @@ class LessonRequest(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     requested_datetime = models.DateTimeField()
     is_approved = models.BooleanField(default=False)
-    is_rescheduling = models.BooleanField(default=False)
-    original_lesson = models.ForeignKey('Lesson', on_delete=models.SET_NULL, null=True, blank=True)
     request_reason = models.CharField(max_length=255)   
     end_datetime = models.DateTimeField(default=1)
     recurring_amount = models.IntegerField(default=False)
@@ -39,6 +39,10 @@ class Lesson(models.Model):
     start_datetime = models.DateTimeField()
     student_attendance = models.BooleanField(default=False)
     end_datetime = models.DateTimeField()
+
+    # Additional fields from iteration 2
+    is_rescheduled = models.BooleanField(default=False)
+    rescheduled_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='rescheduled_from')
     
     def clean(self):
         if self.start_datetime <= timezone.now():
@@ -50,7 +54,6 @@ class Lesson(models.Model):
         return f"{self.start_datetime.strftime('%Y-%m-%d %H:%M')} - {self.teacher.user.get_full_name()}"
         
     
-
 # Other event model, used to schedule events that are not lessons
 class OtherEvent(models.Model):
     event_id = models.AutoField(primary_key=True)
@@ -69,3 +72,59 @@ class OtherEvent(models.Model):
             raise ValidationError("Event description cannot be empty or just whitespace.")
         if self.recurring_amount < 1 or self.recurring_amount > 52:
             raise ValidationError("Recurring amount must be between 1 and 52.")
+        
+
+# Rescheduling request model, used to request a rescheduling of a lesson
+class ReschedulingRequest(models.Model):
+    rescheduling_id = models.AutoField(primary_key=True)
+    original_lesson = models.ForeignKey('Lesson', on_delete=models.CASCADE, related_name='rescheduling_requests')
+    requested_by = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    requested_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+    request_reason = models.TextField()
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def clean(self):
+        if self.requested_datetime <= timezone.now():
+            raise ValidationError("Requested datetime must be in the future.")
+        if self.end_datetime <= self.requested_datetime:
+            raise ValidationError("End datetime must be after the requested datetime.")
+
+    def __str__(self):
+        return f"Rescheduling request for lesson {self.original_lesson.id} on {self.requested_datetime}"
+    
+    # Instead of this in the views.py file, we implement in the model to save space.
+    @transaction.atomic
+    def approve(self):
+        original_lesson = self.original_lesson
+        
+        # Create new lesson
+        new_lesson = Lesson.objects.create(
+            student=original_lesson.student,
+            teacher=original_lesson.teacher,
+            start_datetime=self.requested_datetime,
+            end_datetime=self.end_datetime,
+            student_attendance=False  # Reset attendance for new lesson
+        )
+        
+        # Update original lesson
+        original_lesson.is_rescheduled = True
+        original_lesson.rescheduled_to = new_lesson
+        original_lesson.save()
+        
+        # Update rescheduling request
+        self.is_approved = True
+        self.save()
+        
+        # Create notifications
+        Notification.objects.create(
+            receiver=original_lesson.student.user,
+            content=f"Lesson on {original_lesson.start_datetime} has been rescheduled to {new_lesson.start_datetime}"
+        )
+        Notification.objects.create(
+            receiver=original_lesson.teacher.user,
+            content=f"Lesson on {original_lesson.start_datetime} has been rescheduled to {new_lesson.start_datetime}"
+        )
+        
+        return new_lesson

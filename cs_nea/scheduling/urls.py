@@ -20,6 +20,12 @@ urlpatterns = [
     
     # Path for rescheduling lesson requests
     path('reschedule_lesson/', views.reschedule_lesson, name='reschedule_lesson'),
+    path('accept_rescheduling_request/<int:rescheduling_request_id>/', views.accept_rescheduling_request, name='accept_rescheduling_request'),
+    path('decline_rescheduling_request/<int:rescheduling_request_id>/', views.decline_rescheduling_request, name='decline_rescheduling_request'),
+
+
+    
+    
 ]
 
 

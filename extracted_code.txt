@@ -219,6 +219,8 @@ if __name__ == '__main__':
 
 
 # File: cs_nea/templates/_dashboard.html
+<!-- TODO: Make dashboard more responsive -->
+
 {% load static %} {% load static tailwind_tags %}
 
 <!DOCTYPE html>
@@ -361,20 +363,8 @@ if __name__ == '__main__':
               href="{% url 'calendar' %}"
               class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
             >
-              <span class="mx-3">Home</span>
-            </a>
-            <a
-              href="{% url 'user_profile' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Profile</span>
-            </a>
-            <a
-              href="{% url 'settings' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Settings</span>
-            </a>
+              <span class="mx-3">Calendar</span>
+            </a>  
             {% if user.user_type == 1 %}
             <a
               href="{% url 'student_invites' %}"
@@ -413,7 +403,13 @@ if __name__ == '__main__':
               <span class="mx-3">Schedule with a student</span>
             </a>
             {% endif %}
-            
+            <a
+              href="{% url 'reschedule_lesson' %}"
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Reschedule a lesson</span>
+            </a>
+
             <a
               href="{% url 'message_list' %}"
               class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
@@ -428,6 +424,13 @@ if __name__ == '__main__':
               <span class="mx-3">Assignments</span>
             </a>
 
+            <a 
+              href="{% url 'lesson_requests' %}" 
+              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+            >
+              <span class="mx-3">Lesson Requests</span>
+            </a>
+
             {% block sidemenu %}{% endblock %}
           </div>
 
@@ -436,18 +439,19 @@ if __name__ == '__main__':
             class="flex-1 flex flex-col overflow-hidden"
             :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}"
           >
-            <main
-              class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 pt-14"
-              role="main"
+            <div
+              class="flex-1 flex flex-col overflow-hidden bg-gray-200 pt-28"  
             >
-              <div class="container mx-auto py-8">
-                <h3 class="text-gray-700 text-3xl font-medium">
+              <div class="flex-1 flex flex-col overflow-hidden container mx-auto px-4">  
+                <h3 class="text-neutral-800 text-3xl font-medium mb-4">
                   {% block name %}{% endblock %}
                 </h3>
                 <!-- Add dashboard content here... -->
+                <div class="flex-1 overflow-y-auto">
                 {% block content %}{% endblock %}
+                 </div>
               </div>
-            </main>
+            </div>
           </div>
         </div>
       </main>
@@ -571,10 +575,10 @@ if __name__ == '__main__':
 {% extends "_dashboard.html" %}
 {% load static %}
 
-{% block content %}
-<div class="container mx-auto px-4 py-8 h-screen flex flex-col">
-    <h1 class="text-3xl font-bold mb-6 text-neutral-800">Calendar</h1>
+{% block name %}Calendar{% endblock %}
 
+{% block content %}
+<div class="container mx-auto py-8 h-full flex flex-col">
     <div class="bg-white shadow-md rounded-lg overflow-hidden flex-grow flex flex-col">
         <div class="p-4 flex flex-col h-full" x-data="calendarData()">
             <div class="flex justify-between items-center mb-4">
@@ -661,15 +665,17 @@ function calendarData() {
 {% endblock content %}
 
 # File: cs_nea/templates/scheduling/teacher_schedule_lesson.html
-{% extends "_dashboard.html" %}{% load widget_tweaks %}
+{% extends "_dashboard.html" %}
+{% load widget_tweaks %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto px-4 py-8" x-data="{ showModal: false }">
     <h1 class="text-2xl font-bold mb-4">Schedule or Request a Lesson</h1>
-    <form method="post" class="space-y-4">
+    
+    <form method="post" @submit.prevent="showModal = true">
         {% csrf_token %}
         {% for field in form %}
-            <div>
+            <div class="mb-4">
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
                     {{ field.label }}
                 </label>
@@ -689,6 +695,34 @@ function calendarData() {
             </button>
         </div>
     </form>
+
+    <!-- Modal -->
+    <div x-show="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-cloak>
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Lesson Schedule/Request</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">
+                        Are you sure you want to submit this lesson schedule/request?
+                    </p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button
+                        @click="showModal = false"
+                        class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-600"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        @click="document.querySelector('form').submit()"
+                        class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-24 hover:bg-green-600"
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -705,34 +739,212 @@ function calendarData() {
 {% endblock %}
 
 # File: cs_nea/templates/scheduling/student_schedule_lesson.html
-{% extends "_dashboard.html" %}{% load widget_tweaks %}
-
+{% extends "_dashboard.html" %}
+{% load widget_tweaks %}
+{% block name %}Request a Lesson{% endblock %}
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-4">Request a Lesson</h1>
-    <form method="post" class="space-y-4">
+
+<div class="container mx-auto py-8">
+    <form class="bg-white rounded-lg shadow-md p-6" method="post" x-data="{ showModal: false }" @submit.prevent="showModal = true">
+        {% csrf_token %}
+        <div class="flex flex-col gap-4 justify-center w-full">
+
+            {% for field in form %}
+                <div class="w-full">
+                    <label class="text-neutral-800 text-sm font-bold" for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
+                    {{ field|add_class:"shadow border rounded w-full text-gray-700 focus:border-purple-500" }}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-xs italic">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="pt-6">
+                <input
+                    class="w-full bg-purple-500 text-white font-medium rounded-lg px-4 py-2 hover:bg-purple-600 hover:ring-2 ring-purple-800"
+                    type="submit"
+                    value="Submit Request"
+                />
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-show="showModal" x-cloak>
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Lesson Request</h3>
+                    <div class="mt-2 px-7 py-3">
+                        <p class="text-gray-500">Are you sure you want to submit this lesson request?</p>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <button @click="showModal = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-600">Cancel</button>
+                        <button @click="$refs.form.submit()" class="px-4 py-2 bg-purple-500 text-white text-base font-medium rounded-md w-24 hover:bg-purple-600">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+# File: cs_nea/templates/scheduling/reschedule_lesson.html
+{% extends "_dashboard.html" %}
+{% load widget_tweaks %}
+{% block name %}Request Lesson Rescheduling{% endblock %}
+{% block content %}
+
+<div class="container mx-auto py-8" x-data="{ showModal: false }">
+    <form method="post" class="flex flex-col bg-white rounded-lg shadow-md p-6 gap-4" @submit.prevent="showModal = true" x-ref="form">
         {% csrf_token %}
         {% for field in form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+            <div class="justify-center w-full">
+                <label class="block text-gray-700 text-sm font-bold" for="{{ field.id_for_label }}">
                     {{ field.label }}
                 </label>
-                <div class="mt-1">
-                    {% render_field field class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
-                </div>
+                {% render_field field class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" %}
                 {% if field.errors %}
                     {% for error in field.errors %}
-                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                        <p class="text-red-500 text-xs italic mt-1">{{ error }}</p>
                     {% endfor %}
                 {% endif %}
             </div>
         {% endfor %}
-        <div>
-            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Submit Request
+
+        <div class="pt-6">
+            <button type="submit" class="bg-purple-500 text-white font-semibold py-2 px-4 w-full rounded focus:outline-none focus:shadow-outline hover:bg-purple-600">
+                Submit Rescheduling Request
             </button>
         </div>
     </form>
+
+    <!-- Confirmation Modal -->
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-show="showModal" x-cloak>
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Rescheduling Request</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-gray-500">Are you sure you want to submit this rescheduling request?</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button @click="showModal = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-600">Cancel</button>
+                    <button @click="$refs.form.submit()" class="px-4 py-2 bg-purple-500 text-white text-base font-medium rounded-md w-24 hover:bg-purple-600">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+# File: cs_nea/templates/scheduling/lesson_requests.html
+{% extends "_dashboard.html" %}
+{% load static %}
+
+{% block name %}Lesson Requests{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8" x-data="{ showAcceptModal: false, showDeclineModal: false, selectedRequest: null, requestType: '' }">
+    {% if scheduling_requests or rescheduling_requests %}
+        <h2 class="text-2xl font-bold mb-4">New Lesson Requests</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {% for request in scheduling_requests %}
+                <div class="bg-white shadow-md rounded-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">New Lesson Request</h3>
+                    {% if user.user_type == 1 %}
+                        <p>From: {{ request.teacher.user.get_full_name }}</p>
+                    {% else %}
+                        <p>From: {{ request.student.user.get_full_name }}</p>
+                    {% endif %}
+                    <p>Start: {{ request.requested_datetime|date:"F d, Y H:i" }}</p>
+                    <p>End: {{ request.end_datetime|date:"F d, Y H:i" }}</p>
+                    <p>Recurring: {{ request.recurring_amount }} time(s)</p>
+                    <p>Reason: {{ request.request_reason }}</p>
+                    <div class="flex justify-between mt-4">
+                        <button @click="showAcceptModal = true; selectedRequest = '{{ request.request_id }}'; requestType = 'schedule'" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                            Accept
+                        </button>
+                        <button @click="showDeclineModal = true; selectedRequest = '{{ request.request_id }}'; requestType = 'schedule'" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                            Decline
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <h2 class="text-2xl font-bold mb-4">Rescheduling Requests</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for request in rescheduling_requests %}
+                <div class="bg-white shadow-md rounded-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Rescheduling Request</h3>
+                    {% if user.user_type == 1 %}
+                        <p>From: {{ request.teacher.user.get_full_name }}</p>
+                    {% else %}
+                        <p>From: {{ request.student.user.get_full_name }}</p>
+                    {% endif %}
+                    <p>Original Lesson: {{ request.original_lesson.start_datetime|date:"F d, Y H:i" }}</p>
+                    <p>New Start: {{ request.requested_datetime|date:"F d, Y H:i" }}</p>
+                    <p>New End: {{ request.end_datetime|date:"F d, Y H:i" }}</p>
+                    <p>Reason: {{ request.request_reason }}</p>
+                    <div class="flex justify-between mt-4">
+                        <button @click="showAcceptModal = true; selectedRequest = '{{ request.id }}'; requestType = 'reschedule'" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                            Accept
+                        </button>
+                        <button @click="showDeclineModal = true; selectedRequest = '{{ request.id }}'; requestType = 'reschedule'" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                            Decline
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-xl">No pending lesson requests.</p>
+    {% endif %}
+
+    <!-- Accept Modal -->
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-show="showAcceptModal" x-cloak>
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Acceptance</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">Are you sure you want to accept this lesson request?</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button @click="showAcceptModal = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-600">
+                        Cancel
+                    </button>
+                    <a :href="requestType === 'schedule' ? '/accept_lesson_request/' + selectedRequest + '/' : '/accept_rescheduling_request/' + selectedRequest + '/'" 
+                       class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-24 hover:bg-green-600">
+                        Confirm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decline Modal -->
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-show="showDeclineModal" x-cloak>
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Decline</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">Are you sure you want to decline this lesson request?</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button @click="showDeclineModal = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-600">
+                        Cancel
+                    </button>
+                    <a :href="requestType === 'schedule' ? '/decline_lesson_request/' + selectedRequest + '/' : '/decline_rescheduling_request/' + selectedRequest + '/'" 
+                       class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 hover:bg-red-600">
+                        Confirm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -752,13 +964,14 @@ function calendarData() {
 # File: cs_nea/templates/communications/message_list.html
 {% extends "_dashboard.html" %}
 
+{% block name %} Direct Messages {% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-bold mb-4">Messages</h2>
+<div class="container mx-auto py-8">
     <ul class="space-y-2">
         {% for user in users %}
             <li>
-                <a href="{% url 'direct_message' user.id %}" class="text-blue-500 hover:underline">
+                <a href="{% url 'direct_message' user.id %}" class="text-purple-800">
                     {{ user.get_full_name }}
                 </a>
             </li>
@@ -843,10 +1056,10 @@ function calendarData() {
 {% extends "_dashboard.html" %}
 {% load static %}
 
+{% block name %}Assignments{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-3xl font-bold mb-6 text-gray-800">Assignments</h2>
-    
+<div class="container mx-auto py-8">
     {% if user.user_type == 2 %}
     <a href="{% url 'create_assignment' %}" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded mb-6 inline-block transition duration-300 ease-in-out">
         Create New Assignment
@@ -881,58 +1094,135 @@ function calendarData() {
 
 # File: cs_nea/templates/communications/direct_message.html
 {% extends "_dashboard.html" %}
-
+{% block name %}Chat with {{ other_user.get_full_name }}{% endblock %}
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-bold mb-4">Chat with {{ other_user.get_full_name }}</h2>
-    <div class="border rounded-lg p-4 mb-4 h-64 overflow-y-auto" id="chat-messages">
-        <!-- Messages will be displayed here -->
+
+<div class="flex flex-col h-full">
+    <div id="chat-messages" class="flex-1 overflow-y-auto border rounded-lg p-4 space-y-4">
+        <!-- Messages will be displayed here dynamically -->
     </div>
-    <div class="flex">
+
+    <div class="flex pb-6 pt-2">
         <input type="text" id="chat-message-input" class="flex-grow border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your message...">
         <button id="chat-message-submit" class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Send</button>
     </div>
 </div>
 
 <script>
-    const otherUserId = "{{ other_user.id }}";
     const chatSocket = new WebSocket(
-        'ws://' + window.location.host +
-        '/ws/dm/' + otherUserId + '/'
+        'ws://' + window.location.host + '/ws/dm/{{ other_user.id }}/'
     );
 
     const messageInput = document.querySelector('#chat-message-input');
     const messageSubmit = document.querySelector('#chat-message-submit');
     const chatMessages = document.querySelector('#chat-messages');
 
+    let isConnected = false;
+    let messageQueue = [];
+
+    chatSocket.onopen = function(e) {
+        isConnected = true;
+        console.log("WebSocket connection established");
+        sendQueuedMessages();
+    };
+
     chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        const messageElement = document.createElement('div');
-        messageElement.textContent = `${data.sender}: ${data.message}`;
-        messageElement.classList.add('mb-2');
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    };
-
-    chatSocket.onclose = function(e) {
-        console.error('Chat socket closed unexpectedly');
-    };
-
-    messageInput.focus();
-    messageInput.onkeyup = function(e) {
-        if (e.key === 'Enter') {
-            messageSubmit.click();
+        if (data.error) {
+            showError(data.error);
+        } else {
+            addMessageToChat(data.sender, data.message, data.timestamp);
         }
     };
 
-    messageSubmit.onclick = function(e) {
-        const message = messageInput.value;
-        chatSocket.send(JSON.stringify({
-            'message': message
-        }));
-        messageInput.value = '';
+    chatSocket.onclose = function(e) {
+        isConnected = false;
+        console.error("WebSocket connection closed unexpectedly");
+        showError("Connection lost. Please refresh the page.");
     };
+
+    messageSubmit.onclick = sendMessage;
+
+    messageInput.onkeyup = function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    };
+
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message) {
+            if (message.length > 1000) {
+                showError("Message is too long. Please limit to 1000 characters.");
+                return;
+            }
+            if (isConnected) {
+                chatSocket.send(JSON.stringify({ 'message': message }));
+            } else {
+                messageQueue.push(message);
+                showError("Connection lost. Message will be sent when reconnected.");
+            }
+            messageInput.value = '';
+        } else {
+            showError("Please enter a message before sending.");
+        }
+    }
+
+    function sendQueuedMessages() {
+        while (messageQueue.length > 0) {
+            const message = messageQueue.shift();
+            chatSocket.send(JSON.stringify({ 'message': message }));
+        }
+    }
+
+    function addMessageToChat(sender, message, timestamp) {
+        const messageElement = document.createElement('div');
+        const isCurrentUser = sender === "{{ user.get_full_name }}";
+        
+        messageElement.className = isCurrentUser ? 'flex flex-col items-end' : 'flex flex-col items-start';
+        
+        const dateTime = new Date(timestamp).toLocaleString();
+        
+        messageElement.innerHTML = `
+            <div class="text-xs text-gray-500 mb-1">${sender} • ${dateTime}</div>
+            <div class="bg-white rounded-lg p-3 shadow max-w-xs lg:max-w-md">
+                <div class="text-sm">${escapeHTML(message)}</div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showError(message) {
+        const errorElement = document.createElement('div');
+        errorElement.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4';
+        errorElement.role = 'alert';
+        errorElement.innerHTML = `
+            <strong class="font-bold">Error:</strong>
+            <span class="block sm:inline">${message}</span>
+        `;
+        chatMessages.appendChild(errorElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        setTimeout(() => {
+            errorElement.remove();
+        }, 5000);
+    }   
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
+    }
 </script>
+
 {% endblock %}
 
 # File: cs_nea/templates/users/signup.html
@@ -945,14 +1235,6 @@ function calendarData() {
     {% csrf_token %}
     <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
       <div class="text-4xl font-semibold">Student Sign Up</div>
-      
-      {% if messages %}
-        {% for message in messages %}
-          <div class="px-4 py-3 {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %} rounded" role="alert">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
 
       {% if form.non_field_errors %}
         <div class="flex bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
@@ -1189,9 +1471,10 @@ function calendarData() {
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
 
+{% block name %}User Settings{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-3xl font-semibold mb-6">User Settings</h2>
+<div class="container mx-auto">
     
     {% if messages %}
     <div class="mb-4">
@@ -1380,27 +1663,29 @@ function calendarData() {
 
 
 # File: cs_nea/templates/users/profile.html
-{% extends "_dashboard.html" %}
+{% extends "_dashboard.html" %} 
+
+{% block name %}Profile{% endblock %} 
 
 {% block content %}
-  <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
-    <div class="text-4xl font-semibold">Profile</div>
+<div class="flex flex-col gap-4 justify-center w-full max-w-md">
     <div class="flex flex-col gap-4">
-      <div class="flex flex-col gap-2">
-        <div class="text-lg font-semibold">Name</div>
-        <div>{{ user.first_name }} {{ user.last_name }}</div>
-      </div>
-      <div class="flex flex-col gap-2">
-        <div class="text-lg font-semibold">Email</div>
-        <div>{{ user.email }}</div>
-      </div>
-      <div class="flex flex-col gap-2">
-        <div class="text-lg font-semibold">Contact Number</div>
-        <div>{{ user.contact_number }}</div>
-      </div>
+        <div class="flex flex-col gap-2">
+            <div class="text-lg font-semibold">Name</div>
+            <div>{{ user.first_name }} {{ user.last_name }}</div>
+        </div>
+        <div class="flex flex-col gap-2">
+            <div class="text-lg font-semibold">Email</div>
+            <div>{{ user.email }}</div>
+        </div>
+        <div class="flex flex-col gap-2">
+            <div class="text-lg font-semibold">Contact Number</div>
+            <div>{{ user.contact_number }}</div>
+        </div>
     </div>
-  </div>
+</div>
 {% endblock content %}
+
 
 # File: cs_nea/templates/users/two_factor_verify.html
 {% extends "_base.html" %}
@@ -1453,119 +1738,289 @@ function calendarData() {
 
 
 # File: cs_nea/templates/users/student_templates/student_teachers.html
-{% extends "dashboard/student_dashboard.html" %}
-
+{% extends "_dashboard.html" %}
+{% load static %}
+{% block name %}Teachers{% endblock %}
 {% block content %}
-<h2>My Teachers</h2>
-{% if teachers %}
-    <ul>
-    {% for teacher in teachers %}
-        <li>
-            {{ teacher.user.get_full_name }} ({{ teacher.user.email }})
-            <p>Extra Info: {{ teacher.extra_teacher_info }}</p>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>You don't have any teachers yet.</p>
-{% endif %}
+
+<div class="container mx-auto py-6">
+    {% if teachers %}
+    <div class="grid grid-cols-1 gap-6">
+        {% for teacher in teachers %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex flex-col lg:flex-row">
+                <div class="w-full lg:w-1/2 pr-0 lg:pr-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ teacher.user.get_full_name }}</h3>
+                    <p class="mb-1"><span class="font-semibold">Email:</span> {{ teacher.user.email }}</p>
+                    <p class="mb-1"><span class="font-semibold">Phone Number:</span> {{ teacher.user.contact_number }}</p>
+                </div>
+                <div class="w-full lg:w-1/2 mt-4 lg:mt-0 lg:border-l lg:border-gray-200 lg:pl-4">
+                    <h4 class="font-semibold mb-2">Extra Information:</h4>
+                    <p class="text-gray-600">{{ teacher.extra_teacher_info|default:"No additional information provided." }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-lg text-gray-600">You don't have any teachers yet.</p>
+    {% endif %}
+</div>
+
 {% endblock %}
 
 # File: cs_nea/templates/users/student_templates/student_invites.html
-{% extends "dashboard/student_dashboard.html" %}
-
+{% extends "_dashboard.html" %}
+{% load static %}
+{% block name %}Pending Invites{% endblock %}
 {% block content %}
-<h2>Pending Invites</h2>
-{% if invites %}
-    <ul>
-    {% for invite in invites %}
-        <li>
-            Invite from 
-            {% if invite.teacher.user %}
-                {{ invite.teacher.user.get_full_name }}
-            {% else %}
-                Unknown Teacher
+
+<div class="container mx-auto py-6 pr-4">
+    {% if invites %}
+    <div class="space-y-6">
+        {% for invite in invites %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-semibold text-gray-800">
+                        {% if invite.teacher.user %}
+                            {{ invite.teacher.user.get_full_name }}
+                        {% else %}
+                            Unknown Teacher
+                        {% endif %}
+                    </h3>
+                    <p class="text-gray-600">{{ invite.teacher.user.email }}</p>
+                </div>
+                <a href="{% url 'accept_invite' invite.id %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    Accept Invite
+                </a>
+            </div>
+            {% if invite.message %}
+            <div class="mt-4 p-4 bg-gray-100 rounded-md">
+                <h4 class="font-semibold mb-2">Message:</h4>
+                <p class="text-gray-700">{{ invite.message }}</p>
+            </div>
             {% endif %}
-            <p>{{ invite.message }}</p>
-            <a href="{% url 'accept_invite' invite.id %}">Accept</a>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No pending invites.</p>
-{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-lg text-gray-600">No pending invites.</p>
+    {% endif %}
+</div>
+
 {% endblock %}
 
 # File: cs_nea/templates/users/teacher_templates/teacher_students.html
-{% extends "dashboard/teacher_dashboard.html" %}
+{% extends "_dashboard.html" %}
+{% load static %}
+
+{% block name %}My Students{% endblock %}
 
 {% block content %}
-<h2>My Students</h2>
-{% if students %}
-    <ul>
-    {% for student in students %}
-        <li>
-            {{ student.user.get_full_name }} ({{ student.user.email }})
-            <p>Grade: {{ student.grade_level }}</p>
-            <p>Extra Info: {{ student.extra_student_info }}</p>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
+<div class="container mx-auto py-6 pr-4">
+    {% if students %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {% for student in students %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex flex-col lg:flex-row">
+                <div class="w-full lg:w-1/2 pr-0 lg:pr-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ student.user.get_full_name }}</h3>
+                    <p>Email: {{ student.user.email }}</p>
+                    <p>Phone Number: {{ student.user.contact_number }}</p>
+                    <p>Grade: {{ student.grade_level }}</p>
+                    <p>Extra Information: {{ student.extra_student_info }}</p>
+                    <button onclick="toggleNotes('notes-{{ student.student_id }}')" class="mt-2 bg-green-500 text-white px-4 py-2 rounded">Toggle Notes</button>
+                </div>
+
+                <div class="w-full lg:w-1/2 mt-4 lg:mt-0">
+                    <div id="notes-{{ student.student_id }}" class="hidden bg-yellow-100 p-4 rounded-md">
+                        <h4 class="font-semibold mb-2">Notes:</h4>
+                        {% for note in notes %}
+                            {% if note.student == student %}
+                            <div class="mb-2 p-2 bg-white rounded">
+                                <p>{{ note.note_content }}</p>
+                                <p class="text-sm text-gray-500">Created: {{ note.created_at|date:"F d, Y, h:i a" }}</p>
+                                <div class="mt-2">
+                                    <button onclick="showEditForm('{{ note.note_id }}')" class="text-blue-500">Edit</button>
+                                    <form method="post" class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_note">
+                                        <input type="hidden" name="note_id" value="{{ note.note_id }}">
+                                        <button type="submit" class="text-red-500 ml-2">Delete</button>
+                                    </form>
+                                </div>
+                                <div id="edit-form-{{ note.note_id }}" class="hidden mt-2">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="edit_note">
+                                        <input type="hidden" name="note_id" value="{{ note.note_id }}">
+                                        <textarea name="note_content" class="w-full p-2 border rounded">{{ note.note_content }}</textarea>
+                                        <button type="submit" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Update Note</button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        <form method="post" class="mt-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add_note">
+                            <input type="hidden" name="student_id" value="{{ student.student_id }}">
+                            {{ form.note_content }}
+                            <button type="submit" class="mt-2 bg-green-500 text-white px-4 py-2 rounded">Add Note</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
     <p>You don't have any students yet.</p>
-{% endif %}
-<a href="{% url 'invite_student' %}">Invite New Student</a>
+    {% endif %}
+
+    <div class="mt-8">
+        <a href="{% url 'invite_student' %}" class="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition duration-300">Invite New Student</a>
+    </div>
+</div>
+
+<script>
+function toggleExtraInfo(id) {
+    var element = document.getElementById(id);
+    element.classList.toggle('hidden');
+}
+
+function toggleNotes(id) {
+    var element = document.getElementById(id);
+    element.classList.toggle('hidden');
+}
+
+function showEditForm(noteId) {
+    var editForm = document.getElementById('edit-form-' + noteId);
+    editForm.classList.toggle('hidden');
+}
+</script>
 {% endblock %}
-
-
 
 # File: cs_nea/templates/users/teacher_templates/invite_student.html
-{% extends "dashboard/teacher_dashboard.html" %}
+{% extends "_dashboard.html" %}
+{% load widget_tweaks %}
+
+{% block name %}Invite Student{% endblock %}
 
 {% block content %}
-<h2>Invite Student</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    <div class="form-group">
-        {{ form.student_email.errors }}
-        <label for="{{ form.student_email.id_for_label }}">Student's Email:</label>
-        {{ form.student_email }}
-    </div>
-    <div class="form-group">
-        {{ form.message.errors }}
-        <label for="{{ form.message.id_for_label }}">Message (optional):</label>
-        {{ form.message }}
-    </div>
-    <button type="submit">Send Invite</button>
-</form>
-{% endblock %}
+<div class="container mx-auto py-8">
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="w-full">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+                {{ field|add_class:"shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" }}
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <p class="text-red-500 text-xs italic mt-1">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="mt-6">
+            <button
+                type="submit"
+                class="bg-purple-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:bg-purple-600 transition duration-300"
+            >
+                Send Invite
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock content %}
 
 # File: cs_nea/templates/components/notification.html
 {% load static %}
-<div x-data="notificationComponent()" class="relative inline-block text-left mr-4">
-    <button @click="toggleNotifications" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-500 text-white focus:outline-none">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+<div
+    x-data="notificationComponent()"
+    class="relative inline-block text-left mr-4"
+>
+    <button
+        @click="toggleNotifications"
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-500 text-white focus:outline-none"
+    >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
         </svg>
     </button>
 
-    <div x-show="isOpen" @click.away="isOpen = false" class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+    <div
+        x-show="isOpen"
+        @click.away="isOpen = false"
+        class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none"
+        role="menu"
+        aria-orientation="vertical"
+        aria-labelledby="menu-button"
+        tabindex="-1"
+    >
         <div class="py-1 max-h-80 overflow-y-auto" role="none">
-            <template x-for="notification in notifications" :key="notification.id">
+            <template
+                x-for="notification in notifications"
+                :key="notification.id"
+            >
                 <div class="flex items-center px-4 py-3 hover:bg-gray-100">
                     <div class="flex-grow">
-                        <p x-text="notification.content" class="text-sm text-gray-700"></p>
-                        <p x-text="notification.timestamp" class="text-xs text-gray-500"></p>
+                        <p
+                            x-text="notification.content"
+                            class="text-sm text-gray-700"
+                        ></p>
+                        <p
+                            x-text="notification.timestamp"
+                            class="text-xs text-gray-500"
+                        ></p>
                     </div>
-                    <button @click="dismissNotification(notification.id)" class="ml-2 text-gray-400 hover:text-gray-600">
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    <button
+                        @click="dismissNotification(notification.id)"
+                        class="ml-2 text-gray-400 hover:text-gray-600"
+                    >
+                        <svg
+                            class="h-5 w-5"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                clip-rule="evenodd"
+                            />
                         </svg>
                     </button>
                 </div>
             </template>
-            <div x-show="notifications.length === 0" class="px-4 py-3 text-sm text-gray-700">
+            <div
+                x-show="notifications.length === 0"
+                class="px-4 py-3 text-sm text-gray-700"
+            >
                 No new notifications
             </div>
         </div>
@@ -1573,55 +2028,60 @@ function calendarData() {
 </div>
 
 <script>
-function notificationComponent() {
-    return {
-        isOpen: false,
-        notifications: [],
-        toggleNotifications() {
-            this.isOpen = !this.isOpen;
-            if (this.isOpen) {
-                this.fetchNotifications();
-            }
-        },
-        fetchNotifications() {
-            fetch('/communications/get-notifications/')
-                .then(response => response.json())
-                .then(data => {
-                    this.notifications = data;
-                });
-        },
-        dismissNotification(id) {
-            fetch(`/communications/mark-notification-read/${id}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    this.notifications = this.notifications.filter(n => n.id !== id);
+    function notificationComponent() {
+        return {
+            isOpen: false,
+            notifications: [],
+            toggleNotifications() {
+                this.isOpen = !this.isOpen;
+                if (this.isOpen) {
+                    this.fetchNotifications();
                 }
-            });
-        }
+            },
+            fetchNotifications() {
+                fetch("/get_notifications/")
+                    .then((response) => response.json())
+                    .then((data) => {
+                        this.notifications = data;
+                    });
+            },
+            dismissNotification(id) {
+                fetch(`/mark_notification_read/${id}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.status === "success") {
+                            this.notifications = this.notifications.filter(
+                                (n) => n.id !== id
+                            );
+                        }
+                    });
+            },
+        };
     }
-}
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === name + "=") {
+                    cookieValue = decodeURIComponent(
+                        cookie.substring(name.length + 1)
+                    );
+                    break;
+                }
             }
         }
+        return cookieValue;
     }
-    return cookieValue;
-}
 </script>
+
 
 # File: cs_nea/templates/components/current_user.html
 {% load static %}
@@ -1787,18 +2247,35 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from datetime import date
-from .forms import StudentLessonRequestForm, TeacherLessonRequestForm, OtherEventForm, LessonForm
-from .models import Student, Teacher, Lesson, OtherEvent, LessonRequest
+from .forms import (
+    StudentLessonRequestForm,
+    TeacherLessonRequestForm,
+    OtherEventForm,
+    LessonForm,
+    RescheduleLessonForm,
+)
+from .models import (
+    Student,
+    Teacher,
+    Lesson,
+    OtherEvent,
+    LessonRequest,
+    ReschedulingRequest,
+)
 from .calendar_utils import LessonCalendar
 from communications.models import Notification
+from datetime import timedelta
+from django.db import transaction
+from communications.models import Notification, NotificationConfig
 
-
-# Predefined functions to check user type
-def is_student(user):
-    return user.user_type == 1
 
 def is_teacher(user):
     return user.user_type == 2
+
+
+def is_student(user):
+    return user.user_type == 1
+
 
 # Student lesson request form
 @login_required
@@ -1809,20 +2286,37 @@ def student_lesson_request(request):
         if form.is_valid():
             lesson_request = form.save(commit=False)
             lesson_request.student = request.user.student
+            lesson_request.is_rescheduling = False
             lesson_request.save()
-            
-            if lesson_request.teacher.user.notification_preferences.lesson_requests:
-                Notification.objects.create(
-                    receiver=lesson_request.teacher.user,
-                    content=f"New lesson request from {request.user.get_full_name()}"
+
+            teacher = lesson_request.teacher
+            # Get or create NotificationConfig for the teacher
+            notification_config, created = NotificationConfig.objects.get_or_create(
+                user=teacher.user
+            )
+
+            if notification_config.receive_notification:
+                recurring_text = (
+                    f" (recurring {lesson_request.recurring_amount} times)"
+                    if lesson_request.recurring_amount > 1
+                    else ""
                 )
-            
+                Notification.objects.create(
+                    receiver=teacher.user,
+                    content=f"New lesson request from {request.user.get_full_name()}{recurring_text}",
+                )
+
             messages.success(request, "Lesson request submitted successfully!")
             return redirect("dashboard")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = StudentLessonRequestForm()
 
     return render(request, "scheduling/student_schedule_lesson.html", {"form": form})
+
 
 # Teacher lesson request form
 @login_required
@@ -1833,49 +2327,80 @@ def teacher_lesson_request(request):
         if form.is_valid():
             lesson_request = form.save(commit=False)
             lesson_request.teacher = request.user.teacher
+            lesson_request.is_rescheduling = False
             lesson_request.is_sent_by_teacher = True
-            
-            if form.cleaned_data['send_request']:
+
+            if form.cleaned_data["send_request"]:
                 lesson_request.save()
-                if lesson_request.student.user.notification_preferences.lesson_requests:
-                    Notification.objects.create(
-                        receiver=lesson_request.student.user,
-                        content=f"New lesson request from {request.user.get_full_name()}"
+                student = lesson_request.student
+
+                # Get or create NotificationConfig for the teacher
+                notification_config, created = NotificationConfig.objects.get_or_create(
+                    user=student.user
+                )
+
+                if notification_config.receive_notification:
+                    recurring_text = (
+                        f" (recurring {lesson_request.recurring_amount} times)"
+                        if lesson_request.recurring_amount > 1
+                        else ""
                     )
+                    Notification.objects.create(
+                        receiver=student.user,
+                        content=f"New lesson request from {request.user.get_full_name()}{recurring_text}",
+                    )
+
                 messages.success(request, "Lesson request sent to student.")
             else:
-                lesson = Lesson.objects.create(
-                    student=lesson_request.student,
-                    teacher=request.user.teacher,
-                    start_datetime=lesson_request.requested_datetime,
-                    end_datetime=lesson_request.requested_datetime + lesson_request.duration,
-                    is_recurring=lesson_request.is_recurring
+                # Create multiple lessons based on recurring amount
+                lesson_duration = (
+                    lesson_request.end_datetime - lesson_request.requested_datetime
                 )
+
+                for i in range(lesson_request.recurring_amount):
+                    start_time = lesson_request.requested_datetime + timedelta(weeks=i)
+                    end_time = start_time + lesson_duration
+
+                    Lesson.objects.create(
+                        student=lesson_request.student,
+                        teacher=request.user.teacher,
+                        start_datetime=start_time,
+                        end_datetime=end_time,
+                    )
+
                 if lesson_request.student.user.notification_preferences.lessons:
+                    recurring_text = (
+                        f" (recurring {lesson_request.recurring_amount} times)"
+                        if lesson_request.recurring_amount > 1
+                        else ""
+                    )
                     Notification.objects.create(
                         receiver=lesson_request.student.user,
-                        content=f"New lesson scheduled with {request.user.get_full_name()}"
+                        content=f"New lesson{recurring_text} scheduled with {request.user.get_full_name()}",
                     )
-                messages.success(request, "Lesson scheduled successfully.")
-            
+                messages.success(
+                    request,
+                    f"{lesson_request.recurring_amount} lesson{'s' if lesson_request.recurring_amount > 1 else ''} scheduled successfully.",
+                )
+
             return redirect("dashboard")
     else:
         form = TeacherLessonRequestForm()
 
     return render(request, "scheduling/teacher_schedule_lesson.html", {"form": form})
 
+
 # Create lesson view
+@login_required
 def create_lesson(request):
     if request.method == "POST":
         form = LessonForm(request.POST)
         if form.is_valid():
             lesson = form.save(commit=False)
-            lesson.student = Student.objects.get(
-                user=request.user
-            )  # Assuming the logged-in user is a student
+            lesson.student = Student.objects.get(user=request.user)
             lesson.save()
             messages.success(request, "Lesson created successfully!")
-            return redirect("lesson_list")  # Redirect to a list of lessons or dashboard
+            return redirect("lesson_list")
     else:
         form = LessonForm()
 
@@ -1883,6 +2408,7 @@ def create_lesson(request):
 
 
 # Create other event view
+@login_required
 def create_other_event(request):
     if request.method == "POST":
         form = OtherEventForm(request.POST)
@@ -1900,44 +2426,233 @@ def create_other_event(request):
     return render(request, "scheduling/create_other_event.html", {"form": form})
 
 
+# View for listing lessons requests
+@login_required
+def lesson_requests(request):
+    if request.user.user_type == 1:
+        scheduling_requests = LessonRequest.objects.filter(
+            student=request.user.student, is_approved=False, is_rescheduling=False
+        )
+        rescheduling_requests = ReschedulingRequest.objects.filter(
+            original_lesson__student=request.user.student, is_approved=False
+        )
+    else:
+        scheduling_requests = LessonRequest.objects.filter(
+            teacher=request.user.teacher, is_approved=False, is_rescheduling=False
+        )
+        rescheduling_requests = ReschedulingRequest.objects.filter(
+            original_lesson__teacher=request.user.teacher, is_approved=False
+        )
+
+    context = {
+        "scheduling_requests": scheduling_requests,
+        "rescheduling_requests": rescheduling_requests,
+    }
+    return render(request, "scheduling/lesson_requests.html", context)
 
 
+# View for accepting a lesson request
+@login_required
+def accept_lesson_request(request, request_id):
+    lesson_request = get_object_or_404(LessonRequest, pk=request_id)
+
+    if (
+        request.user.user_type == 1 and lesson_request.student != request.user.student
+    ) or (
+        request.user.user_type == 2 and lesson_request.teacher != request.user.teacher
+    ):
+        messages.error(request, "You don't have permission to accept this request.")
+        return redirect("lesson_requests")
+
+    try:
+        with transaction.atomic():
+            lesson_duration = (
+                lesson_request.end_datetime - lesson_request.requested_datetime
+            )
+
+            for i in range(lesson_request.recurring_amount):
+                start_time = lesson_request.requested_datetime + timedelta(weeks=i)
+                end_time = start_time + lesson_duration
+
+                Lesson.objects.create(
+                    student=lesson_request.student,
+                    teacher=lesson_request.teacher,
+                    start_datetime=start_time,
+                    end_datetime=end_time,
+                    request=lesson_request,
+                )
+
+            lesson_request.is_approved = True
+            lesson_request.save()
+
+            messages.success(
+                request,
+                f"{lesson_request.recurring_amount} lesson{'s' if lesson_request.recurring_amount > 1 else ''} scheduled successfully.",
+            )
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+
+    return redirect("lesson_requests")
+
+
+# View for declining a lesson request
+@login_required
+def decline_lesson_request(request, request_id):
+    lesson_request = get_object_or_404(LessonRequest, pk=request_id)
+
+    if (
+        request.user.user_type == 1 and lesson_request.student != request.user.student
+    ) or (
+        request.user.user_type == 2 and lesson_request.teacher != request.user.teacher
+    ):
+        messages.error(request, "You don't have permission to decline this request.")
+        return redirect("lesson_requests")
+
+    lesson_request.delete()
+    messages.success(request, "Lesson request declined and deleted.")
+    return redirect("lesson_requests")
 
 
 # Calendar views
 @login_required
 def calendar_view(request):
-    return render(request, 'scheduling/calendar.html')
+    return render(request, "scheduling/calendar.html")
+
 
 # Calendar refresh view
 @login_required
 def get_calendar_data(request):
-    year = int(request.GET.get('year'))
-    month = int(request.GET.get('month'))
-    view_type = request.GET.get('view_type', 'month')
-    
+    year = int(request.GET.get("year"))
+    month = int(request.GET.get("month"))
+    view_type = request.GET.get("view_type", "month")
+
     # Fetch events for the entire month
     start_date = date(year, month, 1)
     end_date = date(year, month + 1, 1) if month < 12 else date(year + 1, 1, 1)
-    
+
     lessons = Lesson.objects.filter(
-        start_datetime__gte=start_date,
-        start_datetime__lt=end_date
+        start_datetime__gte=start_date, start_datetime__lt=end_date
     )
     other_events = OtherEvent.objects.filter(
-        start_datetime__gte=start_date,
-        start_datetime__lt=end_date
+        start_datetime__gte=start_date, start_datetime__lt=end_date
     )
-    
-    if view_type == 'month':
+
+    if view_type == "month":
         cal = LessonCalendar(year, month, lessons=lessons, other_events=other_events)
         html_cal = cal.formatmonth(withyear=True)
     else:  # week view
-        week = int(request.GET.get('week', 1))
-        cal = LessonCalendar(year, month, week, lessons=lessons, other_events=other_events)
+        week = int(request.GET.get("week", 1))
+        cal = LessonCalendar(
+            year, month, week, lessons=lessons, other_events=other_events
+        )
         html_cal = cal.formatweek_view()
-    
-    return JsonResponse({'calendar_html': html_cal})
+
+    return JsonResponse({"calendar_html": html_cal})
+
+
+# Reschedule lesson view
+@login_required
+def reschedule_lesson(request):
+    if request.method == "POST":
+        form = RescheduleLessonForm(request.POST, user=request.user)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    rescheduling_request = form.save(commit=False)
+                    rescheduling_request.requested_by = request.user
+                    rescheduling_request.original_lesson = form.cleaned_data["lesson"]
+                    rescheduling_request.save()
+
+                    # Create notification for the other party
+                    other_user = (
+                        rescheduling_request.original_lesson.teacher.user
+                        if request.user.user_type == 1
+                        else rescheduling_request.original_lesson.student.user
+                    )
+                    Notification.objects.create(
+                        receiver=other_user,
+                        content=f"New rescheduling request for lesson on {rescheduling_request.original_lesson.start_datetime}",
+                    )
+
+                messages.success(
+                    request, "Rescheduling request submitted successfully!"
+                )
+                return redirect("dashboard")
+            except Exception as e:
+                messages.error(request, f"An error occurred: {str(e)}")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = RescheduleLessonForm(user=request.user)
+
+    return render(request, "scheduling/reschedule_lesson.html", {"form": form})
+
+
+@login_required
+def accept_rescheduling_request(request, rescheduling_request_id):
+    rescheduling_request = get_object_or_404(
+        ReschedulingRequest, id=rescheduling_request_id
+    )
+
+    if request.user.user_type == 1:  # Student
+        if request.user.student != rescheduling_request.original_lesson.student:
+            messages.error(
+                request,
+                "You don't have permission to accept this rescheduling request.",
+            )
+            return redirect("lesson_requests")
+    elif request.user.user_type == 2:  # Teacher
+        if request.user.teacher != rescheduling_request.original_lesson.teacher:
+            messages.error(
+                request,
+                "You don't have permission to accept this rescheduling request.",
+            )
+            return redirect("lesson_requests")
+    else:
+        messages.error(request, "Invalid user type.")
+        return redirect("lesson_requests")
+
+    try:
+        new_lesson = rescheduling_request.approve()
+        messages.success(
+            request, f"Lesson rescheduled successfully to {new_lesson.start_datetime}."
+        )
+    except Exception as e:
+        messages.error(request, f"An error occurred while rescheduling: {str(e)}")
+
+    return redirect("lesson_requests")
+
+
+@login_required
+def decline_rescheduling_request(request, rescheduling_request_id):
+    rescheduling_request = get_object_or_404(
+        ReschedulingRequest, id=rescheduling_request_id
+    )
+
+    if request.user.user_type == 1:  # Student
+        if request.user.student != rescheduling_request.original_lesson.student:
+            messages.error(
+                request,
+                "You don't have permission to decline this rescheduling request.",
+            )
+            return redirect("lesson_requests")
+    elif request.user.user_type == 2:  # Teacher
+        if request.user.teacher != rescheduling_request.original_lesson.teacher:
+            messages.error(
+                request,
+                "You don't have permission to decline this rescheduling request.",
+            )
+            return redirect("lesson_requests")
+    else:
+        messages.error(request, "Invalid user type.")
+        return redirect("lesson_requests")
+
+    rescheduling_request.delete()
+    messages.success(request, "Rescheduling request declined and deleted.")
+    return redirect("lesson_requests")
+
 
 # File: cs_nea/scheduling/__init__.py
 
@@ -1957,6 +2672,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 from users.models import Student, Teacher
+from django.db import transaction
+from communications.models import Notification
 
 # Lesson request model, used to request a lesson with a teacher
 class LessonRequest(models.Model):
@@ -1965,25 +2682,22 @@ class LessonRequest(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     requested_datetime = models.DateTimeField()
     is_approved = models.BooleanField(default=False)
-    is_rescheduling = models.BooleanField()
-    original_lesson = models.ForeignKey('Lesson', on_delete=models.SET_NULL, null=True, blank=True)
-    request_reason = models.CharField(max_length=255)
-    duration = models.DurationField()
-    recurring_amount = models.IntegerField()
+    request_reason = models.CharField(max_length=255)   
+    end_datetime = models.DateTimeField(default=1)
+    recurring_amount = models.IntegerField(default=False)
     
     # Additional fields from iteration 2
     is_sent_by_teacher = models.BooleanField(default=False)
-    is_recurring = models.BooleanField(default=False)
 
     def clean(self):
         if self.requested_datetime <= timezone.now():
             raise ValidationError("Requested datetime must be in the future.")
         if not self.request_reason.strip():
             raise ValidationError("Request reason cannot be empty or just whitespace.")
-        if self.duration < timedelta(minutes=15) or self.duration > timedelta(hours=3):
-            raise ValidationError("Duration must be between 15 minutes and 3 hours.")
-        if self.is_recurring and (self.recurring_amount < 1 or self.recurring_amount > 52):
-            raise ValidationError("For recurring lessons, recurring amount must be between 1 and 52.")
+        if self.end_datetime <= self.requested_datetime:
+            raise ValidationError("End datetime must be after the requested datetime.")
+        if self.recurring_amount < 1 or self.recurring_amount > 52:
+            raise ValidationError("Recurring amount must be between 1 and 52.")
 
 # Lesson model, used store scheduled lessons
 class Lesson(models.Model):
@@ -1992,15 +2706,23 @@ class Lesson(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     request = models.ForeignKey(LessonRequest, on_delete=models.SET_NULL, null=True)
     start_datetime = models.DateTimeField()
-    student_attendance = models.BooleanField()
+    student_attendance = models.BooleanField(default=False)
     end_datetime = models.DateTimeField()
 
+    # Additional fields from iteration 2
+    is_rescheduled = models.BooleanField(default=False)
+    rescheduled_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='rescheduled_from')
+    
     def clean(self):
         if self.start_datetime <= timezone.now():
             raise ValidationError("Start datetime must be in the future.")
         if self.end_datetime <= self.start_datetime:
             raise ValidationError("End datetime must be after the start datetime.")
-
+        
+    def __str__(self):
+        return f"{self.start_datetime.strftime('%Y-%m-%d %H:%M')} - {self.teacher.user.get_full_name()}"
+        
+    
 # Other event model, used to schedule events that are not lessons
 class OtherEvent(models.Model):
     event_id = models.AutoField(primary_key=True)
@@ -2019,76 +2741,216 @@ class OtherEvent(models.Model):
             raise ValidationError("Event description cannot be empty or just whitespace.")
         if self.recurring_amount < 1 or self.recurring_amount > 52:
             raise ValidationError("Recurring amount must be between 1 and 52.")
+        
+
+# Rescheduling request model, used to request a rescheduling of a lesson
+class ReschedulingRequest(models.Model):
+    rescheduling_id = models.AutoField(primary_key=True)
+    original_lesson = models.ForeignKey('Lesson', on_delete=models.CASCADE, related_name='rescheduling_requests')
+    requested_by = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    requested_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+    request_reason = models.TextField()
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def clean(self):
+        if self.requested_datetime <= timezone.now():
+            raise ValidationError("Requested datetime must be in the future.")
+        if self.end_datetime <= self.requested_datetime:
+            raise ValidationError("End datetime must be after the requested datetime.")
+
+    def __str__(self):
+        return f"Rescheduling request for lesson {self.original_lesson.id} on {self.requested_datetime}"
+    
+    # Instead of this in the views.py file, we implement in the model to save space.
+    @transaction.atomic
+    def approve(self):
+        original_lesson = self.original_lesson
+        
+        # Create new lesson
+        new_lesson = Lesson.objects.create(
+            student=original_lesson.student,
+            teacher=original_lesson.teacher,
+            start_datetime=self.requested_datetime,
+            end_datetime=self.end_datetime,
+            student_attendance=False  # Reset attendance for new lesson
+        )
+        
+        # Update original lesson
+        original_lesson.is_rescheduled = True
+        original_lesson.rescheduled_to = new_lesson
+        original_lesson.save()
+        
+        # Update rescheduling request
+        self.is_approved = True
+        self.save()
+        
+        # Create notifications
+        Notification.objects.create(
+            receiver=original_lesson.student.user,
+            content=f"Lesson on {original_lesson.start_datetime} has been rescheduled to {new_lesson.start_datetime}"
+        )
+        Notification.objects.create(
+            receiver=original_lesson.teacher.user,
+            content=f"Lesson on {original_lesson.start_datetime} has been rescheduled to {new_lesson.start_datetime}"
+        )
+        
+        return new_lesson
 
 # File: cs_nea/scheduling/forms.py
 from django import forms
-from .models import LessonRequest, Lesson, OtherEvent
+from .models import LessonRequest, Lesson, OtherEvent, ReschedulingRequest
 from django.utils import timezone
 from datetime import timedelta
 from users.models import Teacher, Student
 
+
 # Lesson request form for students
 class StudentLessonRequestForm(forms.ModelForm):
-    teacher = forms.ModelChoiceField(queryset=Teacher.objects.all())
-
     class Meta:
         model = LessonRequest
-        fields = ['teacher', 'requested_datetime', 'request_reason', 'duration', 'is_recurring', 'recurring_amount']
+        fields = [
+            "teacher",
+            "requested_datetime",
+            "end_datetime",
+            "request_reason",
+            "recurring_amount",
+        ]
         widgets = {
-            'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'duration': forms.TimeInput(attrs={'type': 'time'}),
+            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
+
 
 # Lesson request form for teachers
 class TeacherLessonRequestForm(forms.ModelForm):
-    student = forms.ModelChoiceField(queryset=Student.objects.all())
-    send_request = forms.BooleanField(required=False, initial=True)
+    send_request = forms.BooleanField(required=True, initial=True)
 
     class Meta:
         model = LessonRequest
-        fields = ['student', 'requested_datetime', 'request_reason', 'duration', 'is_recurring', 'recurring_amount']
+        fields = [
+            "student",
+            "requested_datetime",
+            "end_datetime",
+            "request_reason",
+            "recurring_amount",
+        ]
         widgets = {
-            'requested_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'duration': forms.TimeInput(attrs={'type': 'time'}),
+            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
-    
+
+
 # Corresponding Django form for the Lesson model
 class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson
-        fields = ['student', 'teacher', 'start_datetime', 'end_datetime', 'student_attendance']
+        fields = [
+            "student",
+            "teacher",
+            "start_datetime",
+            "end_datetime",
+            "student_attendance",
+        ]
+        widgets = {
+            "start_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        }
 
     def clean(self):
         cleaned_data = super().clean()
-        start_datetime = cleaned_data.get('start_datetime')
-        end_datetime = cleaned_data.get('end_datetime')
+        start_datetime = cleaned_data.get("start_datetime")
+        end_datetime = cleaned_data.get("end_datetime")
 
         if start_datetime and start_datetime <= timezone.now():
             raise forms.ValidationError("Start datetime must be in the future.")
         if start_datetime and end_datetime and end_datetime <= start_datetime:
-            raise forms.ValidationError("End datetime must be after the start datetime.")
+            raise forms.ValidationError(
+                "End datetime must be after the start datetime."
+            )
+
+        return cleaned_data
+
 
 # Corresponding Django form for the OtherEvent model
 class OtherEventForm(forms.ModelForm):
     class Meta:
         model = OtherEvent
-        fields = ['teacher', 'start_datetime', 'end_datetime', 'event_description', 'recurring_amount']
+        fields = [
+            "teacher",
+            "start_datetime",
+            "end_datetime",
+            "event_description",
+            "recurring_amount",
+        ]
 
     def clean(self):
         cleaned_data = super().clean()
-        start_datetime = cleaned_data.get('start_datetime')
-        end_datetime = cleaned_data.get('end_datetime')
-        event_description = cleaned_data.get('event_description')
-        recurring_amount = cleaned_data.get('recurring_amount')
+        start_datetime = cleaned_data.get("start_datetime")
+        end_datetime = cleaned_data.get("end_datetime")
+        event_description = cleaned_data.get("event_description")
+        recurring_amount = cleaned_data.get("recurring_amount")
 
         if start_datetime and start_datetime <= timezone.now():
             raise forms.ValidationError("Start datetime must be in the future.")
         if start_datetime and end_datetime and end_datetime <= start_datetime:
-            raise forms.ValidationError("End datetime must be after the start datetime.")
+            raise forms.ValidationError(
+                "End datetime must be after the start datetime."
+            )
         if not event_description or not event_description.strip():
-            raise forms.ValidationError("Event description cannot be empty or just whitespace.")
+            raise forms.ValidationError(
+                "Event description cannot be empty or just whitespace."
+            )
         if recurring_amount and (recurring_amount < 1 or recurring_amount > 52):
             raise forms.ValidationError("Recurring amount must be between 1 and 52.")
+
+
+# Reschedule lesson form
+class RescheduleLessonForm(forms.ModelForm):
+    lesson = forms.ModelChoiceField(
+        queryset=None,
+        label="Select Lesson to Reschedule",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = ReschedulingRequest
+        fields = ['lesson', 'requested_datetime', 'end_datetime', 'request_reason']
+        widgets = {
+            'requested_datetime': forms.DateTimeInput(
+                attrs={'type': 'datetime-local', 'class': 'form-control'},
+                format='%Y-%m-%dT%H:%M'
+            ),
+            'end_datetime': forms.DateTimeInput(
+                attrs={'type': 'datetime-local', 'class': 'form-control'},
+                format='%Y-%m-%dT%H:%M'
+            ),
+            'request_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(RescheduleLessonForm, self).__init__(*args, **kwargs)
+        if self.user:
+            if self.user.user_type == 1:  
+                self.fields['lesson'].queryset = Lesson.objects.filter(student=self.user.student, is_rescheduled=False).order_by('start_datetime')
+            else:   
+                self.fields['lesson'].queryset = Lesson.objects.filter(teacher=self.user.teacher, is_rescheduled=False).order_by('start_datetime')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        requested_datetime = cleaned_data.get('requested_datetime')
+        end_datetime = cleaned_data.get('end_datetime')
+
+        if requested_datetime and requested_datetime <= timezone.now():
+            raise forms.ValidationError("Requested datetime must be in the future.")
+
+        if end_datetime and requested_datetime and end_datetime <= requested_datetime:
+            raise forms.ValidationError("End datetime must be after the requested datetime.")
+
+        return cleaned_data
+
 
 # File: cs_nea/scheduling/tests.py
 from django.test import TestCase
@@ -2106,8 +2968,20 @@ urlpatterns = [
     path("calendar/", views.calendar_view, name="calendar"),
     path('get_calendar_data/', views.get_calendar_data, name='get_calendar_data'),
     
+    # Path for creating student and teacher lesson requests
     path('student/request_lesson/', views.student_lesson_request, name='student_lesson_request'),
     path('teacher/request_lesson/', views.teacher_lesson_request, name='teacher_lesson_request'),
+    
+    # Path for accepting and listing lesson requests
+    path('lesson_requests/', views.lesson_requests, name='lesson_requests'),
+    path('accept_lesson_request/<int:request_id>/', views.accept_lesson_request, name='accept_lesson_request'),
+    
+    # Path for declining lesson requests
+    path('decline_lesson_request/<int:request_id>/', views.decline_lesson_request, name='decline_lesson_request'),
+    
+    # Path for rescheduling lesson requests
+    path('reschedule_lesson/', views.reschedule_lesson, name='reschedule_lesson'),
+    path('accept-rescheduling/<int:rescheduling_request_id>/', views.accept_rescheduling_request, name='accept_rescheduling_request'),
 ]
 
 
@@ -2229,10 +3103,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from .models import Notification, Assignment
+from .models import Notification, Assignment, Note
 from django.contrib.auth import get_user_model
 from .forms import AssignmentForm
 from django.utils import timezone
+from users.models import Student
 
 
 User = get_user_model()
@@ -2345,7 +3220,6 @@ def mark_completed(request, assignment_id):
 
     messages.success(request, "Task marked as completed.")
     return redirect("assignment_list")
-
 
 # File: cs_nea/communications/consumers.py
 import json
@@ -2483,6 +3357,8 @@ class NotificationConfig(models.Model):
     t2r_requests = models.BooleanField(default=True)
     cancellation_notification = models.BooleanField(default=True)
 
+    def __str__(self):
+        return f"Notification Config for {self.user.username}"
 
 # Notification model
 class Notification(models.Model):
@@ -2544,6 +3420,17 @@ class Assignment(models.Model):
     def __str__(self):
         return f"Task for {self.student} by {self.teacher}"
 
+# Model for student notes
+class Note(models.Model):
+    note_id = models.AutoField(primary_key=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    note_content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Note for {self.student} by {self.teacher}"
+
 
 # File: cs_nea/communications/routing.py
 from django.urls import re_path
@@ -2558,7 +3445,6 @@ websocket_urlpatterns = [
 from django import forms
 from .models import Assignment
 from users.models import Student
-
 
 class AssignmentForm(forms.ModelForm):
     class Meta:
@@ -2577,15 +3463,16 @@ class AssignmentForm(forms.ModelForm):
             )
 
 
+
 # File: cs_nea/communications/urls.py
 from django.urls import path
 from . import views
 
 urlpatterns = [
     # Notification URLs
-    path("get-notifications/", views.get_notifications, name="get_notifications"),
+    path("get_notifications/", views.get_notifications, name="get_notifications"),
     path(
-        "mark-notification-read/<int:notification_id>/",
+        "mark_notification_read/<int:notification_id>/",
         views.mark_notification_read,
         name="mark_notification_read",
     ),
@@ -2604,7 +3491,7 @@ urlpatterns = [
         "assignments/<int:assignment_id>/complete/",
         views.mark_completed,
         name="mark_completed",
-    ),
+    ), 
 ]
 
 
@@ -2636,8 +3523,10 @@ from .forms import (
     PasswordResetForm,
     UserSettingsForm,
     InviteForm,
+    NoteForm,
 )
 from .models import Student, Teacher, User, Invite
+from communications.models import Note
 
 
 def index(request):
@@ -2652,6 +3541,15 @@ def login(request):
             password = form.cleaned_data.get("password")
             user = authenticate(request, username=email, password=password)
             if user is not None:
+                if 'teacher/login' in request.path:
+                    if not user.user_type == 2:
+                        messages.error(request, "This is not a teacher account")
+                        return redirect("teacher_login")
+                elif 'student/login' in request.path:
+                    if not user.user_type == 1:
+                        messages.error(request, "This is not a student account")
+                        return redirect("student_login")
+
                 if user.two_factor_enabled:
                     user.generate_two_factor_code()
                     send_two_factor_code(user)
@@ -2805,8 +3703,6 @@ def send_password_reset_link(request, user):
     send_mail(subject, message, "noreply@example.com", [user.email])
 
 
-
-
 def signup(request):
     if request.path == "/student/signup":
         form_class = StudentSignupForm
@@ -2936,15 +3832,7 @@ def accept_invite(request, invite_id):
     return redirect("student_dashboard")
 
 
-@login_required
-@user_passes_test(lambda u: u.user_type == 2)
-def teacher_students(request):
-    teacher = request.user.teacher
-    accepted_invites = Invite.objects.filter(teacher=teacher, status="accepted")
-    students = [invite.student for invite in accepted_invites]
-    return render(request, "users/teacher_templates/teacher_students.html", {"students": students})
-
-
+# Views for notes
 @login_required
 @user_passes_test(lambda u: u.user_type == 1)
 def student_teachers(request):
@@ -2952,6 +3840,54 @@ def student_teachers(request):
     accepted_invites = Invite.objects.filter(student=student, status="accepted")
     teachers = [invite.teacher for invite in accepted_invites]
     return render(request, "users/student_templates/student_teachers.html", {"teachers": teachers})
+
+@login_required
+@user_passes_test(lambda u: u.user_type == 2)
+def teacher_students(request):
+    teacher = request.user.teacher
+    accepted_invites = Invite.objects.filter(teacher=teacher, status="accepted")
+    students = [invite.student for invite in accepted_invites]
+    notes = Note.objects.filter(teacher=teacher)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add_note':
+            form = NoteForm(request.POST)
+            if form.is_valid():
+                note = form.save(commit=False)
+                note.teacher = teacher
+                note.student_id = request.POST.get('student_id')
+                note.save()
+                messages.success(request, 'Note added successfully.')
+            else:
+                messages.error(request, 'Error adding note. Please try again.')
+        elif action == 'edit_note':
+            note_id = request.POST.get('note_id')
+            note = get_object_or_404(Note, note_id=note_id, teacher=teacher)
+            form = NoteForm(request.POST, instance=note)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Note updated successfully.')
+            else:
+                messages.error(request, 'Error updating note. Please try again.')
+        elif action == 'delete_note':
+            note_id = request.POST.get('note_id')
+            note = get_object_or_404(Note, note_id=note_id, teacher=teacher)
+            note.delete()
+            messages.success(request, 'Note deleted successfully.')
+
+        return redirect('teacher_students')
+
+    context = {
+        'students': students,
+        'notes': notes,
+        'form': NoteForm(),
+    }
+    return render(request, 'users/teacher_templates/teacher_students.html', context)
+
+
+
+
 
 
 # File: cs_nea/users/__init__.py
@@ -3137,7 +4073,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .models import User, Student, Teacher, Invite
-
+from communications.models import Note
 from phonenumber_field.formfields import SplitPhoneNumberField
 
 
@@ -3270,54 +4206,98 @@ class PasswordResetForm(forms.Form):
 # FIXME: Some fields should be greyed out and non-editable
 class UserSettingsForm(forms.ModelForm):
     current_password = forms.CharField(widget=forms.PasswordInput(), required=False)
-    new_password = forms.CharField(widget=forms.PasswordInput(), required=False, validators=[validate_password])
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(), required=False, validators=[validate_password]
+    )
     confirm_new_password = forms.CharField(widget=forms.PasswordInput(), required=False)
-    
+
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'contact_number', 'two_factor_enabled']
-        
+        fields = [
+            "first_name",
+            "last_name",
+            "email",
+            "contact_number",
+            "two_factor_enabled",
+        ]
+        widgets = {
+            "email": forms.EmailInput(
+                attrs={
+                    "disabled": "disabled",
+                    "class": "bg-neutral-200"
+                }
+            ),
+            "first_name": forms.TextInput(
+                attrs={
+                    "disabled": "disabled",
+                    "class": "bg-neutral-200"
+                }
+            ),
+            "last_name": forms.TextInput(
+                attrs={
+                    "disabled": "disabled",
+                    "class": "bg-neutral-200"
+                }
+            ),
+        }
+
     def clean(self):
         cleaned_data = super().clean()
         current_password = cleaned_data.get("current_password")
         new_password = cleaned_data.get("new_password")
         confirm_new_password = cleaned_data.get("confirm_new_password")
-        
+
         if new_password:
             if not current_password:
-                raise forms.ValidationError("Current password is required to set a new password")
+                raise forms.ValidationError(
+                    "Current password is required to set a new password"
+                )
             if new_password != confirm_new_password:
                 raise forms.ValidationError("New passwords do not match")
-        
+
         return cleaned_data
-    
+
+
 # Invite form
 class InviteForm(forms.Form):
     student_email = forms.EmailField(label="Student's Email")
     message = forms.CharField(widget=forms.Textarea, max_length=500, required=False)
 
     def __init__(self, *args, **kwargs):
-        self.teacher = kwargs.pop('teacher', None)
+        self.teacher = kwargs.pop("teacher", None)
         super(InviteForm, self).__init__(*args, **kwargs)
 
     def clean_student_email(self):
-        email = self.cleaned_data['student_email']
+        email = self.cleaned_data["student_email"]
         try:
             user = User.objects.get(email=email, user_type=1)  # 1 is for Student
             student = user.student
-            
+
             # Check if an invite from this teacher already exists
-            existing_invite = Invite.objects.filter(student=student, teacher=self.teacher).first()
+            existing_invite = Invite.objects.filter(
+                student=student, teacher=self.teacher
+            ).first()
             if existing_invite:
                 if existing_invite.status == "accepted":
-                    raise ValidationError("You are already connected with this student.")
+                    raise ValidationError(
+                        "You are already connected with this student."
+                    )
                 elif existing_invite.status == "pending":
-                    raise ValidationError("You have already sent an invite to this student.")
+                    raise ValidationError(
+                        "You have already sent an invite to this student."
+                    )
         except User.DoesNotExist:
             raise ValidationError("No student account found with this email address.")
         return email
 
 
+class NoteForm(forms.ModelForm):
+    class Meta:
+        model = Note
+        fields = ["note_content"]
+        widgets = {
+            "note_content": forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
+        }
 
 
 # File: cs_nea/users/urls.py
@@ -3364,6 +4344,7 @@ urlpatterns = [
     path('invite_student/', invite_student, name='invite_student'),
     path('student_invites/', student_invites, name='student_invites'),
     path('accept_invite/<int:invite_id>/', accept_invite, name='accept_invite'),
+    # Notes URLs         
     path('teacher_students/', teacher_students, name='teacher_students'),
     path('student_teachers/', student_teachers, name='student_teachers'),
 ]

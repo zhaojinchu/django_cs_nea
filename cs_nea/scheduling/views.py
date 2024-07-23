@@ -10,7 +10,14 @@ from .forms import (
     LessonForm,
     RescheduleLessonForm,
 )
-from .models import Student, Teacher, Lesson, OtherEvent, LessonRequest
+from .models import (
+    Student,
+    Teacher,
+    Lesson,
+    OtherEvent,
+    LessonRequest,
+    ReschedulingRequest,
+)
 from .calendar_utils import LessonCalendar
 from communications.models import Notification
 from datetime import timedelta
@@ -82,7 +89,7 @@ def teacher_lesson_request(request):
             if form.cleaned_data["send_request"]:
                 lesson_request.save()
                 student = lesson_request.student
-                
+
                 # Get or create NotificationConfig for the teacher
                 notification_config, created = NotificationConfig.objects.get_or_create(
                     user=student.user
@@ -98,7 +105,7 @@ def teacher_lesson_request(request):
                         receiver=student.user,
                         content=f"New lesson request from {request.user.get_full_name()}{recurring_text}",
                     )
-                    
+
                 messages.success(request, "Lesson request sent to student.")
             else:
                 # Create multiple lessons based on recurring amount
@@ -178,18 +185,26 @@ def create_other_event(request):
 # View for listing lessons requests
 @login_required
 def lesson_requests(request):
-    if request.user.user_type == 1: 
-        lesson_requests = LessonRequest.objects.filter(
+    if request.user.user_type == 1:  # Student
+        scheduling_requests = LessonRequest.objects.filter(
             student=request.user.student, is_approved=False
         )
-    else: 
-        lesson_requests = LessonRequest.objects.filter(
+        rescheduling_requests = ReschedulingRequest.objects.filter(
+            original_lesson__student=request.user.student, is_approved=False
+        )
+    else:  # Teacher
+        scheduling_requests = LessonRequest.objects.filter(
             teacher=request.user.teacher, is_approved=False
         )
+        rescheduling_requests = ReschedulingRequest.objects.filter(
+            original_lesson__teacher=request.user.teacher, is_approved=False
+        )
 
-    return render(
-        request, "scheduling/lesson_requests.html", {"lesson_requests": lesson_requests}
-    )
+    context = {
+        "scheduling_requests": scheduling_requests,
+        "rescheduling_requests": rescheduling_requests,
+    }
+    return render(request, "scheduling/lesson_requests.html", context)
 
 
 # View for accepting a lesson request
@@ -299,27 +314,20 @@ def reschedule_lesson(request):
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    lesson = form.cleaned_data["lesson"]
-                    reschedule_request = form.save(commit=False)
-                    reschedule_request.student = lesson.student
-                    reschedule_request.teacher = lesson.teacher
-                    reschedule_request.is_rescheduling = True
-                    reschedule_request.original_lesson = lesson
-                    reschedule_request.recurring_amount = (
-                        1  # Rescheduling is always for a single lesson
-                    )
-                    reschedule_request.is_sent_by_teacher = request.user.user_type == 2
-                    reschedule_request.save()
+                    rescheduling_request = form.save(commit=False)
+                    rescheduling_request.requested_by = request.user
+                    rescheduling_request.original_lesson = form.cleaned_data["lesson"]
+                    rescheduling_request.save()
 
                     # Create notification for the other party
                     other_user = (
-                        lesson.teacher.user
+                        rescheduling_request.original_lesson.teacher.user
                         if request.user.user_type == 1
-                        else lesson.student.user
+                        else rescheduling_request.original_lesson.student.user
                     )
                     Notification.objects.create(
                         receiver=other_user,
-                        content=f"New rescheduling request for lesson on {lesson.start_datetime}",
+                        content=f"New rescheduling request for lesson on {rescheduling_request.original_lesson.start_datetime}",
                     )
 
                 messages.success(
@@ -328,7 +336,75 @@ def reschedule_lesson(request):
                 return redirect("dashboard")
             except Exception as e:
                 messages.error(request, f"An error occurred: {str(e)}")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = RescheduleLessonForm(user=request.user)
 
     return render(request, "scheduling/reschedule_lesson.html", {"form": form})
+
+
+@login_required
+def accept_rescheduling_request(request, rescheduling_request_id):
+    rescheduling_request = get_object_or_404(
+        ReschedulingRequest, id=rescheduling_request_id
+    )
+
+    if request.user.user_type == 1:  # Student
+        if request.user.student != rescheduling_request.original_lesson.student:
+            messages.error(
+                request,
+                "You don't have permission to accept this rescheduling request.",
+            )
+            return redirect("lesson_requests")
+    elif request.user.user_type == 2:  # Teacher
+        if request.user.teacher != rescheduling_request.original_lesson.teacher:
+            messages.error(
+                request,
+                "You don't have permission to accept this rescheduling request.",
+            )
+            return redirect("lesson_requests")
+    else:
+        messages.error(request, "Invalid user type.")
+        return redirect("lesson_requests")
+
+    try:
+        new_lesson = rescheduling_request.approve()
+        messages.success(
+            request, f"Lesson rescheduled successfully to {new_lesson.start_datetime}."
+        )
+    except Exception as e:
+        messages.error(request, f"An error occurred while rescheduling: {str(e)}")
+
+    return redirect("lesson_requests")
+
+
+@login_required
+def decline_rescheduling_request(request, rescheduling_request_id):
+    rescheduling_request = get_object_or_404(
+        ReschedulingRequest, id=rescheduling_request_id
+    )
+
+    if request.user.user_type == 1:  # Student
+        if request.user.student != rescheduling_request.original_lesson.student:
+            messages.error(
+                request,
+                "You don't have permission to decline this rescheduling request.",
+            )
+            return redirect("lesson_requests")
+    elif request.user.user_type == 2:  # Teacher
+        if request.user.teacher != rescheduling_request.original_lesson.teacher:
+            messages.error(
+                request,
+                "You don't have permission to decline this rescheduling request.",
+            )
+            return redirect("lesson_requests")
+    else:
+        messages.error(request, "Invalid user type.")
+        return redirect("lesson_requests")
+
+    rescheduling_request.delete()
+    messages.success(request, "Rescheduling request declined and deleted.")
+    return redirect("lesson_requests")
