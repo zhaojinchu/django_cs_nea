@@ -39,12 +39,17 @@ class Lesson(models.Model):
     start_datetime = models.DateTimeField()
     student_attendance = models.BooleanField(default=False)
     end_datetime = models.DateTimeField()
-
+    
     def clean(self):
         if self.start_datetime <= timezone.now():
             raise ValidationError("Start datetime must be in the future.")
         if self.end_datetime <= self.start_datetime:
             raise ValidationError("End datetime must be after the start datetime.")
+        
+    def __str__(self):
+        return f"{self.start_datetime.strftime('%Y-%m-%d %H:%M')} - {self.teacher.user.get_full_name()}"
+        
+    
 
 # Other event model, used to schedule events that are not lessons
 class OtherEvent(models.Model):
