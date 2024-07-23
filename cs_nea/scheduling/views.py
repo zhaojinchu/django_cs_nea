@@ -164,22 +164,44 @@ def create_lesson(request):
 
 
 # Create other event view
+###################### TODO: TO BE DONE? ######################  
 @login_required
+@user_passes_test(is_teacher)
 def create_other_event(request):
     if request.method == "POST":
         form = OtherEventForm(request.POST)
         if form.is_valid():
-            event = form.save(commit=False)
-            event.teacher = Teacher.objects.get(
-                user=request.user
-            )  # Assuming the logged-in user is a teacher
-            event.save()
-            messages.success(request, "Event created successfully!")
-            return redirect("dashboard")  # Redirect to a list of events or dashboard
+            try:
+                event = form.save(commit=False)
+                event.teacher = request.user.teacher
+                event.save()
+
+                # Create multiple events based on recurring amount
+                if event.recurring_amount > 1:
+                    event_duration = event.end_datetime - event.start_datetime
+                    for i in range(1, event.recurring_amount):
+                        start_time = event.start_datetime + timedelta(weeks=i)
+                        end_time = start_time + event_duration
+                        OtherEvent.objects.create(
+                            teacher=event.teacher,
+                            start_datetime=start_time,
+                            end_datetime=end_time,
+                            event_description=event.event_description,
+                            recurring_amount=1  # Set to 1 for recurring instances
+                        )
+
+                messages.success(request, f"{event.recurring_amount} event{'s' if event.recurring_amount > 1 else ''} scheduled successfully.")
+                return redirect("calendar")
+            except Exception as e:
+                messages.error(request, f"An error occurred while scheduling the event: {str(e)}")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = OtherEventForm()
 
-    return render(request, "scheduling/create_other_event.html", {"form": form})
+    return render(request, "scheduling/schedule_other_event.html", {"form": form})
 
 
 # View for listing lessons requests
