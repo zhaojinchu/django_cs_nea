@@ -5,6 +5,7 @@ from .models import Lesson, CalendarEvent
 from django.shortcuts import get_object_or_404, render
 from django.utils.dateparse import parse_datetime
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
 
 @login_required
 def calendar_view(request):
@@ -13,8 +14,8 @@ def calendar_view(request):
 @login_required
 @require_GET
 def get_calendar_data(request):
-    start = parse_datetime(request.GET.get('start'))
-    end = parse_datetime(request.GET.get('end'))
+    start = timezone.datetime.fromisoformat(request.GET.get('start').replace('Z', '+00:00'))
+    end = timezone.datetime.fromisoformat(request.GET.get('end').replace('Z', '+00:00'))
     
     lessons = Lesson.objects.filter(start_datetime__gte=start, end_datetime__lte=end)
     calendar_events = CalendarEvent.objects.filter(start_datetime__gte=start, end_datetime__lte=end)
@@ -39,8 +40,8 @@ def get_calendar_data(request):
             'color': 'green',
             'editable': True,
         })
-    
-    return JsonResponse(events, safe=False, encoder=DjangoJSONEncoder)
+
+    return JsonResponse(events, safe=False)
 
 # Calendar views for AJAX requests to create, update, and delete events
 @login_required
@@ -50,8 +51,8 @@ def create_event(request):
         return JsonResponse({'error': 'Only teachers can create events'}, status=403)
 
     title = request.POST.get('title')
-    start = parse_datetime(request.POST.get('start'))
-    end = parse_datetime(request.POST.get('end'))
+    start = timezone.datetime.fromisoformat(request.POST.get('start'))
+    end = timezone.datetime.fromisoformat(request.POST.get('end'))
     event_type = request.POST.get('event_type', 'other')
     
     event = CalendarEvent.objects.create(
@@ -71,6 +72,7 @@ def create_event(request):
         'editable': True,
     })
 
+
 @login_required
 @require_POST
 def update_event(request):
@@ -82,9 +84,8 @@ def update_event(request):
     if event.teacher != request.user.teacher:
         return JsonResponse({'error': 'Permission denied'}, status=403)
     
-    event.start_datetime = parse_datetime(request.POST.get('start'))
-    event.end_datetime = parse_datetime(request.POST.get('end'))
-    event.title = request.POST.get('title', event.title)
+    event.start_datetime = timezone.datetime.fromisoformat(request.POST.get('start').replace('Z', '+00:00'))
+    event.end_datetime = timezone.datetime.fromisoformat(request.POST.get('end').replace('Z', '+00:00'))
     event.save()
     
     return JsonResponse({'success': True})

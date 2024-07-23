@@ -173,3 +173,6 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+# Timezone settings
+USE_TZ = True

@@ -12,3 +12,8 @@
 // TODO: Add validation to assignment creation form - disallow a due date in the past
 
 // TODO: Check up on lesson request forms. Recurring lesson request need ironing out. Better to have duration, day, perhaps some other variables.
+
+// BUG: Students can message teachers that are still on pending connection requests. Only after they have connected can they message
+
+// BUG: Calendar is not public calendar. Only events for the student, or event for the teacher should be seen by the respective user
+

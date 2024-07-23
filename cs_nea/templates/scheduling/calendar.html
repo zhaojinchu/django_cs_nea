@@ -42,68 +42,110 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css">
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
-        events: '/get_calendar_data/',
-        selectable: true,
-        select: function(info) {
-            showModal('Create Event', info.startStr, info.endStr);
-        },
-        eventClick: function(info) {
-            // Handle event click if needed
-        }
+    var calendar;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: '/get_calendar_data/',
+            selectable: true,
+            select: function(info) {
+                showModal('Create Event', info.startStr, info.endStr);
+            },
+            eventClick: function(info) {
+                // Handle event click if needed
+            },
+            eventDrop: function(info) {
+                updateEvent(info.event);
+            },
+            timeZone: 'local'
+        });
+        calendar.render();
+    
+        document.getElementById('eventForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveEvent();
+        });
     });
-    calendar.render();
-
-    document.getElementById('eventForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveEvent();
-    });
-});
-
-function showModal(title, start, end) {
-    document.getElementById('modalTitle').textContent = title;
-    document.getElementById('eventStart').value = start.slice(0, 16);
-    document.getElementById('eventEnd').value = end.slice(0, 16);
-    document.getElementById('eventModal').classList.remove('hidden');
-}
-
-function closeModal() {
-    document.getElementById('eventModal').classList.add('hidden');
-}
-
-function saveEvent() {
-    var form = document.getElementById('eventForm');
-    var formData = new FormData(form);
-
-    fetch('/create_event/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+    
+    function showModal(title, start, end) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('eventStart').value = start.slice(0, 16);
+        document.getElementById('eventEnd').value = end.slice(0, 16);
+        document.getElementById('eventModal').classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('eventModal').classList.add('hidden');
+    }
+    
+    function saveEvent() {
+        var form = document.getElementById('eventForm');
+        var formData = new FormData(form);
+    
+        fetch('/create_event/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                calendar.addEvent(data);
+                closeModal();
+                calendar.refetchEvents();  // Refresh all events
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    
+    function updateEvent(event) {
+        fetch('/update_event/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `id=${event.id}&start=${event.start.toISOString()}&end=${event.end.toISOString()}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                event.revert();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            event.revert();
+        });
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            calendar.addEvent(data);
-            closeModal();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-</script>
+        return cookieValue;
+    }
+    </script>
 {% endblock %}
