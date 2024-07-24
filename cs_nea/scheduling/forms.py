@@ -2,6 +2,8 @@ from django import forms
 from .models import LessonRequest, Lesson, ReschedulingRequest
 from users.models import Teacher    
 from django.utils import timezone
+from pytz import timezone as pytz_timezone
+import pytz 
 
 # Lesson request form for students
 class StudentLessonRequestForm(forms.ModelForm):
@@ -21,8 +23,8 @@ class StudentLessonRequestForm(forms.ModelForm):
             "recurring_amount",
         ]
         widgets = {
-            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name(), "class": "form-control"}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name(), "class": "form-control"}),
+            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
             "request_reason": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "recurring_amount": forms.NumberInput(attrs={"class": "form-control"}),
         }
@@ -31,16 +33,25 @@ class StudentLessonRequestForm(forms.ModelForm):
         cleaned_data = super().clean()
         requested_datetime = cleaned_data.get("requested_datetime")
         end_datetime = cleaned_data.get("end_datetime")
+        user_timezone = self.data.get('timezone')
 
-        if requested_datetime and timezone.is_naive(requested_datetime):
-            cleaned_data["requested_datetime"] = timezone.make_aware(requested_datetime)
+        if user_timezone:
+            user_timezone = pytz_timezone(user_timezone)
+            
+            if requested_datetime:
+                if requested_datetime.tzinfo is not None:
+                    requested_datetime = requested_datetime.replace(tzinfo=None)
+                requested_datetime = user_timezone.localize(requested_datetime)
+                cleaned_data["requested_datetime"] = requested_datetime.astimezone(pytz.UTC)
 
-        if end_datetime and timezone.is_naive(end_datetime):
-            cleaned_data["end_datetime"] = timezone.make_aware(end_datetime)
-
+            if end_datetime:
+                if end_datetime.tzinfo is not None:
+                    end_datetime = end_datetime.replace(tzinfo=None)
+                end_datetime = user_timezone.localize(end_datetime)
+                cleaned_data["end_datetime"] = end_datetime.astimezone(pytz.UTC)
+        
         return cleaned_data
-
-
+    
 # Lesson request form for teachers
 class TeacherLessonRequestForm(forms.ModelForm):
     send_request = forms.BooleanField(required=True, initial=True)

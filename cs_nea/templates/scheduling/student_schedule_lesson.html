@@ -43,6 +43,8 @@
                             {% endif %}
                         {% endfor %}
 
+                        <input type="hidden" name="timezone">
+                        
                         <div class="pt-6">
                             <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                                 Submit Lesson Request
@@ -72,6 +74,14 @@
 
     
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var timezoneInput = document.createElement('input');
+        timezoneInput.setAttribute('type', 'hidden');
+        timezoneInput.setAttribute('name', 'timezone');
+        timezoneInput.setAttribute('value', Intl.DateTimeFormat().resolvedOptions().timeZone);
+        document.getElementById('lessonRequestForm').appendChild(timezoneInput);
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
         var calendarContainer = document.getElementById('calendar-container');
