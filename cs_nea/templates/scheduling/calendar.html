@@ -211,8 +211,19 @@
         var formData = new FormData();
         formData.append('id', event.id);
         formData.append('title', event.title);
-        formData.append('start', event.allDay ? moment(event.start).format('YYYY-MM-DD') : moment(event.start).format('YYYY-MM-DDTHH:mm:ss'));
-        formData.append('end', event.allDay ? moment(event.end).format('YYYY-MM-DD') : moment(event.end).format('YYYY-MM-DDTHH:mm:ss'));
+        
+        var start, end;
+        if (event.allDay) {
+            // For all-day events, adjust the end date
+            start = moment(event.start).format('YYYY-MM-DD');
+            end = moment(event.end).subtract(1, 'days').format('YYYY-MM-DD');
+        } else {
+            start = moment(event.start).format('YYYY-MM-DDTHH:mm:ss');
+            end = moment(event.end).format('YYYY-MM-DDTHH:mm:ss');
+        }
+        
+        formData.append('start', start);
+        formData.append('end', end);
         formData.append('allDay', event.allDay);
         formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
     
@@ -225,6 +236,11 @@
             if (data.error) {
                 alert(data.error);
                 event.revert();
+            } else {
+                var updatedEvent = calendar.getEventById(event.id);
+                if (updatedEvent) {
+                    updatedEvent.setDates(data.start, data.end, { allDay: data.allDay });
+                }
             }
         })
         .catch(error => {
