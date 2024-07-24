@@ -21,21 +21,27 @@
             <h2 id="modalTitle" class="text-xl mb-4"></h2>
             <form id="eventForm">
                 {% csrf_token %}
+                <input type="hidden" id="eventId" name="id">
                 <div class="mb-4">
-                    <label for="eventTitle" class="block mb-2">Event Title</label>
-                    <input type="text" id="eventTitle" name="title" class="w-full p-2 border rounded" required>
+                    <label for="eventTitle">Event Title</label>
+                    <input type="text" id="eventTitle" name="title" required class="w-full">
                 </div>
                 <div class="mb-4">
-                    <label for="eventStart" class="block mb-2">Start Time</label>
-                    <input type="datetime-local" id="eventStart" name="start" class="w-full p-2 border rounded" required>
+                    <label for="eventAllDay">All Day</label>
+                    <input type="checkbox" id="eventAllDay" name="allDay">
                 </div>
                 <div class="mb-4">
-                    <label for="eventEnd" class="block mb-2">End Time</label>
-                    <input type="datetime-local" id="eventEnd" name="end" class="w-full p-2 border rounded" required>
+                    <label for="eventStart">Start Time</label>
+                    <input type="datetime-local" id="eventStart" name="start" required class="w-full">
+                </div>
+                <div class="mb-4">
+                    <label for="eventEnd">End Time</label>
+                    <input type="datetime-local" id="eventEnd" name="end" required class="w-full">
                 </div>
                 <div class="flex justify-end">
-                    <button type="button" onclick="closeModal()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded mr-2">Cancel</button>
-                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
+                    <button id="deleteEventButton" class="bg-red-500 text-white px-4 py-2 rounded mr-2">Delete</button>
+                    <button type="button" onclick="closeModal()" class="mr-2">Cancel</button>
+                    <button type="button" onclick="saveEvent()">Save</button>
                 </div>
             </form>
         </div>
@@ -44,8 +50,6 @@
 
 
 <script>
-    var calendar;
-    
     document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
         calendar = new FullCalendar.Calendar(calendarEl, {
@@ -58,40 +62,73 @@
             events: '/get_calendar_data/',
             selectable: true,
             select: function(info) {
-                showModal('Create Event', info.startStr, info.endStr);
+                showModal('Create Event', info.startStr, info.endStr, info.allDay);
             },
             eventClick: function(info) {
-                // Handle event click if needed
+                if (info.event.id.startsWith('event_')) {
+                    showEditModal(info.event);
+                }
             },
             eventDrop: function(info) {
+                updateEvent(info.event);
+            },
+            eventResize: function(info) {
                 updateEvent(info.event);
             },
             timeZone: 'local'
         });
         calendar.render();
-    
-        document.getElementById('eventForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            saveEvent();
-        });
     });
+
     
-    function showModal(title, start, end) {
+    
+    function showModal(title, start, end, allDay) {
         document.getElementById('modalTitle').textContent = title;
-        document.getElementById('eventStart').value = start.slice(0, 16);
-        document.getElementById('eventEnd').value = end.slice(0, 16);
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventStart').value = allDay ? start.slice(0, 10) : start.slice(0, 16);
+        document.getElementById('eventEnd').value = allDay ? end.slice(0, 10) : end.slice(0, 16);
+        document.getElementById('eventAllDay').checked = allDay;
+        document.getElementById('eventId').value = '';
         document.getElementById('eventModal').classList.remove('hidden');
+        updateDateTimeInputs(allDay);
+    }
+    
+    function showEditModal(event) {
+        document.getElementById('modalTitle').textContent = 'Edit Event';
+        document.getElementById('eventTitle').value = event.title;
+        document.getElementById('eventStart').value = event.allDay ? event.start.toISOString().slice(0, 10) : event.start.toISOString().slice(0, 16);
+        document.getElementById('eventEnd').value = event.allDay ? event.end.toISOString().slice(0, 10) : event.end.toISOString().slice(0, 16);
+        document.getElementById('eventAllDay').checked = event.allDay;
+        document.getElementById('eventId').value = event.id;
+        document.getElementById('eventModal').classList.remove('hidden');
+        updateDateTimeInputs(event.allDay);
     }
     
     function closeModal() {
         document.getElementById('eventModal').classList.add('hidden');
     }
     
+    function updateDateTimeInputs(allDay) {
+        var startInput = document.getElementById('eventStart');
+        var endInput = document.getElementById('eventEnd');
+        if (allDay) {
+            startInput.type = 'date';
+            endInput.type = 'date';
+        } else {
+            startInput.type = 'datetime-local';
+            endInput.type = 'datetime-local';
+        }
+    }
+    
     function saveEvent() {
         var form = document.getElementById('eventForm');
         var formData = new FormData(form);
+        var eventId = formData.get('id');
+        var url = eventId ? '/update_event/' : '/create_event/';
     
-        fetch('/create_event/', {
+        formData.append('allDay', document.getElementById('eventAllDay').checked);
+    
+        fetch(url, {
             method: 'POST',
             body: formData,
             headers: {
@@ -103,22 +140,31 @@
             if (data.error) {
                 alert(data.error);
             } else {
-                calendar.addEvent(data);
                 closeModal();
-                calendar.refetchEvents();  // Refresh all events
+                if (eventId) {
+                    var existingEvent = calendar.getEventById(eventId);
+                    if (existingEvent) {
+                        existingEvent.remove();
+                    }
+                }
+                calendar.addEvent(data);
             }
         })
         .catch(error => console.error('Error:', error));
     }
     
     function updateEvent(event) {
+        var formData = new FormData();
+        formData.append('id', event.id);
+        formData.append('title', event.title);
+        formData.append('start', event.start.toISOString());
+        formData.append('end', event.end.toISOString());
+        formData.append('allDay', event.allDay);
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
         fetch('/update_event/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: `id=${event.id}&start=${event.start.toISOString()}&end=${event.end.toISOString()}`
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
@@ -132,6 +178,38 @@
             event.revert();
         });
     }
+
+    function deleteEvent() {
+        var eventId = document.getElementById('eventId').value;
+        if (!eventId) {
+            alert('Cannot delete a new event');
+            return;
+        }
+    
+        if (confirm('Are you sure you want to delete this event?')) {
+            var formData = new FormData();
+            formData.append('id', eventId);
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+            fetch('/delete_event/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    var existingEvent = calendar.getEventById(eventId);
+                    if (existingEvent) {
+                        existingEvent.remove();
+                    }
+                    closeModal();
+                } else {
+                    alert('Error deleting event: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }   
     
     function getCookie(name) {
         let cookieValue = null;
@@ -147,5 +225,14 @@
         }
         return cookieValue;
     }
+    
+    document.getElementById('eventAllDay').addEventListener('change', function() {
+        updateDateTimeInputs(this.checked);
+    });
+
+    document.getElementById('deleteEventButton').addEventListener('click', deleteEvent);
+
     </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 {% endblock %}

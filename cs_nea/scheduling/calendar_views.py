@@ -3,10 +3,8 @@ from django.views.decorators.http import require_GET, require_POST
 from django.contrib.auth.decorators import login_required
 from .models import Lesson, CalendarEvent
 from django.shortcuts import get_object_or_404, render
-from django.utils.dateparse import parse_datetime
-from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
-
+from datetime import datetime
 
 @login_required
 def calendar_view(request):
@@ -16,10 +14,10 @@ def calendar_view(request):
 @login_required
 @require_GET
 def get_calendar_data(request):
-    start = timezone.datetime.fromisoformat(
-        request.GET.get("start").replace("Z", "+00:00")
-    )
+    start = timezone.datetime.fromisoformat(request.GET.get("start").replace("Z", "+00:00"))
     end = timezone.datetime.fromisoformat(request.GET.get("end").replace("Z", "+00:00"))
+
+    user_timezone = timezone.get_current_timezone()
 
     events = []
 
@@ -51,28 +49,25 @@ def get_calendar_data(request):
             if request.user.user_type == 2
             else f"Lesson with {lesson.teacher.user.get_full_name()}"
         )
-        events.append(
-            {
-                "id": f"lesson_{lesson.lesson_id}",
-                "title": event_title,
-                "start": lesson.start_datetime.isoformat(),
-                "end": lesson.end_datetime.isoformat(),
-                "color": "blue",
-                "editable": False,
-            }
-        )
+        events.append({
+            "id": f"lesson_{lesson.lesson_id}",
+            "title": event_title,
+            "start": lesson.start_datetime.astimezone(user_timezone).isoformat(),
+            "end": lesson.end_datetime.astimezone(user_timezone).isoformat(),
+            "color": "blue",
+            "editable": False,
+        })
 
     for event in calendar_events:
-        events.append(
-            {
-                "id": f"event_{event.event_id}",
-                "title": event.title,
-                "start": event.start_datetime.isoformat(),
-                "end": event.end_datetime.isoformat(),
-                "color": "green",
-                "editable": True,
-            }
-        )
+        events.append({
+            "id": f"event_{event.event_id}",
+            "title": event.title,
+            "start": event.start_datetime.astimezone(user_timezone).isoformat(),
+            "end": event.end_datetime.astimezone(user_timezone).isoformat(),
+            "allDay": event.all_day,
+            "color": "green",
+            "editable": True,
+        })
 
     return JsonResponse(events, safe=False)
 
@@ -85,28 +80,41 @@ def create_event(request):
         return JsonResponse({"error": "Only teachers can create events"}, status=403)
 
     title = request.POST.get("title")
-    start = timezone.datetime.fromisoformat(request.POST.get("start"))
-    end = timezone.datetime.fromisoformat(request.POST.get("end"))
+    start_str = request.POST.get("start")
+    end_str = request.POST.get("end")
+    all_day = request.POST.get("allDay") == "true"
     event_type = request.POST.get("event_type", "other")
 
-    event = CalendarEvent.objects.create(
-        teacher=request.user.teacher,
-        title=title,
-        start_datetime=start,
-        end_datetime=end,
-        event_type=event_type,
-    )
+    try:
+        if all_day:
+            start = timezone.datetime.strptime(start_str, "%Y-%m-%d").date()
+            end = timezone.datetime.strptime(end_str, "%Y-%m-%d").date()
+            start_datetime = timezone.make_aware(timezone.datetime.combine(start, timezone.datetime.min.time()))
+            end_datetime = timezone.make_aware(timezone.datetime.combine(end, timezone.datetime.max.time()))
+        else:
+            start_datetime = timezone.datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+            end_datetime = timezone.datetime.fromisoformat(end_str.replace("Z", "+00:00"))
 
-    return JsonResponse(
-        {
+        event = CalendarEvent.objects.create(
+            teacher=request.user.teacher,
+            title=title,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+            all_day=all_day,
+            event_type=event_type,
+        )
+
+        return JsonResponse({
             "id": f"event_{event.event_id}",
             "title": event.title,
             "start": event.start_datetime.isoformat(),
             "end": event.end_datetime.isoformat(),
+            "allDay": event.all_day,
             "color": "green",
             "editable": True,
-        }
-    )
+        })
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
 
 
 @login_required
@@ -120,15 +128,36 @@ def update_event(request):
     if event.teacher != request.user.teacher:
         return JsonResponse({"error": "Permission denied"}, status=403)
 
-    event.start_datetime = timezone.datetime.fromisoformat(
-        request.POST.get("start").replace("Z", "+00:00")
-    )
-    event.end_datetime = timezone.datetime.fromisoformat(
-        request.POST.get("end").replace("Z", "+00:00")
-    )
-    event.save()
+    title = request.POST.get("title")
+    start_str = request.POST.get("start")
+    end_str = request.POST.get("end")
+    all_day = request.POST.get("allDay") == "true"
 
-    return JsonResponse({"success": True})
+    try:
+        if all_day:
+            start = datetime.strptime(start_str, "%Y-%m-%d").date()
+            end = datetime.strptime(end_str, "%Y-%m-%d").date()
+            event.start_datetime = timezone.make_aware(timezone.datetime.combine(start, timezone.datetime.min.time()))
+            event.end_datetime = timezone.make_aware(timezone.datetime.combine(end, timezone.datetime.max.time()))
+        else:
+            event.start_datetime = timezone.datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+            event.end_datetime = timezone.datetime.fromisoformat(end_str.replace("Z", "+00:00"))
+
+        event.title = title
+        event.all_day = all_day
+        event.save()
+
+        return JsonResponse({
+            "id": f"event_{event.event_id}",
+            "title": event.title,
+            "start": event.start_datetime.isoformat(),
+            "end": event.end_datetime.isoformat(),
+            "allDay": event.all_day,
+            "color": "green",
+            "editable": True,
+        })
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
 
 
 @login_required

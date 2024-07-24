@@ -20,8 +20,8 @@ from datetime import timedelta
 from django.db import transaction
 from communications.models import Notification, NotificationConfig
 from datetime import datetime, timedelta
-
-
+from django.utils.timezone import make_aware
+from django.utils import timezone
 
 def is_teacher(user):
     return user.user_type == 2
@@ -41,6 +41,11 @@ def student_lesson_request(request):
             lesson_request = form.save(commit=False)
             lesson_request.student = request.user.student
             lesson_request.is_rescheduling = False
+            
+            # Conversion to UTC time
+            lesson_request.requested_datetime = make_aware(form.cleaned_data['requested_datetime'])
+            lesson_request.end_datetime = make_aware(form.cleaned_data['end_datetime'])
+            
             lesson_request.save()
 
             teacher = lesson_request.teacher
@@ -83,6 +88,9 @@ def teacher_lesson_request(request):
             lesson_request.teacher = request.user.teacher
             lesson_request.is_rescheduling = False
             lesson_request.is_sent_by_teacher = True
+            
+            lesson_request.requested_datetime = make_aware(form.cleaned_data['requested_datetime'])
+            lesson_request.end_datetime = make_aware(form.cleaned_data['end_datetime'])
 
             if form.cleaned_data["send_request"]:
                 lesson_request.save()
@@ -152,6 +160,8 @@ def create_lesson(request):
         if form.is_valid():
             lesson = form.save(commit=False)
             lesson.student = Student.objects.get(user=request.user)
+            lesson.start_datetime = timezone.make_aware(form.cleaned_data['start_datetime'])
+            lesson.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
             lesson.save()
             messages.success(request, "Lesson created successfully!")
             return redirect("lesson_list")
@@ -212,8 +222,8 @@ def accept_lesson_request(request, request_id):
                 Lesson.objects.create(
                     student=lesson_request.student,
                     teacher=lesson_request.teacher,
-                    start_datetime=start_time,
-                    end_datetime=end_time,
+                    start_datetime=timezone.make_aware(start_time),
+                    end_datetime=timezone.make_aware(end_time),
                     request=lesson_request,
                 )
 
@@ -259,6 +269,8 @@ def reschedule_lesson(request):
                     rescheduling_request = form.save(commit=False)
                     rescheduling_request.requested_by = request.user
                     rescheduling_request.original_lesson = form.cleaned_data["lesson"]
+                    rescheduling_request.requested_datetime = timezone.make_aware(form.cleaned_data['requested_datetime'])
+                    rescheduling_request.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
                     rescheduling_request.save()
 
                     # Create notification for the other party

@@ -71,7 +71,8 @@ class CalendarEvent(models.Model):
     event_type = models.CharField(max_length=10, choices=EVENT_TYPES, default='other')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    all_day = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"{self.title} - {self.teacher.user.get_full_name()}"
 

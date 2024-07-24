@@ -14,8 +14,8 @@ class StudentLessonRequestForm(forms.ModelForm):
             "recurring_amount",
         ]
         widgets = {
-            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
         }
 
 
@@ -33,10 +33,9 @@ class TeacherLessonRequestForm(forms.ModelForm):
             "recurring_amount",
         ]
         widgets = {
-            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
         }
-
 
 # Corresponding Django form for the Lesson model
 class LessonForm(forms.ModelForm):
@@ -50,8 +49,8 @@ class LessonForm(forms.ModelForm):
             "student_attendance",
         ]
         widgets = {
-            "start_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "start_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
         }
 
     def clean(self):

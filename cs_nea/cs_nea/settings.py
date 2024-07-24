@@ -176,3 +176,4 @@ CHANNEL_LAYERS = {
 
 # Timezone settings
 USE_TZ = True
+TIME_ZONE = "UTC"
