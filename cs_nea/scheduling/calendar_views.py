@@ -135,13 +135,17 @@ def update_event(request):
 
     try:
         if all_day:
-            start = datetime.strptime(start_str, "%Y-%m-%d").date()
-            end = datetime.strptime(end_str, "%Y-%m-%d").date()
-            event.start_datetime = timezone.make_aware(timezone.datetime.combine(start, timezone.datetime.min.time()))
-            event.end_datetime = timezone.make_aware(timezone.datetime.combine(end, timezone.datetime.max.time()))
+            start = datetime.strptime(start_str[:10], "%Y-%m-%d").date()
+            end = datetime.strptime(end_str[:10], "%Y-%m-%d").date()
+            event.start_datetime = timezone.make_aware(datetime.combine(start, datetime.min.time()))
+            event.end_datetime = timezone.make_aware(datetime.combine(end, datetime.max.time()))
         else:
-            event.start_datetime = timezone.datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-            event.end_datetime = timezone.datetime.fromisoformat(end_str.replace("Z", "+00:00"))
+            start_datetime = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
+            end_datetime = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
+            
+            # Ensure the datetimes are aware
+            event.start_datetime = timezone.make_aware(start_datetime) if timezone.is_naive(start_datetime) else start_datetime
+            event.end_datetime = timezone.make_aware(end_datetime) if timezone.is_naive(end_datetime) else end_datetime
 
         event.title = title
         event.all_day = all_day

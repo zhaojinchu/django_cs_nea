@@ -102,7 +102,7 @@
         document.getElementById('eventId').value = event.id;
         document.getElementById('eventModal').classList.remove('hidden');
         updateDateTimeInputs(event.allDay);
-    }
+    }   
     
     function closeModal() {
         document.getElementById('eventModal').classList.add('hidden');
@@ -127,6 +127,12 @@
         var url = eventId ? '/update_event/' : '/create_event/';
     
         formData.append('allDay', document.getElementById('eventAllDay').checked);
+        
+        // Convert local datetime to ISO format
+        var start = new Date(formData.get('start')).toISOString();
+        var end = new Date(formData.get('end')).toISOString();
+        formData.set('start', start);
+        formData.set('end', end);
     
         fetch(url, {
             method: 'POST',
@@ -150,7 +156,10 @@
                 calendar.addEvent(data);
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the event.');
+        });
     }
     
     function updateEvent(event) {
