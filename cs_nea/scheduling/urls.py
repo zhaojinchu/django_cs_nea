@@ -54,4 +54,7 @@ urlpatterns = [
     path("create_event/", create_event, name="create_event"),
     path("update_event/", update_event, name="update_event"),
     path("delete_event/", delete_event, name="delete_event"),
+    
+    # Fetching teacher schedule URL
+    path('get_teacher_schedule/<int:teacher_id>/', views.get_teacher_schedule, name='get_teacher_schedule'),
 ]

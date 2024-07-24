@@ -14,6 +14,7 @@ from .models import (
     Lesson,
     LessonRequest,
     ReschedulingRequest,
+    CalendarEvent
 )
 from communications.models import Notification
 from datetime import timedelta
@@ -42,28 +43,10 @@ def student_lesson_request(request):
             lesson_request.student = request.user.student
             lesson_request.is_rescheduling = False
             
-            # Conversion to UTC time
-            lesson_request.requested_datetime = make_aware(form.cleaned_data['requested_datetime'])
-            lesson_request.end_datetime = make_aware(form.cleaned_data['end_datetime'])
+            lesson_request.requested_datetime = timezone.make_aware(form.cleaned_data['requested_datetime'])
+            lesson_request.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
             
             lesson_request.save()
-
-            teacher = lesson_request.teacher
-            # Get or create NotificationConfig for the teacher
-            notification_config, created = NotificationConfig.objects.get_or_create(
-                user=teacher.user
-            )
-
-            if notification_config.receive_notification:
-                recurring_text = (
-                    f" (recurring {lesson_request.recurring_amount} times)"
-                    if lesson_request.recurring_amount > 1
-                    else ""
-                )
-                Notification.objects.create(
-                    receiver=teacher.user,
-                    content=f"New lesson request from {request.user.get_full_name()}{recurring_text}",
-                )
 
             messages.success(request, "Lesson request submitted successfully!")
             return redirect("dashboard")
@@ -75,6 +58,48 @@ def student_lesson_request(request):
         form = StudentLessonRequestForm()
 
     return render(request, "scheduling/student_schedule_lesson.html", {"form": form})
+
+# Fetching teacher schedule for calendar view
+@login_required
+@user_passes_test(is_student)
+def get_teacher_schedule(request, teacher_id):
+    teacher = get_object_or_404(Teacher, teacher_id=teacher_id)
+    start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=30)  # Get events for the next 30 days only
+
+    lessons = Lesson.objects.filter(
+        teacher=teacher,
+        start_datetime__gte=start,
+        end_datetime__lte=end,
+    )
+
+    calendar_events = CalendarEvent.objects.filter(
+        teacher=teacher,
+        start_datetime__gte=start,
+        end_datetime__lte=end,
+    )
+
+    events = []
+    for lesson in lessons:
+        events.append({
+            "id": f"lesson_{lesson.lesson_id}",
+            "title": "Busy",
+            "start": lesson.start_datetime.isoformat(),
+            "end": lesson.end_datetime.isoformat(),
+            "color": "blue",
+        })
+
+    for event in calendar_events:
+        events.append({
+            "id": f"event_{event.event_id}",
+            "title": "Busy",
+            "start": event.start_datetime.isoformat(),
+            "end": event.end_datetime.isoformat(),
+            "allDay": event.all_day,
+            "color": "green",
+        })
+
+    return JsonResponse(events, safe=False)
 
 
 # Teacher lesson request form

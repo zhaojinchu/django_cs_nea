@@ -1,9 +1,16 @@
 from django import forms
 from .models import LessonRequest, Lesson, ReschedulingRequest
+from users.models import Teacher    
 from django.utils import timezone
 
 # Lesson request form for students
 class StudentLessonRequestForm(forms.ModelForm):
+    teacher = forms.ModelChoiceField(
+        queryset=Teacher.objects.all(),
+        empty_label="Select a teacher",
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'teacher-select'})
+    )
+    
     class Meta:
         model = LessonRequest
         fields = [
@@ -14,8 +21,10 @@ class StudentLessonRequestForm(forms.ModelForm):
             "recurring_amount",
         ]
         widgets = {
-            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
+            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name(), "class": "form-control"}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name(), "class": "form-control"}),
+            "request_reason": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "recurring_amount": forms.NumberInput(attrs={"class": "form-control"}),
         }
 
 
