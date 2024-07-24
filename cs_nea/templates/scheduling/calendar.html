@@ -57,6 +57,7 @@
 
 
 <script>
+    // Calendar Initialization
     document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
         calendar = new FullCalendar.Calendar(calendarEl, {
@@ -68,18 +69,16 @@
             },
             events: '/get_calendar_data/',
             selectable: true,
-
             select: function(info) {
                 var allDay = !info.view.type.includes('time');
                 var endDate = new Date(info.end);
                 
                 if (allDay) {
-                    endDate.setDate(endDate.getDate() - 1);  // Subtract one day for all-day events
+                    endDate.setDate(endDate.getDate() - 1);
                 }
         
                 showModal('Create Event', info.start, endDate, allDay);
             },
-
             eventClick: function(info) {
                 if (info.event.id.startsWith('event_')) {
                     showEditModal(info.event);
@@ -94,7 +93,11 @@
             height: '100%',
             timeZone: 'local'
         });
-        calendar.render();
+    
+        calendar.render().then(function() {
+            // Making calendar interactive now it is rendered
+            calendar.setOption('selectable', true);
+        });
     });
 
     function formatDate(date) {
@@ -117,7 +120,6 @@
             document.getElementById('eventStart').value = startDate.format('YYYY-MM-DD');
             document.getElementById('eventEnd').value = endDate.format('YYYY-MM-DD');
         } else {
-            // For timed events, use the exact times
             document.getElementById('eventStart').value = startDate.format('YYYY-MM-DDTHH:mm');
             document.getElementById('eventEnd').value = endDate.format('YYYY-MM-DDTHH:mm');
         }
