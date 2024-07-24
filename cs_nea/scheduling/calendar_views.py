@@ -136,6 +136,8 @@ def update_event(request):
     all_day = request.POST.get("allDay") == "true"
 
     try:
+        user_timezone = timezone.get_current_timezone()
+        
         if all_day:
             start = timezone.datetime.strptime(start_str, "%Y-%m-%d").date()
             end = timezone.datetime.strptime(end_str, "%Y-%m-%d").date()
