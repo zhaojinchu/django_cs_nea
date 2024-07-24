@@ -9,13 +9,17 @@
 {% block name %}Calendar{% endblock %}
 
 {% block content %}
-<div class="container mx-auto p-4">
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <div id="calendar"></div>
+<div class="h-[calc(100vh-7rem)] flex flex-col overflow-hidden">
+    <div class="flex-grow overflow-y-auto">
+        <div class="container mx-auto p-4 h-full">
+            <div class="bg-white shadow-md rounded-lg overflow-hidden h-full">
+                <div id="calendar" class="h-full"></div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div id="eventModal" class="fixed inset-0 z-50 overflow-y-auto hidden" style="background-color: rgba(0, 0, 0, 0.5);">
+<div id="eventModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black bg-opacity-50">
     <div class="flex items-center justify-center min-h-screen">
         <div class="bg-white rounded-lg p-8 m-4 max-w-xl w-full">
             <h2 id="modalTitle" class="text-xl mb-4"></h2>
@@ -23,25 +27,28 @@
                 {% csrf_token %}
                 <input type="hidden" id="eventId" name="id">
                 <div class="mb-4">
-                    <label for="eventTitle">Event Title</label>
-                    <input type="text" id="eventTitle" name="title" required class="w-full">
+                    <label for="eventTitle" class="block text-sm font-medium text-gray-700">Event Title</label>
+                    <input type="text" id="eventTitle" name="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 </div>
                 <div class="mb-4">
-                    <label for="eventAllDay">All Day</label>
-                    <input type="checkbox" id="eventAllDay" name="allDay">
+                    <label for="eventAllDay" class="flex items-center">
+                        <input type="checkbox" id="eventAllDay" name="allDay" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        <span class="ml-2 text-sm text-gray-700">All Day</span>
+                    </label>
                 </div>
                 <div class="mb-4">
-                    <label for="eventStart">Start Time</label>
-                    <input type="datetime-local" id="eventStart" name="start" required class="w-full">
+                    <label for="eventStart" class="block text-sm font-medium text-gray-700">Start Time</label>
+                    <input type="datetime-local" id="eventStart" name="start" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 </div>
                 <div class="mb-4">
-                    <label for="eventEnd">End Time</label>
-                    <input type="datetime-local" id="eventEnd" name="end" required class="w-full">
+                    <label for="eventEnd" class="block text-sm font-medium text-gray-700">End Time</label>
+                    <input type="datetime-local" id="eventEnd" name="end" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 </div>
-                <div class="flex justify-end">
-                    <button id="deleteEventButton" class="bg-red-500 text-white px-4 py-2 rounded mr-2">Delete</button>
-                    <button type="button" onclick="closeModal()" class="mr-2">Cancel</button>
-                    <button type="button" onclick="saveEvent()">Save</button>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" id="deleteEventButton" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Delete</button>
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Cancel</button>
+                    <button type="button" onclick="saveEvent()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Save</button>
+                
                 </div>
             </form>
         </div>
@@ -54,6 +61,7 @@
         var calendarEl = document.getElementById('calendar');
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
+            height: '100%',
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
