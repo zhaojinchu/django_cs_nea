@@ -26,6 +26,19 @@ class StudentLessonRequestForm(forms.ModelForm):
             "request_reason": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "recurring_amount": forms.NumberInput(attrs={"class": "form-control"}),
         }
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        requested_datetime = cleaned_data.get("requested_datetime")
+        end_datetime = cleaned_data.get("end_datetime")
+
+        if requested_datetime and timezone.is_naive(requested_datetime):
+            cleaned_data["requested_datetime"] = timezone.make_aware(requested_datetime)
+
+        if end_datetime and timezone.is_naive(end_datetime):
+            cleaned_data["end_datetime"] = timezone.make_aware(end_datetime)
+
+        return cleaned_data
 
 
 # Lesson request form for teachers

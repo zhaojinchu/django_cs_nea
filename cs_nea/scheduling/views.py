@@ -43,8 +43,16 @@ def student_lesson_request(request):
             lesson_request.student = request.user.student
             lesson_request.is_rescheduling = False
             
-            lesson_request.requested_datetime = timezone.make_aware(form.cleaned_data['requested_datetime'])
-            lesson_request.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
+            # Checks if the datetime is already aware
+            if timezone.is_naive(form.cleaned_data['requested_datetime']):
+                lesson_request.requested_datetime = timezone.make_aware(form.cleaned_data['requested_datetime'])
+            else:
+                lesson_request.requested_datetime = form.cleaned_data['requested_datetime']
+
+            if timezone.is_naive(form.cleaned_data['end_datetime']):
+                lesson_request.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
+            else:
+                lesson_request.end_datetime = form.cleaned_data['end_datetime']
             
             lesson_request.save()
 
