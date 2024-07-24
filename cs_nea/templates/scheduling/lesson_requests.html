@@ -6,7 +6,7 @@
 {% block content %}
 <div class="container mx-auto" x-data="{ showAcceptModal: false, showDeclineModal: false, selectedRequest: null, requestType: '' }">
     {% if scheduling_requests or rescheduling_requests %}
-        <h2 class="text-2xl font-bold mb-4">New Lesson Requests</h2>
+        <h2 class="text-xl font-semibold mb-4">New Lesson Requests</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {% for request in scheduling_requests %}
                 <div class="bg-white shadow-md rounded-lg p-6">
@@ -32,7 +32,7 @@
             {% endfor %}
         </div>
 
-        <h2 class="text-2xl font-bold mb-4">Rescheduling Requests</h2>
+        <h2 class="text-xl font-semibold mb-4">Rescheduling Requests</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for request in rescheduling_requests %}
                 <div class="bg-white shadow-md rounded-lg p-6">
