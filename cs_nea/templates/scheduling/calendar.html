@@ -61,7 +61,6 @@
         var calendarEl = document.getElementById('calendar');
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
-            height: '100%',
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
@@ -69,9 +68,18 @@
             },
             events: '/get_calendar_data/',
             selectable: true,
+
             select: function(info) {
-                showModal('Create Event', info.startStr, info.endStr, info.allDay);
+                var allDay = !info.view.type.includes('time');
+                var endDate = new Date(info.end);
+                
+                if (allDay) {
+                    endDate.setDate(endDate.getDate() - 1);  // Subtract one day for all-day events
+                }
+        
+                showModal('Create Event', info.start, endDate, allDay);
             },
+
             eventClick: function(info) {
                 if (info.event.id.startsWith('event_')) {
                     showEditModal(info.event);
@@ -83,19 +91,36 @@
             eventResize: function(info) {
                 updateEvent(info.event);
             },
+            height: '100%',
             timeZone: 'local'
         });
         calendar.render();
     });
 
+    function formatDate(date) {
+        return date.toISOString().split('T')[0];
+    }
     
+    function formatDateTime(date) {
+        return date.toISOString().slice(0, 16);
+    }
     
     function showModal(title, start, end, allDay) {
         document.getElementById('modalTitle').textContent = title;
         document.getElementById('eventTitle').value = '';
-        document.getElementById('eventStart').value = allDay ? start.slice(0, 10) : start.slice(0, 16);
-        document.getElementById('eventEnd').value = allDay ? end.slice(0, 10) : end.slice(0, 16);
         document.getElementById('eventAllDay').checked = allDay;
+    
+        var startDate = moment(start);
+        var endDate = moment(end);
+    
+        if (allDay) {
+            document.getElementById('eventStart').value = startDate.format('YYYY-MM-DD');
+            document.getElementById('eventEnd').value = endDate.subtract(1, 'days').format('YYYY-MM-DD');
+        } else {
+            document.getElementById('eventStart').value = startDate.format('YYYY-MM-DDTHH:mm');
+            document.getElementById('eventEnd').value = endDate.format('YYYY-MM-DDTHH:mm');
+        }
+    
         document.getElementById('eventId').value = '';
         document.getElementById('eventModal').classList.remove('hidden');
         updateDateTimeInputs(allDay);
@@ -134,11 +159,22 @@
         var eventId = formData.get('id');
         var url = eventId ? '/update_event/' : '/create_event/';
     
-        formData.append('allDay', document.getElementById('eventAllDay').checked);
+        var allDay = document.getElementById('eventAllDay').checked;
+        formData.set('allDay', allDay);
+    
+        var start = formData.get('start');
+        var end = formData.get('end');
         
-        // Convert local datetime to ISO format
-        var start = new Date(formData.get('start')).toISOString();
-        var end = new Date(formData.get('end')).toISOString();
+        if (allDay) {
+            // For all-day events, use the date and set time to midnight UTC
+            start = moment(start).format('YYYY-MM-DD');
+            end = moment(end).add(1, 'days').format('YYYY-MM-DD'); // Add one day to include the full last day
+        } else {
+            // For timed events, keep the time but ensure it's in ISO format
+            start = moment(start).format('YYYY-MM-DDTHH:mm:ss');
+            end = moment(end).format('YYYY-MM-DDTHH:mm:ss');
+        }
+    
         formData.set('start', start);
         formData.set('end', end);
     
@@ -174,8 +210,8 @@
         var formData = new FormData();
         formData.append('id', event.id);
         formData.append('title', event.title);
-        formData.append('start', event.start.toISOString());
-        formData.append('end', event.end.toISOString());
+        formData.append('start', event.allDay ? moment(event.start).format('YYYY-MM-DD') : moment(event.start).format('YYYY-MM-DDTHH:mm:ss'));
+        formData.append('end', event.allDay ? moment(event.end).format('YYYY-MM-DD') : moment(event.end).format('YYYY-MM-DDTHH:mm:ss'));
         formData.append('allDay', event.allDay);
         formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
     
