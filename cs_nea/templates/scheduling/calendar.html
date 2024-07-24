@@ -69,16 +69,7 @@
             },
             events: '/get_calendar_data/',
             selectable: true,
-            select: function(info) {
-                var allDay = !info.view.type.includes('time');
-                var endDate = new Date(info.end);
-                
-                if (allDay) {
-                    endDate.setDate(endDate.getDate() - 1);
-                }
-        
-                showModal('Create Event', info.start, endDate, allDay);
-            },
+            select: handleDateSelect,
             eventClick: function(info) {
                 if (info.event.id.startsWith('event_')) {
                     showEditModal(info.event);
@@ -94,11 +85,21 @@
             timeZone: 'local'
         });
     
-        calendar.render().then(function() {
-            // Making calendar interactive now it is rendered
-            calendar.setOption('selectable', true);
-        });
+        calendar.render();
     });
+
+    function handleDateSelect(selectInfo) {
+        var allDay = !selectInfo.view.type.includes('time');
+        var start = selectInfo.start;
+        var end = selectInfo.end;
+    
+        if (allDay) {
+            // For all-day event subtract one day
+            end = new Date(end.getTime() - 86400000);
+        }
+    
+        showModal('Create Event', start, end, allDay);
+    }
 
     function formatDate(date) {
         return date.toISOString().split('T')[0];
@@ -116,18 +117,27 @@
         var startDate = moment(start);
         var endDate = moment(end);
     
+        // Temporarily change the type to text to ensure re-rendering - Fixes issue where on first time fields aren't populated
+        document.getElementById('eventStart').type = 'text';
+        document.getElementById('eventEnd').type = 'text';
+    
         if (allDay) {
             document.getElementById('eventStart').value = startDate.format('YYYY-MM-DD');
             document.getElementById('eventEnd').value = endDate.format('YYYY-MM-DD');
+            document.getElementById('eventStart').type = 'date';
+            document.getElementById('eventEnd').type = 'date';
         } else {
             document.getElementById('eventStart').value = startDate.format('YYYY-MM-DDTHH:mm');
             document.getElementById('eventEnd').value = endDate.format('YYYY-MM-DDTHH:mm');
+            document.getElementById('eventStart').type = 'datetime-local';
+            document.getElementById('eventEnd').type = 'datetime-local';
         }
     
         document.getElementById('eventId').value = '';
         document.getElementById('eventModal').classList.remove('hidden');
         updateDateTimeInputs(allDay);
     }
+    
     
     function showEditModal(event) {
         document.getElementById('modalTitle').textContent = 'Edit Event';
