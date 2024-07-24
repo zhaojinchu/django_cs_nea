@@ -42,18 +42,10 @@ def student_lesson_request(request):
             lesson_request = form.save(commit=False)
             lesson_request.student = request.user.student
             lesson_request.is_rescheduling = False
-            
-            # Checks if the datetime is already aware
-            if timezone.is_naive(form.cleaned_data['requested_datetime']):
-                lesson_request.requested_datetime = timezone.make_aware(form.cleaned_data['requested_datetime'])
-            else:
-                lesson_request.requested_datetime = form.cleaned_data['requested_datetime']
 
-            if timezone.is_naive(form.cleaned_data['end_datetime']):
-                lesson_request.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
-            else:
-                lesson_request.end_datetime = form.cleaned_data['end_datetime']
-            
+            lesson_request.requested_datetime = form.cleaned_data['requested_datetime']
+            lesson_request.end_datetime = form.cleaned_data['end_datetime']
+
             lesson_request.save()
 
             messages.success(request, "Lesson request submitted successfully!")
@@ -66,6 +58,7 @@ def student_lesson_request(request):
         form = StudentLessonRequestForm()
 
     return render(request, "scheduling/student_schedule_lesson.html", {"form": form})
+
 
 # Fetching teacher schedule for calendar view
 @login_required
@@ -221,7 +214,7 @@ def lesson_requests(request):
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__teacher=request.user.teacher, is_approved=False
         )
-
+    
     context = {
         "scheduling_requests": scheduling_requests,
         "rescheduling_requests": rescheduling_requests,
@@ -255,8 +248,8 @@ def accept_lesson_request(request, request_id):
                 Lesson.objects.create(
                     student=lesson_request.student,
                     teacher=lesson_request.teacher,
-                    start_datetime=timezone.make_aware(start_time),
-                    end_datetime=timezone.make_aware(end_time),
+                    start_datetime=start_time,
+                    end_datetime=end_time,
                     request=lesson_request,
                 )
 
