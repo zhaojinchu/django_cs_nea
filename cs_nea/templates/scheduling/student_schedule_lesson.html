@@ -3,7 +3,7 @@
 {% block name %}Request a Lesson{% endblock %}
 {% block content %}
 
-<div class="container mx-auto py-8">
+<div class="container mx-auto">
     <form class="bg-white rounded-lg shadow-md p-6" method="post" x-data="{ showModal: false }" @submit.prevent="showModal = true">
         {% csrf_token %}
         <div class="flex flex-col gap-4 justify-center w-full">

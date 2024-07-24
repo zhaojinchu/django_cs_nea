@@ -15,5 +15,5 @@
 
 // BUG: Students can message teachers that are still on pending connection requests. Only after they have connected can they message
 
-// BUG: Calendar is not public calendar. Only events for the student, or event for the teacher should be seen by the respective user
+// TODO: Make whole app mobile responsive - especially calendar.
 
