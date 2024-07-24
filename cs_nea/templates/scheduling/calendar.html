@@ -238,6 +238,9 @@
         formData.append('end', end);
         formData.append('allDay', event.allDay);
         formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        
+        // Add timezone offset
+        formData.append('timezone_offset', new Date().getTimezoneOffset());
     
         fetch('/update_event/', {
             method: 'POST',
@@ -249,10 +252,7 @@
                 alert(data.error);
                 event.revert();
             } else {
-                var updatedEvent = calendar.getEventById(event.id);
-                if (updatedEvent) {
-                    updatedEvent.setDates(data.start, data.end, { allDay: data.allDay });
-                }
+                // Update successful
             }
         })
         .catch(error => {

@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Lesson, CalendarEvent
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
 
 @login_required
 def calendar_view(request):
@@ -134,18 +134,22 @@ def update_event(request):
     start_str = request.POST.get("start")
     end_str = request.POST.get("end")
     all_day = request.POST.get("allDay") == "true"
+    timezone_offset = int(request.POST.get("timezone_offset", 0))
 
     try:
-        user_timezone = timezone.get_current_timezone()
-        
         if all_day:
-            start = timezone.datetime.strptime(start_str, "%Y-%m-%d").date()
-            end = timezone.datetime.strptime(end_str, "%Y-%m-%d").date()
-            event.start_datetime = timezone.make_aware(timezone.datetime.combine(start, timezone.datetime.min.time()))
-            event.end_datetime = timezone.make_aware(timezone.datetime.combine(end, timezone.datetime.max.time()))
+            start = datetime.strptime(start_str, "%Y-%m-%d").date()
+            end = datetime.strptime(end_str, "%Y-%m-%d").date()
+            event.start_datetime = timezone.make_aware(datetime.combine(start, datetime.min.time()))
+            event.end_datetime = timezone.make_aware(datetime.combine(end, datetime.max.time()))
         else:
-            start_datetime = timezone.datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%S")
-            end_datetime = timezone.datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%S")
+            start_datetime = datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%S")
+            end_datetime = datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%S")
+            
+            # Applies timezone offset
+            start_datetime = start_datetime + timedelta(minutes=timezone_offset)
+            end_datetime = end_datetime + timedelta(minutes=timezone_offset)
+            
             event.start_datetime = timezone.make_aware(start_datetime)
             event.end_datetime = timezone.make_aware(end_datetime)
 
