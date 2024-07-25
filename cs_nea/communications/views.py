@@ -3,15 +3,32 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from .models import Notification, Assignment, Note
+from .models import Notification, Assignment, Note, NotificationConfig
 from django.contrib.auth import get_user_model
-from .forms import AssignmentForm
+from .forms import AssignmentForm, NotificationConfigForm
 from django.utils import timezone
 from users.models import Student, Teacher
 
 User = get_user_model()
 
 # Notification views - only JSON responses
+@login_required
+def notification_preferences(request):
+    try:
+        preferences = NotificationConfig.objects.get(user=request.user)
+    except NotificationConfig.DoesNotExist:
+        preferences = NotificationConfig(user=request.user)
+
+    if request.method == 'POST':
+        form = NotificationConfigForm(request.POST, instance=preferences)
+        if form.is_valid():
+            form.save()
+            return redirect('notification_preferences')
+    else:
+        form = NotificationConfigForm(instance=preferences)
+
+    return render(request, 'notification_preferences.html', {'form': form})
+
 @login_required
 def get_notifications(request):
     notifications = Notification.objects.filter(

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,11 +37,9 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    
     # Additional apps for real time messaging - these two must come before staticfiles
     "daphne",
     "channels",
-    
     "django.contrib.staticfiles",
     # Additional apps
     "tailwind",
@@ -48,12 +47,11 @@ INSTALLED_APPS = [
     "django_browser_reload",
     "widget_tweaks",
     "phonenumber_field",
-    
     # My django apps
     "users",
     "dashboard",
     "scheduling",
-    "communications",    
+    "communications",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -138,7 +136,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [    
+STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
@@ -156,24 +154,38 @@ INTERNAL_IPS = [
 LOGIN_URL = "index"
 LOGIN_REDIRECT_URL = "dashboard"
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Replace with your SMTP server address
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"  # Replace with your SMTP server address
 EMAIL_PORT = 587  # Replace with your SMTP port number
 EMAIL_USE_TLS = True  # Set to True if your SMTP server requires TLS
-EMAIL_HOST_USER = 'zhaojin.chu07@gmail.com'  # Replace with your SMTP username
-EMAIL_HOST_PASSWORD = 'wxwk ximf qxzy oiyl'  # Replace with your SMTP password
-DEFAULT_FROM_EMAIL = 'zhaojin.chu07@gmail.com'  # Replace with your default from email address
+EMAIL_HOST_USER = "zhaojin.chu07@gmail.com"  # Replace with your SMTP username
+EMAIL_HOST_PASSWORD = "wxwk ximf qxzy oiyl"  # Replace with your SMTP password
+DEFAULT_FROM_EMAIL = (
+    "zhaojin.chu07@gmail.com"  # Replace with your default from email address
+)
 
 # Settings for real time messaging
 ASGI_APPLICATION = "cs_nea.asgi.application"
 
-# Uses the in-memory channel layer  
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
-}
+# Uses the in-memory channel layer
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 # Timezone settings
 USE_TZ = True
 TIME_ZONE = "UTC"
+
+# Celery settings
+CELERY_BROKER_URL = "redis://localhost:6379/0"  # Using Redis as broker
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"  # Storing results in Redis
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+# Celery beat schedule
+CELERY_BEAT_SCHEDULE = {
+    "check-scheduled-notifications-every-5-minutes": {
+        "task": "communications.tasks.check_scheduled_notifications",
+        "schedule": crontab(minute="*/5"),
+    },
+}

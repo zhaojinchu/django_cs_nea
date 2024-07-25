@@ -42,9 +42,13 @@ class Lesson(models.Model):
     student_attendance = models.BooleanField(default=False)
     end_datetime = models.DateTimeField()
 
-    # Additional fields from iteration 2
+    # Additional fields - iteration 2
     is_rescheduled = models.BooleanField(default=False)
     rescheduled_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='rescheduled_from')
+    
+    # Notification checks - iteration 3
+    is_teacher_notification_sent = models.BooleanField(default=False)
+    is_student_notification_sent = models.BooleanField(default=False)
     
     def clean(self):
         if self.start_datetime <= timezone.now():

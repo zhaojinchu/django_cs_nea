@@ -15,8 +15,14 @@ class NotificationConfig(models.Model):
     message_notification = models.BooleanField(default=True)
     attendance_notification = models.BooleanField(default=True)
     t2r_requests = models.BooleanField(default=True)
-    cancellation_notification = models.BooleanField(default=True)
+    cancellation_notification = models.BooleanField(default=True)   
 
+    # Lesson reminder notification frequency - iteration 2
+    weekly_summary = models.BooleanField(default=False)
+    lesson_reminder_1hr = models.BooleanField(default=True)
+    lesson_reminder_24hr = models.BooleanField(default=False)
+    lesson_reminder_30min = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"Notification Config for {self.user.username}"
 

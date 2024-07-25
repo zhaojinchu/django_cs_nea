@@ -1,6 +1,7 @@
 from django import forms
-from .models import Assignment
+from .models import Assignment, NotificationConfig
 from users.models import Student
+
 
 class AssignmentForm(forms.ModelForm):
     class Meta:
@@ -18,3 +19,20 @@ class AssignmentForm(forms.ModelForm):
                 invites__teacher=self.teacher, invites__status="accepted"
             )
 
+
+class NotificationConfigForm(forms.ModelForm):
+    class Meta:
+        model = NotificationConfig
+        fields = [
+            "receive_notification",
+            "lesson_reminder",
+            "assignment_notification",
+            "message_notification",
+            "attendance_notification",
+            "t2r_requests",
+            "cancellation_notification",
+            "weekly_summary",
+            "lesson_reminder_1hr",
+            "lesson_reminder_24hr",
+            "lesson_reminder_30min",
+        ]
