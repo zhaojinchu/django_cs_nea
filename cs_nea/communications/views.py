@@ -7,7 +7,7 @@ from .models import Notification, Assignment, Note
 from django.contrib.auth import get_user_model
 from .forms import AssignmentForm
 from django.utils import timezone
-from users.models import Student
+from users.models import Student, Teacher
 
 User = get_user_model()
 
@@ -47,10 +47,23 @@ def mark_notification_read(request, notification_id):
 # Real time messaging view
 @login_required
 def message_list(request):
-    if request.user.user_type == 1: 
-        users = User.objects.filter(user_type=2)  
-    else:  
-        users = User.objects.filter(user_type=1) 
+    if request.user.user_type == 1:  # Student
+        student = Student.objects.get(user=request.user)
+        connected_teachers = User.objects.filter(
+            teacher__sent_invites__student=student,
+            teacher__sent_invites__status='accepted',
+            user_type=2
+        ).distinct()
+        users = connected_teachers
+    else:  # Teacher
+        teacher = Teacher.objects.get(user=request.user)
+        connected_students = User.objects.filter(
+            student__invites__teacher=teacher,
+            student__invites__status='accepted',
+            user_type=1
+        ).distinct()
+        users = connected_students
+
     return render(request, "communications/message_list.html", {"users": users})
 
 
