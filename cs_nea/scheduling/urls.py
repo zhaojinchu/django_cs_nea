@@ -57,4 +57,6 @@ urlpatterns = [
     
     # Fetching teacher schedule URL
     path('get_teacher_schedule/<int:teacher_id>/', views.get_teacher_schedule, name='get_teacher_schedule'),
+    # Fetching student schedule URL
+    path('get_student_schedule/<int:student_id>/', views.get_student_schedule, name='get_student_schedule'),
 ]

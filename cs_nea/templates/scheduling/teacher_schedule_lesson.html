@@ -3,49 +3,130 @@
 {% block name %}Schedule or Request a Lesson{% endblock %}
 {% block content %}
 
-<div class="container mx-auto">
-    <form method="post" x-data="{ showModal: false }" class="bg-white rounded-lg shadow-md p-6">
-        {% csrf_token %}
+<div class="bg-white rounded-lg shadow-md p-6 h-full">
+    <div class="h-full flex flex-col overflow-hidden">
+        <div class="flex-grow overflow-y-auto">
+            <div class="container mx-auto p-4 h-full">
+                {% csrf_token %}
 
-        <div class="flex flex-col gap-4 justify-center w-full">
-            {% for field in form %}
-                <div class="w-full">
-                    {{ field.label }}
-                    {{ field|add_class:"shadow border rounded w-full text-gray-700 focus:border-purple-500" }}
-                    {% if field.errors %}
-                        {% for error in field.errors %}
-                            <p class="text-red-500 text-xs italic">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
+                <div class="flex flex-col gap-4 justify-center w-full">
+                    <div class="w-full">
+                        {{ form.student.label_tag }}
+                        {% render_field form.student class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" %}
+                        {% if form.student.errors %}
+                            {% for error in form.student.errors %}
+                                <p class="text-red-500 text-xs italic">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div id="calendar-container" class="w-full hidden mt-4">
+                        <div id="calendar"></div>
+                    </div>
+
+                    {% for field in form %}
+                        {% if field.name != 'student' %}
+                            <div class="w-full">
+                                {{ field.label_tag }}
+                                {% render_field field class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" %}
+                                {% if field.errors %}
+                                    {% for error in field.errors %}
+                                        <p class="text-red-500 text-xs italic">{{ error }}</p>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <div class="pt-6">
+                        <button type="submit" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                            Submit Lesson Request
+                        </button>
+                    </div>
                 </div>
-            {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
 
-            <div class="pt-6">
-                <button type="button" x-on:click="showModal = true" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
-                    Submit
+<div id="confirmModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 m-4 max-w-xl w-full">
+            <h2 class="text-xl mb-4">Confirm Lesson Request</h2>
+            <p>Are you sure you want to submit this lesson request?</p>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button id="cancelBtn" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">
+                    Cancel
+                </button>
+                <button id="confirmBtn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                    Confirm
                 </button>
             </div>
         </div>
-
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-show="showModal" x-cloak>
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div class="mt-3 text-center">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Lesson Schedule/Request</h3>
-                    <div class="mt-2 px-7 py-3">
-                        <p class="text-sm text-gray-500">Are you sure you want to submit this lesson schedule/request?</p>
-                    </div>
-                    <div class="items-center px-4 py-3">
-                        <button type="button" x-on:click="showModal = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2">
-                            Cancel
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-purple-500 text-white text-base font-medium rounded-md w-24">
-                            Confirm
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const studentSelect = document.getElementById('id_student');
+        const calendarContainer = document.getElementById('calendar-container');
+        const confirmModal = document.getElementById('confirmModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const form = document.querySelector('form');
+
+        let calendar;
+
+        studentSelect.addEventListener('change', function() {
+            const studentId = this.value;
+            if (studentId) {
+                fetchStudentSchedule(studentId);
+            } else {
+                calendarContainer.classList.add('hidden');
+            }
+        });
+
+        function fetchStudentSchedule(studentId) {
+            fetch(`/get_student_schedule/${studentId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    calendarContainer.classList.remove('hidden');
+                    initializeCalendar(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function initializeCalendar(events) {
+            if (calendar) {
+                calendar.destroy();
+            }
+
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                events: events,
+                selectable: true,
+                select: function(info) {
+                    document.getElementById('id_requested_datetime').value = info.startStr;
+                    document.getElementById('id_end_datetime').value = info.endStr;
+                }
+            });
+            calendar.render();
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            confirmModal.classList.remove('hidden');
+        });
+
+        cancelBtn.addEventListener('click', function() {
+            confirmModal.classList.add('hidden');
+        });
+
+        confirmBtn.addEventListener('click', function() {
+            form.submit();
+        });
+    });
+</script>
 
 {% endblock %}

@@ -40,7 +40,7 @@ def is_student(user):
 @user_passes_test(is_student)
 def student_lesson_request(request):
     if request.method == "POST":
-        form = StudentLessonRequestForm(request.POST)
+        form = StudentLessonRequestForm(request.POST, student=request.user.student)
         if form.is_valid():
             lesson_request = form.save(commit=False)
             lesson_request.student = request.user.student
@@ -80,12 +80,12 @@ def student_lesson_request(request):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = StudentLessonRequestForm()
+        form = StudentLessonRequestForm(student=request.user.student)
 
     return render(request, "scheduling/student_schedule_lesson.html", {"form": form})
 
 
-# Fetching teacher schedule for calendar view
+# Fetching teacher schedule for scheduling view
 @login_required
 @user_passes_test(is_student)
 def get_teacher_schedule(request, teacher_id):
@@ -133,7 +133,7 @@ def get_teacher_schedule(request, teacher_id):
 @user_passes_test(is_teacher)
 def teacher_lesson_request(request):
     if request.method == "POST":
-        form = TeacherLessonRequestForm(request.POST)
+        form = TeacherLessonRequestForm(request.POST, teacher=request.user.teacher)
         if form.is_valid():
             lesson_request = form.save(commit=False)
             lesson_request.teacher = request.user.teacher
@@ -198,10 +198,35 @@ def teacher_lesson_request(request):
 
             return redirect("dashboard")
     else:
-        form = TeacherLessonRequestForm()
+        form = TeacherLessonRequestForm(teacher=request.user.teacher)
 
     return render(request, "scheduling/teacher_schedule_lesson.html", {"form": form})
 
+# Fetching student schedule for scheduling view
+@login_required
+@user_passes_test(is_teacher)
+def get_student_schedule(request, student_id):
+    student = get_object_or_404(Student, student_id=student_id)
+    start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=30)  # Get events for the next 30 days only
+
+    lessons = Lesson.objects.filter(
+        student=student,
+        start_datetime__gte=start,
+        end_datetime__lte=end,
+    )
+
+    events = []
+    for lesson in lessons:
+        events.append({
+            "id": f"lesson_{lesson.lesson_id}",
+            "title": "Busy",
+            "start": lesson.start_datetime.isoformat(),
+            "end": lesson.end_datetime.isoformat(),
+            "color": "blue",
+        })
+
+    return JsonResponse(events, safe=False)
 
 # Create lesson view
 @login_required
