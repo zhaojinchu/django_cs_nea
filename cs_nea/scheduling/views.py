@@ -140,8 +140,8 @@ def teacher_lesson_request(request):
             lesson_request.is_rescheduling = False
             lesson_request.is_sent_by_teacher = True
             
-            lesson_request.requested_datetime = make_aware(form.cleaned_data['requested_datetime'])
-            lesson_request.end_datetime = make_aware(form.cleaned_data['end_datetime'])
+            lesson_request.requested_datetime = form.cleaned_data['requested_datetime']
+            lesson_request.end_datetime = form.cleaned_data['end_datetime']
 
             if form.cleaned_data["send_request"]:
                 lesson_request.save()

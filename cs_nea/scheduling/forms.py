@@ -82,6 +82,7 @@ class TeacherLessonRequestForm(forms.ModelForm):
         empty_label="Select a student",
         widget=forms.Select(attrs={"class": "form-control", "id": "id_student"}),
     )
+    send_request = forms.BooleanField(required=True, initial=True)
 
     class Meta:
         model = LessonRequest
