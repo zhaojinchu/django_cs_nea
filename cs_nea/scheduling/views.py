@@ -220,7 +220,7 @@ def get_student_schedule(request, student_id):
     for lesson in lessons:
         events.append({
             "id": f"lesson_{lesson.lesson_id}",
-            "title": "Busy",
+            "title": f"Lesson with {Teacher.objects.filter(teacher_id=lesson.teacher_id)}",
             "start": lesson.start_datetime.isoformat(),
             "end": lesson.end_datetime.isoformat(),
             "color": "blue",
