@@ -9,7 +9,7 @@ from .calendar_views import (
 )
 
 urlpatterns = [
-    path("create_lesson", views.create_lesson, name="create_lesson"),
+    #path("create_lesson", views.create_lesson, name="create_lesson"),
 
     # Path for creating student and teacher lesson requests
     path(

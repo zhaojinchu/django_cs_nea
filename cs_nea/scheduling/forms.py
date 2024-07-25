@@ -105,6 +105,31 @@ class TeacherLessonRequestForm(forms.ModelForm):
             ),
             "recurring_amount": forms.NumberInput(attrs={"class": "form-control"}),
         }
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        requested_datetime = cleaned_data.get("requested_datetime")
+        end_datetime = cleaned_data.get("end_datetime")
+        user_timezone = self.data.get("timezone")
+
+        if user_timezone:
+            user_timezone = pytz_timezone(user_timezone)
+
+            if requested_datetime:
+                if requested_datetime.tzinfo is not None:
+                    requested_datetime = requested_datetime.replace(tzinfo=None)
+                requested_datetime = user_timezone.localize(requested_datetime)
+                cleaned_data["requested_datetime"] = requested_datetime.astimezone(
+                    pytz.UTC
+                )
+
+            if end_datetime:
+                if end_datetime.tzinfo is not None:
+                    end_datetime = end_datetime.replace(tzinfo=None)
+                end_datetime = user_timezone.localize(end_datetime)
+                cleaned_data["end_datetime"] = end_datetime.astimezone(pytz.UTC)
+
+        return cleaned_data
     
     def __init__(self, *args, **kwargs):
         self.teacher = kwargs.pop("teacher", None)

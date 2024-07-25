@@ -50,28 +50,34 @@ def student_lesson_request(request):
             lesson_request.end_datetime = form.cleaned_data['end_datetime']
 
             lesson_request.save()
-
-            # Create and send notification
-            notification = Notification.objects.create(
-                receiver=lesson_request.teacher.user,
-                content=f"New lesson request from {request.user.get_full_name()}",
-                timestamp=timezone.now().isoformat(),
+            teacher = lesson_request.teacher
+            
+            notification_config, created = NotificationConfig.objects.get_or_create(
+                    user=teacher.user
             )
+            
+            if notification_config.receive_notification:
+                # Create and send notification
+                notification = Notification.objects.create(
+                    receiver=lesson_request.teacher.user,
+                    content=f"New lesson request from {request.user.get_full_name()}",
+                    timestamp=timezone.now().isoformat(),
+                )
 
-            # Send real-time notification
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f"user_{lesson_request.teacher.user.id}_notifications",
-                {
-                    "type": "notification",
-                    "notification": {
-                        "id": notification.id,
-                        "content": notification.content,
-                        "timestamp": notification.timestamp.isoformat(),
-                        "is_read": notification.is_read
+                # Send real-time notification
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{lesson_request.teacher.user.id}_notifications",
+                    {
+                        "type": "notification",
+                        "notification": {
+                            "id": notification.id,
+                            "content": notification.content,
+                            "timestamp": notification.timestamp.isoformat(),
+                            "is_read": notification.is_read
+                        }
                     }
-                }
-            )
+                )
 
             messages.success(request, "Lesson request submitted successfully!")
             return redirect("dashboard")
@@ -158,12 +164,35 @@ def teacher_lesson_request(request):
                         if lesson_request.recurring_amount > 1
                         else ""
                     )
-                    Notification.objects.create(
+                    notification = Notification.objects.create(
                         receiver=student.user,
                         content=f"New lesson request from {request.user.get_full_name()}{recurring_text}",
+                        timestamp=timezone.now().isoformat(),
                     )
+                    # Send real-time notification
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{lesson_request.student.user.id}_notifications",
+                        {
+                            "type": "notification",
+                            "notification": {
+                                "id": notification.id,
+                                "content": notification.content,
+                                "timestamp": notification.timestamp.isoformat(),
+                                "is_read": notification.is_read
+                            }
+                        }
+                    )
+                    
+                    messages.success(request, "Lesson request sent to student.")
+                    return redirect("dashboard")
+                
+                else:
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            messages.error(request, f"{field}: {error}")
 
-                messages.success(request, "Lesson request sent to student.")
+                
             else:
                 # Create multiple lessons based on recurring amount
                 lesson_duration = (
@@ -187,9 +216,24 @@ def teacher_lesson_request(request):
                         if lesson_request.recurring_amount > 1
                         else ""
                     )
-                    Notification.objects.create(
+                    notification = Notification.objects.create(
                         receiver=lesson_request.student.user,
                         content=f"New lesson{recurring_text} scheduled with {request.user.get_full_name()}",
+                    )
+                    
+                    # Send real-time notification
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{lesson_request.student.user.id}_notifications",
+                        {
+                            "type": "notification",
+                            "notification": {
+                                "id": notification.id,
+                                "content": notification.content,
+                                "timestamp": notification.timestamp.isoformat(),
+                                "is_read": notification.is_read
+                            }
+                        }
                     )
                 messages.success(
                     request,
@@ -229,6 +273,7 @@ def get_student_schedule(request, student_id):
     return JsonResponse(events, safe=False)
 
 # Create lesson view
+"""
 @login_required
 def create_lesson(request):
     if request.method == "POST":
@@ -245,7 +290,7 @@ def create_lesson(request):
         form = LessonForm()
 
     return render(request, "scheduling/create_lesson.html", {"form": form})
-
+"""
 
 # View for listing lessons requests
 @login_required
@@ -306,6 +351,33 @@ def accept_lesson_request(request, request_id):
             lesson_request.is_approved = True
             lesson_request.save()
 
+            # Notifications
+            user_notification_pref = NotificationConfig.objects.filter(user=lesson_request.teacher.user).first()
+            if user_notification_pref and user_notification_pref.receive_notification:
+                    recurring_text = (
+                        f" (recurring {lesson_request.recurring_amount} times)"
+                        if lesson_request.recurring_amount > 1
+                        else ""
+                    )
+                    notification = Notification.objects.create(
+                        receiver=lesson_request.student.user,
+                        content=f"New lesson{recurring_text} scheduled with {request.user.get_full_name()}",
+                    )
+                    
+                    # Send real-time notification
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{lesson_request.student.user.id}_notifications",
+                        {
+                            "type": "notification",
+                            "notification": {
+                                "id": notification.id,
+                                "content": notification.content,
+                                "timestamp": notification.timestamp.isoformat(),
+                                "is_read": notification.is_read
+                            }
+                        }
+                    )
             messages.success(
                 request,
                 f"{lesson_request.recurring_amount} lesson{'s' if lesson_request.recurring_amount > 1 else ''} scheduled successfully.",
