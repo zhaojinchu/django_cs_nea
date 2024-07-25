@@ -9,9 +9,7 @@ from .forms import AssignmentForm
 from django.utils import timezone
 from users.models import Student
 
-
 User = get_user_model()
-
 
 # Notification views - only JSON responses
 @login_required

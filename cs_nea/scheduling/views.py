@@ -23,6 +23,9 @@ from communications.models import Notification, NotificationConfig
 from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
 from django.utils import timezone
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 def is_teacher(user):
     return user.user_type == 2
@@ -47,6 +50,28 @@ def student_lesson_request(request):
             lesson_request.end_datetime = form.cleaned_data['end_datetime']
 
             lesson_request.save()
+
+            # Create and send notification
+            notification = Notification.objects.create(
+                receiver=lesson_request.teacher.user,
+                content=f"New lesson request from {request.user.get_full_name()}",
+                timestamp=timezone.now().isoformat(),
+            )
+
+            # Send real-time notification
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{lesson_request.teacher.user.id}_notifications",
+                {
+                    "type": "notification",
+                    "notification": {
+                        "id": notification.id,
+                        "content": notification.content,
+                        "timestamp": notification.timestamp.isoformat(),
+                        "is_read": notification.is_read
+                    }
+                }
+            )
 
             messages.success(request, "Lesson request submitted successfully!")
             return redirect("dashboard")

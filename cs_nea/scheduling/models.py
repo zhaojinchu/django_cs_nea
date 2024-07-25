@@ -29,6 +29,8 @@ class LessonRequest(models.Model):
             raise ValidationError("End datetime must be after the requested datetime.")
         if self.recurring_amount < 1 or self.recurring_amount > 52:
             raise ValidationError("Recurring amount must be between 1 and 52.")
+        
+    
 
 # Lesson model, used store scheduled lessons
 class Lesson(models.Model):

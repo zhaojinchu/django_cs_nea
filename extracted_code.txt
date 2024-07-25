@@ -235,6 +235,7 @@ if __name__ == '__main__':
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
     ></script>
+    {% block extra_head %} {% endblock %}
   </head>
 
   <body class="bg-neutral-200" x-data="{ sidebarOpen: true }">
@@ -440,14 +441,14 @@ if __name__ == '__main__':
             :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}"
           >
             <div
-              class="flex-1 flex flex-col overflow-hidden bg-gray-200 pt-28"  
+              class="flex-1 flex flex-col overflow-hidden bg-gray-200 pt-20"  
             >
               <div class="flex-1 flex flex-col overflow-hidden container mx-auto px-4">  
-                <h3 class="text-neutral-800 text-3xl font-medium mb-4">
+                <h3 class="text-neutral-800 text-3xl mb-8 font-bold">
                   {% block name %}{% endblock %}
                 </h3>
                 <!-- Add dashboard content here... -->
-                <div class="flex-1 overflow-y-auto">
+                <div class="flex-1 overflow-y-auto mb-2">
                 {% block content %}{% endblock %}
                  </div>
               </div>
@@ -463,6 +464,7 @@ if __name__ == '__main__':
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
     ></script>
+    {% block extra_js %} {% endblock %}
   </body>
 </html>
 
@@ -575,155 +577,380 @@ if __name__ == '__main__':
 {% extends "_dashboard.html" %}
 {% load static %}
 
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+{% endblock %}
+
 {% block name %}Calendar{% endblock %}
 
 {% block content %}
-<div class="container mx-auto py-8 h-full flex flex-col">
-    <div class="bg-white shadow-md rounded-lg overflow-hidden flex-grow flex flex-col">
-        <div class="p-4 flex flex-col h-full" x-data="calendarData()">
-            <div class="flex justify-between items-center mb-4">
-                <button @click="previousPeriod()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Previous
-                </button>
-                <h2 class="text-xl font-semibold" x-text="currentPeriodName"></h2>
-                <button @click="nextPeriod()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Next
-                </button>
-            </div>
 
-            <div class="mb-4">
-                <button @click="toggleView()" x-text="viewType === 'month' ? 'Switch to Week View' : 'Switch to Month View'" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                </button>
+<div class="bg-white rounded-lg shadow-md p-6 h-full">
+    <div class="h-full flex flex-col overflow-hidden">
+        <div class="flex-grow overflow-y-auto">
+            <div class="container mx-auto p-4 h-full">
+                <div class="bg-white shadow-md rounded-lg overflow-hidden h-full">
+                    <div id="calendar" class="h-full"></div>
+                </div>
             </div>
-
-            <div class="calendar-container flex-grow" x-html="calendarHtml"></div>
         </div>
     </div>
 </div>
 
-<script>
-function calendarData() {
-    return {
-        currentDate: new Date(),
-        calendarHtml: '',
-        viewType: 'month',
-        get currentPeriodName() {
-            return `${this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`;
 
-        },
-        async fetchCalendar() {
-            const year = this.currentDate.getFullYear();
-            const month = this.currentDate.getMonth() + 1;
-            const week = this.getWeekNumberInMonth(this.currentDate);
-            const response = await fetch(`/get_calendar_data?year=${year}&month=${month}&week=${week}&view_type=${this.viewType}`);
-            const data = await response.json();
-            this.calendarHtml = data.calendar_html;
-        },
-        previousPeriod() {
-            if (this.viewType === 'month') {
-                this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
-            } else {
-                this.currentDate.setDate(this.currentDate.getDate() - 7);
-                if (this.getWeekNumberInMonth(this.currentDate) > 4) {
-                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+<div id="eventModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 m-4 max-w-xl w-full">
+            <h2 id="modalTitle" class="text-xl mb-4"></h2>
+            <form id="eventForm">
+                {% csrf_token %}
+                <input type="hidden" id="eventId" name="id">
+                <div class="mb-4">
+                    <label for="eventTitle" class="block text-sm font-medium text-gray-700">Event Title</label>
+                    <input type="text" id="eventTitle" name="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="mb-4">
+                    <label for="eventAllDay" class="flex items-center">
+                        <input type="checkbox" id="eventAllDay" name="allDay" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        <span class="ml-2 text-sm text-gray-700">All Day</span>
+                    </label>
+                </div>
+                <div class="mb-4">
+                    <label for="eventStart" class="block text-sm font-medium text-gray-700">Start Time</label>
+                    <input type="datetime-local" id="eventStart" name="start" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="mb-4">
+                    <label for="eventEnd" class="block text-sm font-medium text-gray-700">End Time</label>
+                    <input type="datetime-local" id="eventEnd" name="end" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" id="deleteEventButton" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Delete</button>
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Cancel</button>
+                    <button type="button" onclick="saveEvent()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Save</button>
+                
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // Calendar Initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: '/get_calendar_data/',
+            selectable: true,
+            select: handleDateSelect,
+            eventClick: function(info) {
+                if (info.event.id.startsWith('event_')) {
+                    showEditModal(info.event);
                 }
-            }
-            this.fetchCalendar();
-        },
-        nextPeriod() {
-            if (this.viewType === 'month') {
-                this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
-            } else {
-                this.currentDate.setDate(this.currentDate.getDate() + 7);
-                if (this.getWeekNumberInMonth(this.currentDate) > 4) {
-                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
-                }
-            }
-            this.fetchCalendar();
-        },
-        toggleView() {
-            this.viewType = this.viewType === 'month' ? 'week' : 'month';
-            this.fetchCalendar();
-        },
-        getWeekNumberInMonth(d) {
-            const firstDayOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
-            const offsetDate = new Date(d.getTime());
-            offsetDate.setDate(offsetDate.getDate() - firstDayOfMonth.getDay());
-            return Math.ceil((d.getDate() + firstDayOfMonth.getDay()) / 7);
-        },
-        getOrdinal(n) {
-            const s = ["th", "st", "nd", "rd"];
-            const v = n % 100;
-            return n + (s[(v - 20) % 10] || s[v] || s[0]);
-        },
-        init() {
-            this.fetchCalendar();
+            },
+            eventDrop: function(info) {
+                updateEvent(info.event);
+            },
+            eventResize: function(info) {
+                updateEvent(info.event);
+            },
+            height: '100%',
+            timeZone: 'local',
+            fixedWeekCount: false, 
+        });
+    
+        calendar.render();
+    });
+
+    function handleDateSelect(selectInfo) {
+        var allDay = !selectInfo.view.type.includes('time');
+        var start = selectInfo.start;
+        var end = selectInfo.end;
+    
+        if (allDay) {
+            // For all-day event subtract one day
+            end = new Date(end.getTime() - 86400000);
+        }
+    
+        showModal('Create Event', start, end, allDay);
+    }
+
+    function formatDate(date) {
+        return date.toISOString().split('T')[0];
+    }
+    
+    function formatDateTime(date) {
+        return date.toISOString().slice(0, 16);
+    }
+    
+    function showModal(title, start, end, allDay) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventAllDay').checked = allDay;
+    
+        var startDate = moment(start);
+        var endDate = moment(end);
+    
+        // Temporarily change the type to text to ensure re-rendering - Fixes issue where on first time fields aren't populated
+        document.getElementById('eventStart').type = 'text';
+        document.getElementById('eventEnd').type = 'text';
+    
+        if (allDay) {
+            document.getElementById('eventStart').value = startDate.format('YYYY-MM-DD');
+            document.getElementById('eventEnd').value = endDate.format('YYYY-MM-DD');
+            document.getElementById('eventStart').type = 'date';
+            document.getElementById('eventEnd').type = 'date';
+        } else {
+            document.getElementById('eventStart').value = startDate.format('YYYY-MM-DDTHH:mm');
+            document.getElementById('eventEnd').value = endDate.format('YYYY-MM-DDTHH:mm');
+            document.getElementById('eventStart').type = 'datetime-local';
+            document.getElementById('eventEnd').type = 'datetime-local';
+        }
+    
+        document.getElementById('eventId').value = '';
+        document.getElementById('eventModal').classList.remove('hidden');
+        updateDateTimeInputs(allDay);
+    }
+    
+    
+    function showEditModal(event) {
+        document.getElementById('modalTitle').textContent = 'Edit Event';
+        document.getElementById('eventTitle').value = event.title;
+        document.getElementById('eventStart').value = event.allDay ? event.start.toISOString().slice(0, 10) : event.start.toISOString().slice(0, 16);
+        document.getElementById('eventEnd').value = event.allDay ? event.end.toISOString().slice(0, 10) : event.end.toISOString().slice(0, 16);
+        document.getElementById('eventAllDay').checked = event.allDay;
+        document.getElementById('eventId').value = event.id;
+        document.getElementById('eventModal').classList.remove('hidden');
+        updateDateTimeInputs(event.allDay);
+    }   
+    
+    function closeModal() {
+        document.getElementById('eventModal').classList.add('hidden');
+    }
+    
+    function updateDateTimeInputs(allDay) {
+        var startInput = document.getElementById('eventStart');
+        var endInput = document.getElementById('eventEnd');
+        if (allDay) {
+            startInput.type = 'date';
+            endInput.type = 'date';
+        } else {
+            startInput.type = 'datetime-local';
+            endInput.type = 'datetime-local';
         }
     }
-}
-</script>
-{% endblock content %}
+    
+    function saveEvent() {
+        var form = document.getElementById('eventForm');
+        var formData = new FormData(form);
+        var eventId = formData.get('id');
+        var url = eventId ? '/update_event/' : '/create_event/';
+
+        var allDay = document.getElementById('eventAllDay').checked;
+        formData.set('allDay', allDay);
+
+        var start = formData.get('start');
+        var end = formData.get('end');
+        
+        if (allDay) {
+            // For all-day events, use the date and set time to midnight UTC
+            start = moment(start).format('YYYY-MM-DD');
+            end = moment(end).format('YYYY-MM-DD');
+        } else {
+            // For timed events, keep the time but ensure it's in ISO format
+            start = moment(start).format('YYYY-MM-DDTHH:mm:ss');
+            end = moment(end).format('YYYY-MM-DDTHH:mm:ss');
+        }
+
+        formData.set('start', start);
+        formData.set('end', end);
+    
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                closeModal();
+                if (eventId) {
+                    var existingEvent = calendar.getEventById(eventId);
+                    if (existingEvent) {
+                        existingEvent.remove();
+                    }
+                }
+                calendar.addEvent(data);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the event.');
+        });
+    }
+    
+    function updateEvent(event) {
+        var formData = new FormData();
+        formData.append('id', event.id);
+        formData.append('title', event.title);
+        
+        var start, end;
+        if (event.allDay) {
+            // For all-day events, adjust the end date
+            start = moment(event.start).format('YYYY-MM-DD');
+            end = moment(event.end).subtract(1, 'days').format('YYYY-MM-DD');
+        } else {
+            start = moment(event.start).format('YYYY-MM-DDTHH:mm:ss');
+            end = moment(event.end).format('YYYY-MM-DDTHH:mm:ss');
+        }
+        
+        formData.append('start', start);
+        formData.append('end', end);
+        formData.append('allDay', event.allDay);
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        
+        // Add timezone offset
+        formData.append('timezone_offset', new Date().getTimezoneOffset());
+    
+        fetch('/update_event/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                event.revert();
+            } else {
+                // Update successful
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            event.revert();
+        });
+    }
+
+    function deleteEvent() {
+        var eventId = document.getElementById('eventId').value;
+        if (!eventId) {
+            alert('Cannot delete a new event');
+            return;
+        }
+    
+        if (confirm('Are you sure you want to delete this event?')) {
+            var formData = new FormData();
+            formData.append('id', eventId);
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+            fetch('/delete_event/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    var existingEvent = calendar.getEventById(eventId);
+                    if (existingEvent) {
+                        existingEvent.remove();
+                    }
+                    closeModal();
+                } else {
+                    alert('Error deleting event: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }   
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    document.getElementById('eventAllDay').addEventListener('change', function() {
+        updateDateTimeInputs(this.checked);
+    });
+
+    document.getElementById('deleteEventButton').addEventListener('click', deleteEvent);
+
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+{% endblock %}
 
 # File: cs_nea/templates/scheduling/teacher_schedule_lesson.html
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
-
+{% block name %}Schedule or Request a Lesson{% endblock %}
 {% block content %}
-<div class="container mx-auto px-4 py-8" x-data="{ showModal: false }">
-    <h1 class="text-2xl font-bold mb-4">Schedule or Request a Lesson</h1>
-    
-    <form method="post" @submit.prevent="showModal = true">
+
+<div class="container mx-auto">
+    <form method="post" x-data="{ showModal: false }" class="bg-white rounded-lg shadow-md p-6">
         {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-4">
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+
+        <div class="flex flex-col gap-4 justify-center w-full">
+            {% for field in form %}
+                <div class="w-full">
                     {{ field.label }}
-                </label>
-                <div class="mt-1">
-                    {% render_field field class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                    {{ field|add_class:"shadow border rounded w-full text-gray-700 focus:border-purple-500" }}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-xs italic">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
                 </div>
-                {% if field.errors %}
-                    {% for error in field.errors %}
-                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
-                    {% endfor %}
-                {% endif %}
+            {% endfor %}
+
+            <div class="pt-6">
+                <button type="button" x-on:click="showModal = true" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                    Submit
+                </button>
             </div>
-        {% endfor %}
-        <div>
-            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Submit
-            </button>
+        </div>
+
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-show="showModal" x-cloak>
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Lesson Schedule/Request</h3>
+                    <div class="mt-2 px-7 py-3">
+                        <p class="text-sm text-gray-500">Are you sure you want to submit this lesson schedule/request?</p>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <button type="button" x-on:click="showModal = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-purple-500 text-white text-base font-medium rounded-md w-24">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </form>
-
-    <!-- Modal -->
-    <div x-show="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-cloak>
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Lesson Schedule/Request</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500">
-                        Are you sure you want to submit this lesson schedule/request?
-                    </p>
-                </div>
-                <div class="items-center px-4 py-3">
-                    <button
-                        @click="showModal = false"
-                        class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-600"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        @click="document.querySelector('form').submit()"
-                        class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-24 hover:bg-green-600"
-                    >
-                        Confirm
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
+
 {% endblock %}
 
 # File: cs_nea/templates/scheduling/create_lesson.html
@@ -741,54 +968,156 @@ function calendarData() {
 # File: cs_nea/templates/scheduling/student_schedule_lesson.html
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
+
 {% block name %}Request a Lesson{% endblock %}
+
 {% block content %}
+<div class="bg-white rounded-lg shadow-md p-6 h-full">
+    <div class="h-full flex flex-col overflow-hidden">
+        <div class="flex-grow overflow-y-auto">
+            <div class="container mx-auto p-4 h-full">
+                <form id="lessonRequestForm" method="post" class="mb-8">
+                    {% csrf_token %}
+                    
+                    <div class="flex flex-col gap-4 justify-center w-full">
+                        <!-- Teacher field -->
+                        <div class="w-full">
+                            {{ form.teacher.label_tag }}
+                            {% render_field form.teacher class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" %}
+                            {% if form.teacher.errors %}
+                                {% for error in form.teacher.errors %}
+                                    <p class="text-red-500 text-xs italic">{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
 
-<div class="container mx-auto py-8">
-    <form class="bg-white rounded-lg shadow-md p-6" method="post" x-data="{ showModal: false }" @submit.prevent="showModal = true">
-        {% csrf_token %}
-        <div class="flex flex-col gap-4 justify-center w-full">
+                        <!-- Calendar container -->
+                        <div id="calendar-container" class="w-full hidden mt-4">
+                            <div id="calendar"></div>
+                        </div>
 
-            {% for field in form %}
-                <div class="w-full">
-                    <label class="text-neutral-800 text-sm font-bold" for="{{ field.id_for_label }}">
-                        {{ field.label }}
-                    </label>
-                    {{ field|add_class:"shadow border rounded w-full text-gray-700 focus:border-purple-500" }}
-                    {% if field.errors %}
-                        {% for error in field.errors %}
-                            <p class="text-red-500 text-xs italic">{{ error }}</p>
+                        <!-- Other form fields -->
+                        {% for field in form %}
+                            {% if field.name != 'teacher' %}
+                            <div class="w-full">
+                                {{ field.label_tag }}
+                                {% render_field field class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" %}
+                                {% if field.errors %}
+                                    {% for error in field.errors %}
+                                        <p class="text-red-500 text-xs italic">{{ error }}</p>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         {% endfor %}
-                    {% endif %}
-                </div>
-            {% endfor %}
 
-            <div class="pt-6">
-                <input
-                    class="w-full bg-purple-500 text-white font-medium rounded-lg px-4 py-2 hover:bg-purple-600 hover:ring-2 ring-purple-800"
-                    type="submit"
-                    value="Submit Request"
-                />
+                        <input type="hidden" name="timezone">
+                        
+                        <div class="pt-6">
+                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                Submit Lesson Request
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
-
-        <!-- Confirmation Modal -->
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-show="showModal" x-cloak>
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div class="mt-3 text-center">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Lesson Request</h3>
-                    <div class="mt-2 px-7 py-3">
-                        <p class="text-gray-500">Are you sure you want to submit this lesson request?</p>
-                    </div>
-                    <div class="items-center px-4 py-3">
-                        <button @click="showModal = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-600">Cancel</button>
-                        <button @click="$refs.form.submit()" class="px-4 py-2 bg-purple-500 text-white text-base font-medium rounded-md w-24 hover:bg-purple-600">Confirm</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
+    </div>
 </div>
+
+<!-- Modal -->
+<div id="confirmModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 m-4 max-w-xl w-full">
+            <h2 class="text-xl mb-4">Confirm Lesson Request</h2>
+            <p class="mb-4">Are you sure you want to submit this lesson request?</p>
+            <div class="flex justify-end space-x-2">
+                <button id="cancelButton" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md">Cancel</button>
+                <button id="confirmButton" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var timezoneInput = document.createElement('input');
+        timezoneInput.setAttribute('type', 'hidden');
+        timezoneInput.setAttribute('name', 'timezone');
+        timezoneInput.setAttribute('value', Intl.DateTimeFormat().resolvedOptions().timeZone);
+        document.getElementById('lessonRequestForm').appendChild(timezoneInput);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendarContainer = document.getElementById('calendar-container');
+        var teacherSelect = document.getElementById('teacher-select');
+        var form = document.getElementById('lessonRequestForm');
+        var modal = document.getElementById('confirmModal');
+        var cancelButton = document.getElementById('cancelButton');
+        var confirmButton = document.getElementById('confirmButton');
+    
+        if (!teacherSelect) {
+            console.error('Teacher select element not found');
+            return;
+        }
+    
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 'auto',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek'
+            },
+            events: [],
+        });
+    
+        teacherSelect.addEventListener('change', function() {
+            var teacherId = this.value;
+            if (teacherId) {
+                calendarContainer.classList.remove('hidden');
+                if (!calendar.isRendered) {
+                    calendar.render();
+                    calendar.isRendered = true;
+                }
+                fetch(`/get_teacher_schedule/${teacherId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        calendar.removeAllEvents();
+                        calendar.addEventSource(data);
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                calendarContainer.classList.add('hidden');
+                calendar.removeAllEvents();
+            }
+        });
+    
+        // Show modal on form submit
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            modal.classList.remove('hidden');
+        });
+    
+        // Hide modal on cancel
+        cancelButton.addEventListener('click', function() {
+            modal.classList.add('hidden');
+        });
+    
+        // Submit form on confirm
+        confirmButton.addEventListener('click', function() {
+            form.submit();
+        });
+    
+        if (teacherSelect.value) {
+            teacherSelect.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 {% endblock %}
 
 # File: cs_nea/templates/scheduling/reschedule_lesson.html
@@ -797,7 +1126,7 @@ function calendarData() {
 {% block name %}Request Lesson Rescheduling{% endblock %}
 {% block content %}
 
-<div class="container mx-auto py-8" x-data="{ showModal: false }">
+<div class="container mx-auto" x-data="{ showModal: false }">
     <form method="post" class="flex flex-col bg-white rounded-lg shadow-md p-6 gap-4" @submit.prevent="showModal = true" x-ref="form">
         {% csrf_token %}
         {% for field in form %}
@@ -847,9 +1176,9 @@ function calendarData() {
 {% block name %}Lesson Requests{% endblock %}
 
 {% block content %}
-<div class="container mx-auto py-8" x-data="{ showAcceptModal: false, showDeclineModal: false, selectedRequest: null, requestType: '' }">
+<div class="container mx-auto" x-data="{ showAcceptModal: false, showDeclineModal: false, selectedRequest: null, requestType: '' }">
     {% if scheduling_requests or rescheduling_requests %}
-        <h2 class="text-2xl font-bold mb-4">New Lesson Requests</h2>
+        <h2 class="text-xl font-semibold mb-4">New Lesson Requests</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {% for request in scheduling_requests %}
                 <div class="bg-white shadow-md rounded-lg p-6">
@@ -859,8 +1188,8 @@ function calendarData() {
                     {% else %}
                         <p>From: {{ request.student.user.get_full_name }}</p>
                     {% endif %}
-                    <p>Start: {{ request.requested_datetime|date:"F d, Y H:i" }}</p>
-                    <p>End: {{ request.end_datetime|date:"F d, Y H:i" }}</p>
+                    <p>Start: <span class="datetime" data-datetime="{{ request.requested_datetime|date:'c' }}"></span></p>
+                    <p>End: <span class="datetime" data-datetime="{{ request.end_datetime|date:'c' }}"></span></p>
                     <p>Recurring: {{ request.recurring_amount }} time(s)</p>
                     <p>Reason: {{ request.request_reason }}</p>
                     <div class="flex justify-between mt-4">
@@ -875,25 +1204,25 @@ function calendarData() {
             {% endfor %}
         </div>
 
-        <h2 class="text-2xl font-bold mb-4">Rescheduling Requests</h2>
+        <h2 class="text-xl font-semibold mb-4">Rescheduling Requests</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for request in rescheduling_requests %}
                 <div class="bg-white shadow-md rounded-lg p-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-2">Rescheduling Request</h3>
                     {% if user.user_type == 1 %}
-                        <p>From: {{ request.teacher.user.get_full_name }}</p>
+                        <p>From: {{ request.original_lesson.teacher.user.get_full_name }}</p>
                     {% else %}
-                        <p>From: {{ request.student.user.get_full_name }}</p>
+                        <p>From: {{ request.original_lesson.student.user.get_full_name }}</p>
                     {% endif %}
-                    <p>Original Lesson: {{ request.original_lesson.start_datetime|date:"F d, Y H:i" }}</p>
-                    <p>New Start: {{ request.requested_datetime|date:"F d, Y H:i" }}</p>
-                    <p>New End: {{ request.end_datetime|date:"F d, Y H:i" }}</p>
+                    <p>Original Lesson: <span class="datetime" data-datetime="{{ request.original_lesson.start_datetime|date:'c' }}"></span></p>
+                    <p>New Start: <span class="datetime" data-datetime="{{ request.requested_datetime|date:'c' }}"></span></p>
+                    <p>New End: <span class="datetime" data-datetime="{{ request.end_datetime|date:'c' }}"></span></p>
                     <p>Reason: {{ request.request_reason }}</p>
                     <div class="flex justify-between mt-4">
-                        <button @click="showAcceptModal = true; selectedRequest = '{{ request.id }}'; requestType = 'reschedule'" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                        <button @click="showAcceptModal = true; selectedRequest = '{{ request.rescheduling_id }}'; requestType = 'reschedule'" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
                             Accept
                         </button>
-                        <button @click="showDeclineModal = true; selectedRequest = '{{ request.id }}'; requestType = 'reschedule'" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                        <button @click="showDeclineModal = true; selectedRequest = '{{ request.rescheduling_id }}'; requestType = 'reschedule'" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
                             Decline
                         </button>
                     </div>
@@ -946,7 +1275,30 @@ function calendarData() {
         </div>
     </div>
 </div>
+
+<!-- Converts UTC time from db to local time -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateTimeElements = document.querySelectorAll('.datetime');
+        dateTimeElements.forEach(element => {
+            const dateTimeString = element.getAttribute('data-datetime');
+            const localDate = new Date(dateTimeString);
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            };
+            element.textContent = localDate.toLocaleDateString(undefined, options);
+        });
+    });
+</script>
+
+
 {% endblock %}
+
 
 # File: cs_nea/templates/scheduling/create_other_event.html
 {% extends "_dashboard.html" %}
@@ -967,7 +1319,7 @@ function calendarData() {
 {% block name %} Direct Messages {% endblock %}
 
 {% block content %}
-<div class="container mx-auto py-8">
+<div class="container mx-auto bg-white rounded-lg shadow-md p-6">
     <ul class="space-y-2">
         {% for user in users %}
             <li>
@@ -986,10 +1338,10 @@ function calendarData() {
 {% extends "_dashboard.html" %}
 {% load static %}
 
+{% block name %}Assignment Details{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-3xl font-bold mb-6 text-gray-800">Assignment Details</h2>
-    
+<div class="container mx-auto px-4 py-8">    
     <div class="bg-white shadow-md rounded-lg p-6">
         <h3 class="text-2xl font-semibold text-gray-800 mb-4">{{ assignment.task_content }}</h3>
         <p class="text-gray-600 mb-2">Assigned by: {{ assignment.teacher.user.get_full_name }}</p>
@@ -1022,10 +1374,10 @@ function calendarData() {
 {% load static %}
 {% load widget_tweaks %}
 
+{% block name %}Create New Assignment{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-3xl font-bold mb-6 text-gray-800">Create New Assignment</h2>
-    
+<div class="container mx-auto">
     <form method="post" class="bg-white shadow-md rounded-lg p-6">
         {% csrf_token %}
         <div class="mb-4">
@@ -1059,7 +1411,7 @@ function calendarData() {
 {% block name %}Assignments{% endblock %}
 
 {% block content %}
-<div class="container mx-auto py-8">
+<div class="container mx-auto">
     {% if user.user_type == 2 %}
     <a href="{% url 'create_assignment' %}" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded mb-6 inline-block transition duration-300 ease-in-out">
         Create New Assignment
@@ -1743,7 +2095,7 @@ function calendarData() {
 {% block name %}Teachers{% endblock %}
 {% block content %}
 
-<div class="container mx-auto py-6">
+<div class="container mx-auto">
     {% if teachers %}
     <div class="grid grid-cols-1 gap-6">
         {% for teacher in teachers %}
@@ -1775,7 +2127,7 @@ function calendarData() {
 {% block name %}Pending Invites{% endblock %}
 {% block content %}
 
-<div class="container mx-auto py-6 pr-4">
+<div class="container mx-auto">
     {% if invites %}
     <div class="space-y-6">
         {% for invite in invites %}
@@ -1818,7 +2170,7 @@ function calendarData() {
 {% block name %}My Students{% endblock %}
 
 {% block content %}
-<div class="container mx-auto py-6 pr-4">
+<div class="container mx-auto">
     {% if students %}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {% for student in students %}
@@ -1909,8 +2261,8 @@ function showEditForm(noteId) {
 {% block name %}Invite Student{% endblock %}
 
 {% block content %}
-<div class="container mx-auto py-8">
-    <form method="post" class="space-y-4">
+<div class="container mx-auto">
+    <form method="post">
         {% csrf_token %}
 
         {% if form.non_field_errors %}
@@ -2241,16 +2593,202 @@ from django.contrib import admin
 # Register your models here.
 
 
+# File: cs_nea/scheduling/calendar_views.py
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET, require_POST
+from django.contrib.auth.decorators import login_required
+from .models import Lesson, CalendarEvent
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from datetime import datetime, timedelta
+
+@login_required
+def calendar_view(request):
+    return render(request, "scheduling/calendar.html")
+
+
+@login_required
+@require_GET
+def get_calendar_data(request):
+    start = timezone.datetime.fromisoformat(request.GET.get("start").replace("Z", "+00:00"))
+    end = timezone.datetime.fromisoformat(request.GET.get("end").replace("Z", "+00:00"))
+
+    user_timezone = timezone.get_current_timezone()
+
+    events = []
+
+    if request.user.user_type == 2:  # Teacher
+        lessons = Lesson.objects.filter(
+            teacher=request.user.teacher,
+            start_datetime__gte=start,
+            end_datetime__lte=end,
+        )
+        calendar_events = CalendarEvent.objects.filter(
+            teacher=request.user.teacher,
+            start_datetime__gte=start,
+            end_datetime__lte=end,
+        )
+    elif request.user.user_type == 1:  # Student
+        lessons = Lesson.objects.filter(
+            student=request.user.student,
+            start_datetime__gte=start,
+            end_datetime__lte=end,
+        )
+        calendar_events = []  # Students don't see calendar events
+    else:
+        lessons = []
+        calendar_events = []
+
+    for lesson in lessons:
+        event_title = (
+            f"Lesson with {lesson.student.user.get_full_name()}"
+            if request.user.user_type == 2
+            else f"Lesson with {lesson.teacher.user.get_full_name()}"
+        )
+        events.append({
+            "id": f"lesson_{lesson.lesson_id}",
+            "title": event_title,
+            "start": lesson.start_datetime.astimezone(user_timezone).isoformat(),
+            "end": lesson.end_datetime.astimezone(user_timezone).isoformat(),
+            "color": "blue",
+            "editable": False,
+        })
+
+    for event in calendar_events:
+        events.append({
+            "id": f"event_{event.event_id}",
+            "title": event.title,
+            "start": event.start_datetime.astimezone(user_timezone).isoformat(),
+            "end": event.end_datetime.astimezone(user_timezone).isoformat(),
+            "allDay": event.all_day,
+            "color": "green",
+            "editable": True,
+        })
+
+    return JsonResponse(events, safe=False)
+
+
+# Calendar views for AJAX requests to create, update, and delete events
+@login_required
+@require_POST
+def create_event(request):
+    if request.user.user_type != 2:
+        return JsonResponse({"error": "Only teachers can create events"}, status=403)
+
+    title = request.POST.get("title")
+    start_str = request.POST.get("start")
+    end_str = request.POST.get("end")
+    all_day = request.POST.get("allDay") == "true"
+    event_type = request.POST.get("event_type", "other")
+
+    try:
+        if all_day:
+            start = timezone.datetime.strptime(start_str, "%Y-%m-%d").date()
+            end = timezone.datetime.strptime(end_str, "%Y-%m-%d").date()
+            start_datetime = timezone.make_aware(timezone.datetime.combine(start, timezone.datetime.min.time()))
+            end_datetime = timezone.make_aware(timezone.datetime.combine(end, timezone.datetime.max.time()))
+        else:
+            start_datetime = timezone.datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%S")
+            end_datetime = timezone.datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%S")
+            start_datetime = timezone.make_aware(start_datetime)
+            end_datetime = timezone.make_aware(end_datetime)
+
+        event = CalendarEvent.objects.create(
+            teacher=request.user.teacher,
+            title=title,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+            all_day=all_day,
+            event_type=event_type,
+        )
+
+        return JsonResponse({
+            "id": f"event_{event.event_id}",
+            "title": event.title,
+            "start": event.start_datetime.isoformat(),
+            "end": event.end_datetime.isoformat(),
+            "allDay": event.all_day,
+            "color": "green",
+            "editable": True,
+        })
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def update_event(request):
+    event_id = request.POST.get("id")
+    if not event_id.startswith("event_"):
+        return JsonResponse({"error": "Can only update calendar events"}, status=400)
+
+    event = get_object_or_404(CalendarEvent, event_id=event_id[6:])
+    if event.teacher != request.user.teacher:
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
+    title = request.POST.get("title")
+    start_str = request.POST.get("start")
+    end_str = request.POST.get("end")
+    all_day = request.POST.get("allDay") == "true"
+    timezone_offset = int(request.POST.get("timezone_offset", 0))
+
+    try:
+        if all_day:
+            start = datetime.strptime(start_str, "%Y-%m-%d").date()
+            end = datetime.strptime(end_str, "%Y-%m-%d").date()
+            event.start_datetime = timezone.make_aware(datetime.combine(start, datetime.min.time()))
+            event.end_datetime = timezone.make_aware(datetime.combine(end, datetime.max.time()))
+        else:
+            start_datetime = datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%S")
+            end_datetime = datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%S")
+            
+            # Applies timezone offset
+            start_datetime = start_datetime + timedelta(minutes=timezone_offset)
+            end_datetime = end_datetime + timedelta(minutes=timezone_offset)
+            
+            event.start_datetime = timezone.make_aware(start_datetime)
+            event.end_datetime = timezone.make_aware(end_datetime)
+
+        event.title = title
+        event.all_day = all_day
+        event.save()
+
+        return JsonResponse({
+            "id": f"event_{event.event_id}",
+            "title": event.title,
+            "start": event.start_datetime.isoformat(),
+            "end": event.end_datetime.isoformat(),
+            "allDay": event.all_day,
+            "color": "green",
+            "editable": True,
+        })
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def delete_event(request):
+    event_id = request.POST.get("id")
+    if not event_id.startswith("event_"):
+        return JsonResponse({"error": "Can only delete calendar events"}, status=400)
+
+    event = get_object_or_404(CalendarEvent, event_id=event_id[6:])
+    if event.teacher != request.user.teacher:
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
+    event.delete()
+    return JsonResponse({"success": True})
+
+
 # File: cs_nea/scheduling/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
-from datetime import date
 from .forms import (
     StudentLessonRequestForm,
     TeacherLessonRequestForm,
-    OtherEventForm,
     LessonForm,
     RescheduleLessonForm,
 )
@@ -2258,16 +2796,17 @@ from .models import (
     Student,
     Teacher,
     Lesson,
-    OtherEvent,
     LessonRequest,
     ReschedulingRequest,
+    CalendarEvent
 )
-from .calendar_utils import LessonCalendar
 from communications.models import Notification
 from datetime import timedelta
 from django.db import transaction
 from communications.models import Notification, NotificationConfig
-
+from datetime import datetime, timedelta
+from django.utils.timezone import make_aware
+from django.utils import timezone
 
 def is_teacher(user):
     return user.user_type == 2
@@ -2287,24 +2826,11 @@ def student_lesson_request(request):
             lesson_request = form.save(commit=False)
             lesson_request.student = request.user.student
             lesson_request.is_rescheduling = False
+
+            lesson_request.requested_datetime = form.cleaned_data['requested_datetime']
+            lesson_request.end_datetime = form.cleaned_data['end_datetime']
+
             lesson_request.save()
-
-            teacher = lesson_request.teacher
-            # Get or create NotificationConfig for the teacher
-            notification_config, created = NotificationConfig.objects.get_or_create(
-                user=teacher.user
-            )
-
-            if notification_config.receive_notification:
-                recurring_text = (
-                    f" (recurring {lesson_request.recurring_amount} times)"
-                    if lesson_request.recurring_amount > 1
-                    else ""
-                )
-                Notification.objects.create(
-                    receiver=teacher.user,
-                    content=f"New lesson request from {request.user.get_full_name()}{recurring_text}",
-                )
 
             messages.success(request, "Lesson request submitted successfully!")
             return redirect("dashboard")
@@ -2318,6 +2844,49 @@ def student_lesson_request(request):
     return render(request, "scheduling/student_schedule_lesson.html", {"form": form})
 
 
+# Fetching teacher schedule for calendar view
+@login_required
+@user_passes_test(is_student)
+def get_teacher_schedule(request, teacher_id):
+    teacher = get_object_or_404(Teacher, teacher_id=teacher_id)
+    start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=30)  # Get events for the next 30 days only
+
+    lessons = Lesson.objects.filter(
+        teacher=teacher,
+        start_datetime__gte=start,
+        end_datetime__lte=end,
+    )
+
+    calendar_events = CalendarEvent.objects.filter(
+        teacher=teacher,
+        start_datetime__gte=start,
+        end_datetime__lte=end,
+    )
+
+    events = []
+    for lesson in lessons:
+        events.append({
+            "id": f"lesson_{lesson.lesson_id}",
+            "title": "Busy",
+            "start": lesson.start_datetime.isoformat(),
+            "end": lesson.end_datetime.isoformat(),
+            "color": "blue",
+        })
+
+    for event in calendar_events:
+        events.append({
+            "id": f"event_{event.event_id}",
+            "title": "Busy",
+            "start": event.start_datetime.isoformat(),
+            "end": event.end_datetime.isoformat(),
+            "allDay": event.all_day,
+            "color": "green",
+        })
+
+    return JsonResponse(events, safe=False)
+
+
 # Teacher lesson request form
 @login_required
 @user_passes_test(is_teacher)
@@ -2329,6 +2898,9 @@ def teacher_lesson_request(request):
             lesson_request.teacher = request.user.teacher
             lesson_request.is_rescheduling = False
             lesson_request.is_sent_by_teacher = True
+            
+            lesson_request.requested_datetime = make_aware(form.cleaned_data['requested_datetime'])
+            lesson_request.end_datetime = make_aware(form.cleaned_data['end_datetime'])
 
             if form.cleaned_data["send_request"]:
                 lesson_request.save()
@@ -2398,6 +2970,8 @@ def create_lesson(request):
         if form.is_valid():
             lesson = form.save(commit=False)
             lesson.student = Student.objects.get(user=request.user)
+            lesson.start_datetime = timezone.make_aware(form.cleaned_data['start_datetime'])
+            lesson.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
             lesson.save()
             messages.success(request, "Lesson created successfully!")
             return redirect("lesson_list")
@@ -2407,43 +2981,24 @@ def create_lesson(request):
     return render(request, "scheduling/create_lesson.html", {"form": form})
 
 
-# Create other event view
-@login_required
-def create_other_event(request):
-    if request.method == "POST":
-        form = OtherEventForm(request.POST)
-        if form.is_valid():
-            event = form.save(commit=False)
-            event.teacher = Teacher.objects.get(
-                user=request.user
-            )  # Assuming the logged-in user is a teacher
-            event.save()
-            messages.success(request, "Event created successfully!")
-            return redirect("dashboard")  # Redirect to a list of events or dashboard
-    else:
-        form = OtherEventForm()
-
-    return render(request, "scheduling/create_other_event.html", {"form": form})
-
-
 # View for listing lessons requests
 @login_required
 def lesson_requests(request):
-    if request.user.user_type == 1:
+    if request.user.user_type == 1:  # Student
         scheduling_requests = LessonRequest.objects.filter(
-            student=request.user.student, is_approved=False, is_rescheduling=False
+            student=request.user.student, is_approved=False
         )
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__student=request.user.student, is_approved=False
         )
-    else:
+    else:  # Teacher
         scheduling_requests = LessonRequest.objects.filter(
-            teacher=request.user.teacher, is_approved=False, is_rescheduling=False
+            teacher=request.user.teacher, is_approved=False
         )
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__teacher=request.user.teacher, is_approved=False
         )
-
+    
     context = {
         "scheduling_requests": scheduling_requests,
         "rescheduling_requests": rescheduling_requests,
@@ -2513,43 +3068,6 @@ def decline_lesson_request(request, request_id):
     return redirect("lesson_requests")
 
 
-# Calendar views
-@login_required
-def calendar_view(request):
-    return render(request, "scheduling/calendar.html")
-
-
-# Calendar refresh view
-@login_required
-def get_calendar_data(request):
-    year = int(request.GET.get("year"))
-    month = int(request.GET.get("month"))
-    view_type = request.GET.get("view_type", "month")
-
-    # Fetch events for the entire month
-    start_date = date(year, month, 1)
-    end_date = date(year, month + 1, 1) if month < 12 else date(year + 1, 1, 1)
-
-    lessons = Lesson.objects.filter(
-        start_datetime__gte=start_date, start_datetime__lt=end_date
-    )
-    other_events = OtherEvent.objects.filter(
-        start_datetime__gte=start_date, start_datetime__lt=end_date
-    )
-
-    if view_type == "month":
-        cal = LessonCalendar(year, month, lessons=lessons, other_events=other_events)
-        html_cal = cal.formatmonth(withyear=True)
-    else:  # week view
-        week = int(request.GET.get("week", 1))
-        cal = LessonCalendar(
-            year, month, week, lessons=lessons, other_events=other_events
-        )
-        html_cal = cal.formatweek_view()
-
-    return JsonResponse({"calendar_html": html_cal})
-
-
 # Reschedule lesson view
 @login_required
 def reschedule_lesson(request):
@@ -2561,6 +3079,8 @@ def reschedule_lesson(request):
                     rescheduling_request = form.save(commit=False)
                     rescheduling_request.requested_by = request.user
                     rescheduling_request.original_lesson = form.cleaned_data["lesson"]
+                    rescheduling_request.requested_datetime = timezone.make_aware(form.cleaned_data['requested_datetime'])
+                    rescheduling_request.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
                     rescheduling_request.save()
 
                     # Create notification for the other party
@@ -2593,7 +3113,7 @@ def reschedule_lesson(request):
 @login_required
 def accept_rescheduling_request(request, rescheduling_request_id):
     rescheduling_request = get_object_or_404(
-        ReschedulingRequest, id=rescheduling_request_id
+        ReschedulingRequest, rescheduling_id=rescheduling_request_id
     )
 
     if request.user.user_type == 1:  # Student
@@ -2628,7 +3148,7 @@ def accept_rescheduling_request(request, rescheduling_request_id):
 @login_required
 def decline_rescheduling_request(request, rescheduling_request_id):
     rescheduling_request = get_object_or_404(
-        ReschedulingRequest, id=rescheduling_request_id
+        ReschedulingRequest, rescheduling_id=rescheduling_request_id
     )
 
     if request.user.user_type == 1:  # Student
@@ -2724,23 +3244,29 @@ class Lesson(models.Model):
         
     
 # Other event model, used to schedule events that are not lessons
-class OtherEvent(models.Model):
+class CalendarEvent(models.Model):
+    EVENT_TYPES = (
+        ('personal', 'Personal'),
+        ('work', 'Work'),
+        ('other', 'Other'),
+    )
+
     event_id = models.AutoField(primary_key=True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
     start_datetime = models.DateTimeField()
-    end_datetime = models.DateTimeField()
-    event_description = models.CharField(max_length=255)
-    recurring_amount = models.IntegerField()
+    end_datetime = models.DateTimeField()           
+    event_type = models.CharField(max_length=10, choices=EVENT_TYPES, default='other')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    all_day = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"{self.title} - {self.teacher.user.get_full_name()}"
 
-    def clean(self):
-        if self.start_datetime <= timezone.now():
-            raise ValidationError("Start datetime must be in the future.")
-        if self.end_datetime <= self.start_datetime:
-            raise ValidationError("End datetime must be after the start datetime.")
-        if not self.event_description.strip():
-            raise ValidationError("Event description cannot be empty or just whitespace.")
-        if self.recurring_amount < 1 or self.recurring_amount > 52:
-            raise ValidationError("Recurring amount must be between 1 and 52.")
+    class Meta:
+        ordering = ['start_datetime']
         
 
 # Rescheduling request model, used to request a rescheduling of a lesson
@@ -2800,14 +3326,20 @@ class ReschedulingRequest(models.Model):
 
 # File: cs_nea/scheduling/forms.py
 from django import forms
-from .models import LessonRequest, Lesson, OtherEvent, ReschedulingRequest
+from .models import LessonRequest, Lesson, ReschedulingRequest
+from users.models import Teacher    
 from django.utils import timezone
-from datetime import timedelta
-from users.models import Teacher, Student
-
+from pytz import timezone as pytz_timezone
+import pytz 
 
 # Lesson request form for students
 class StudentLessonRequestForm(forms.ModelForm):
+    teacher = forms.ModelChoiceField(
+        queryset=Teacher.objects.all(),
+        empty_label="Select a teacher",
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'teacher-select'})
+    )
+    
     class Meta:
         model = LessonRequest
         fields = [
@@ -2818,11 +3350,35 @@ class StudentLessonRequestForm(forms.ModelForm):
             "recurring_amount",
         ]
         widgets = {
-            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
+            "request_reason": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "recurring_amount": forms.NumberInput(attrs={"class": "form-control"}),
         }
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        requested_datetime = cleaned_data.get("requested_datetime")
+        end_datetime = cleaned_data.get("end_datetime")
+        user_timezone = self.data.get('timezone')
 
+        if user_timezone:
+            user_timezone = pytz_timezone(user_timezone)
+            
+            if requested_datetime:
+                if requested_datetime.tzinfo is not None:
+                    requested_datetime = requested_datetime.replace(tzinfo=None)
+                requested_datetime = user_timezone.localize(requested_datetime)
+                cleaned_data["requested_datetime"] = requested_datetime.astimezone(pytz.UTC)
 
+            if end_datetime:
+                if end_datetime.tzinfo is not None:
+                    end_datetime = end_datetime.replace(tzinfo=None)
+                end_datetime = user_timezone.localize(end_datetime)
+                cleaned_data["end_datetime"] = end_datetime.astimezone(pytz.UTC)
+        
+        return cleaned_data
+    
 # Lesson request form for teachers
 class TeacherLessonRequestForm(forms.ModelForm):
     send_request = forms.BooleanField(required=True, initial=True)
@@ -2837,10 +3393,9 @@ class TeacherLessonRequestForm(forms.ModelForm):
             "recurring_amount",
         ]
         widgets = {
-            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
         }
-
 
 # Corresponding Django form for the Lesson model
 class LessonForm(forms.ModelForm):
@@ -2854,8 +3409,8 @@ class LessonForm(forms.ModelForm):
             "student_attendance",
         ]
         widgets = {
-            "start_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "start_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
         }
 
     def clean(self):
@@ -2871,40 +3426,6 @@ class LessonForm(forms.ModelForm):
             )
 
         return cleaned_data
-
-
-# Corresponding Django form for the OtherEvent model
-class OtherEventForm(forms.ModelForm):
-    class Meta:
-        model = OtherEvent
-        fields = [
-            "teacher",
-            "start_datetime",
-            "end_datetime",
-            "event_description",
-            "recurring_amount",
-        ]
-
-    def clean(self):
-        cleaned_data = super().clean()
-        start_datetime = cleaned_data.get("start_datetime")
-        end_datetime = cleaned_data.get("end_datetime")
-        event_description = cleaned_data.get("event_description")
-        recurring_amount = cleaned_data.get("recurring_amount")
-
-        if start_datetime and start_datetime <= timezone.now():
-            raise forms.ValidationError("Start datetime must be in the future.")
-        if start_datetime and end_datetime and end_datetime <= start_datetime:
-            raise forms.ValidationError(
-                "End datetime must be after the start datetime."
-            )
-        if not event_description or not event_description.strip():
-            raise forms.ValidationError(
-                "Event description cannot be empty or just whitespace."
-            )
-        if recurring_amount and (recurring_amount < 1 or recurring_amount > 52):
-            raise forms.ValidationError("Recurring amount must be between 1 and 52.")
-
 
 # Reschedule lesson form
 class RescheduleLessonForm(forms.ModelForm):
@@ -2961,141 +3482,65 @@ from django.test import TestCase
 # File: cs_nea/scheduling/urls.py
 from django.urls import path
 from . import views
+from .calendar_views import (
+    calendar_view,
+    get_calendar_data,
+    create_event,
+    update_event,
+    delete_event,
+)
 
 urlpatterns = [
     path("create_lesson", views.create_lesson, name="create_lesson"),
-    path("create_other_event", views.create_other_event, name="create_other_event"),
-    path("calendar/", views.calendar_view, name="calendar"),
-    path('get_calendar_data/', views.get_calendar_data, name='get_calendar_data'),
-    
+
     # Path for creating student and teacher lesson requests
-    path('student/request_lesson/', views.student_lesson_request, name='student_lesson_request'),
-    path('teacher/request_lesson/', views.teacher_lesson_request, name='teacher_lesson_request'),
-    
+    path(
+        "student/request_lesson/",
+        views.student_lesson_request,
+        name="student_lesson_request",
+    ),
+    path(
+        "teacher/request_lesson/",
+        views.teacher_lesson_request,
+        name="teacher_lesson_request",
+    ),
     # Path for accepting and listing lesson requests
-    path('lesson_requests/', views.lesson_requests, name='lesson_requests'),
-    path('accept_lesson_request/<int:request_id>/', views.accept_lesson_request, name='accept_lesson_request'),
-    
+    path("lesson_requests/", views.lesson_requests, name="lesson_requests"),
+    path(
+        "accept_lesson_request/<int:request_id>/",
+        views.accept_lesson_request,
+        name="accept_lesson_request",
+    ),
     # Path for declining lesson requests
-    path('decline_lesson_request/<int:request_id>/', views.decline_lesson_request, name='decline_lesson_request'),
-    
+    path(
+        "decline_lesson_request/<int:request_id>/",
+        views.decline_lesson_request,
+        name="decline_lesson_request",
+    ),
     # Path for rescheduling lesson requests
-    path('reschedule_lesson/', views.reschedule_lesson, name='reschedule_lesson'),
-    path('accept-rescheduling/<int:rescheduling_request_id>/', views.accept_rescheduling_request, name='accept_rescheduling_request'),
+    path("reschedule_lesson/", views.reschedule_lesson, name="reschedule_lesson"),
+    path(
+        "accept_rescheduling_request/<int:rescheduling_request_id>/",
+        views.accept_rescheduling_request,
+        name="accept_rescheduling_request",
+    ),
+    path(
+        "decline_rescheduling_request/<int:rescheduling_request_id>/",
+        views.decline_rescheduling_request,
+        name="decline_rescheduling_request",
+    ),
+    # Calendar URLs
+    path("calendar/", calendar_view, name="calendar"),
+    path("get_calendar_data/", get_calendar_data, name="get_calendar_data"),
+    # Calendar AJAX URLs
+    path("create_event/", create_event, name="create_event"),
+    path("update_event/", update_event, name="update_event"),
+    path("delete_event/", delete_event, name="delete_event"),
+    
+    # Fetching teacher schedule URL
+    path('get_teacher_schedule/<int:teacher_id>/', views.get_teacher_schedule, name='get_teacher_schedule'),
 ]
 
-
-
-
-# File: cs_nea/scheduling/calendar_utils.py
-from calendar import HTMLCalendar, weekheader
-from datetime import date, timedelta
-from .models import Lesson, OtherEvent
-from django.utils import timezone
-
-class LessonCalendar(HTMLCalendar):
-    def __init__(self, year=None, month=None, week=None, lessons=None, other_events=None):
-        self.year = year
-        self.month = month
-        self.week = week
-        self.lessons = lessons or []
-        self.other_events = other_events or []
-        super(LessonCalendar, self).__init__()
-
-    def formatday(self, day, weekday):
-        if day == 0:
-            return '<td class="p-2 border border-gray-200 bg-gray-100"></td>'
-        
-        today = timezone.now().date()   
-        try:
-            date_obj = date(self.year, self.month, day)
-        except ValueError:
-            return '<td class="p-2 border border-gray-200 bg-gray-100"></td>'
-        
-        classes = ['p-2', 'border', 'border-gray-200', 'align-top']
-        if date_obj == today:
-            classes.append('bg-yellow-100')
-        elif date_obj < today:
-            classes.append('bg-gray-50')
-        
-        lessons_for_day = [lesson for lesson in self.lessons if lesson.start_datetime.date() == date_obj]
-        events_for_day = [event for event in self.other_events if event.start_datetime.date() == date_obj]
-        
-        d = f"<td class='{' '.join(classes)}'>"
-        d += f"<div class='flex flex-col h-full'>"
-        d += f"<span class='text-sm font-semibold mb-1'>{day}</span>"
-        d += "<div class='flex-grow'>"
-        for lesson in lessons_for_day:
-            d += f'<div class="text-xs p-1 bg-purple-200 rounded mb-1">{lesson.start_datetime.strftime("%H:%M")} - Lesson</div>'
-        for event in events_for_day:
-            d += f'<div class="text-xs p-1 bg-blue-200 rounded mb-1">{event.start_datetime.strftime("%H:%M")} - {event.event_description}</div>'
-        d += "</div></div></td>"
-        return d
-    
-    def formatweek(self, theweek):
-        week = ''
-        for d, weekday in theweek:
-            week += self.formatday(d, weekday)
-        return f'<tr>{week}</tr>'
-
-    def formatmonth(self, withyear=True):
-        cal = f'<table class="calendar table-auto w-full border-collapse h-full">\n'
-        cal += f'{self.formatmonthname(self.year, self.month, withyear=withyear)}\n'
-        cal += f'{self.formatweekheader()}\n'
-        for week in self.monthdays2calendar(self.year, self.month):
-            cal += f'{self.formatweek(week)}\n'
-        return cal
-    
-    def formatweek_view(self):
-        month_calendar = self.monthdays2calendar(self.year, self.month)
-        week_dates = month_calendar[self.week - 1]
-
-        cal = f'<table class="calendar table-auto w-full border-collapse h-full">\n'
-        cal += f'<tr><th colspan="7">{date(self.year, self.month, 1).strftime("%B %Y")} - Week {self.week}</th></tr>\n'
-        
-        # Add day names
-        cal += '<tr>'
-        for day_name in weekheader(7).split():  # Use weekheader() function directly
-            cal += f'<th class="p-2 border border-gray-200">{day_name}</th>'    
-        cal += '</tr>\n'
-    
-        # Add day numbers
-        cal += '<tr>'
-        for day, weekday in week_dates:
-            if day != 0:
-                cal += f'<th class="p-2 border border-gray-200">{day}</th>'
-            else:
-                cal += '<th class="p-2 border border-gray-200"></th>'
-        cal += '</tr>\n'
-        
-        # Add events (without day numbers in the cells)
-        cal += '<tr class="h-full">'
-        for day, weekday in week_dates:
-            if day != 0:
-                date_obj = date(self.year, self.month, day)
-                lessons_for_day = [lesson for lesson in self.lessons if lesson.start_datetime.date() == date_obj]
-                events_for_day = [event for event in self.other_events if event.start_datetime.date() == date_obj]
-                
-                classes = ['p-2', 'border', 'border-gray-200', 'align-top']
-                if date_obj == timezone.now().date():
-                    classes.append('bg-yellow-100')
-                elif date_obj < timezone.now().date():
-                    classes.append('bg-gray-50')
-                
-                d = f"<td class='{' '.join(classes)}'>"
-                d += "<div class='flex flex-col h-full'>"
-                for lesson in lessons_for_day:
-                    d += f'<div class="text-xs p-1 bg-purple-200 rounded mb-1">{lesson.start_datetime.strftime("%H:%M")} - Lesson</div>'
-                for event in events_for_day:
-                    d += f'<div class="text-xs p-1 bg-blue-200 rounded mb-1">{event.start_datetime.strftime("%H:%M")} - {event.event_description}</div>'
-                d += "</div></td>"
-                cal += d
-            else:
-                cal += '<td class="p-2 border border-gray-200 bg-gray-100"></td>'
-        cal += '</tr>\n'
-        
-        cal += '</table>'
-        return cal
 
 # File: cs_nea/communications/views.py
 from django.http import JsonResponse
@@ -4510,7 +4955,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+
+STATICFILES_DIRS = [    
+    BASE_DIR / "static",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -4543,6 +4992,10 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+# Timezone settings
+USE_TZ = True
+TIME_ZONE = "UTC"
 
 # File: cs_nea/cs_nea/wsgi.py
 """
