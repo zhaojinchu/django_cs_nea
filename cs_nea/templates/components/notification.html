@@ -173,13 +173,8 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationComponent.notifications.unshift(data.notification);
             notificationComponent.updateNotificationList();
             notificationComponent.updateUnreadCount();
-            showNotificationPopup(data.notification.content, data.notification.timestamp);
+            notificationComponent.toggleNotifications();
         }
     };
-
-    function showNotificationPopup(content, timestamp) {
-        const localTime = notificationComponent.formatDateTime(timestamp);
-        alert(`${content}\nReceived at: ${localTime}`);  // For simplicity, using an alert
-    }
 });
 </script>
