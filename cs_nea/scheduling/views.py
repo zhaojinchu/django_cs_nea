@@ -297,14 +297,14 @@ def create_lesson(request):
 def lesson_requests(request):
     if request.user.user_type == 1:  # Student
         scheduling_requests = LessonRequest.objects.filter(
-            student=request.user.student, is_approved=False
+            student=request.user.student, is_approved=False, is_sent_by_teacher=True
         )
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__student=request.user.student, is_approved=False
         )
     else:  # Teacher
         scheduling_requests = LessonRequest.objects.filter(
-            teacher=request.user.teacher, is_approved=False
+            teacher=request.user.teacher, is_approved=False, is_sent_by_teacher=False
         )
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__teacher=request.user.teacher, is_approved=False
