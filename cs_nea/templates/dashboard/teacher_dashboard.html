@@ -1,31 +1,88 @@
-{% extends "_dashboard.html" %} {% block name %} Teacher Dashboard {% endblock %} 
-{% block content %}
-<div class="pt-16">
-  <h2>Calendar</h2>
-  <div class="calendar">
-    <h3>Lessons</h3>
-    {% for lesson in lessons %}
-    <div class="lesson">
-      <p>
-        {{ lesson.start_datetime|date:"F d, Y H:i" }} - {{
-        lesson.end_datetime|date:"H:i" }}
-      </p>
-      <p>Student: {{ lesson.student }}</p>
-      <p>Teacher: {{ lesson.teacher }}</p>
-    </div>
-    {% endfor %}
+{% extends "_dashboard.html" %}
+{% load static %}
 
-    <h3>Other Events</h3>
-    {% for event in other_events %}
-    <div class="other-event">
-      <p>
-        {{ event.start_datetime|date:"F d, Y H:i" }} - {{
-        event.end_datetime|date:"H:i" }}
-      </p>
-      <p>Teacher: {{ event.teacher }}</p>
-      <p>Description: {{ event.event_description }}</p>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+{% endblock %}
+
+{% block name %}
+Teacher Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6 h-full">
+    <div class="h-full flex flex-col overflow-hidden">
+        <div class="flex-grow overflow-y-auto">
+            <div class="container mx-auto p-4 h-full">
+                <div class="bg-white shadow-md rounded-lg overflow-hidden h-full">
+                    <div id="calendar" class="h-full"></div>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endfor %}
-  </div>
 </div>
+
+<!-- TODO: I like this event modal popup thing, add this to other calendar implementations? -->
+<!-- Event Modal -->
+<div id="eventModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 m-4 max-w-xl w-full">
+            <h2 id="modalTitle" class="text-xl mb-4"></h2>
+            <form id="eventForm">
+                {% csrf_token %}
+                <input type="hidden" id="eventId" name="id">
+                <div class="mb-4">
+                    <label for="eventTitle" class="block text-sm font-medium text-gray-700">Event Title</label>
+                    <input disabled type="text" id="eventTitle" name="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="mb-4">
+                    <label for="eventStart" class="block text-sm font-medium text-gray-700">Start Time</label>
+                    <input disabled type="datetime-local" id="eventStart" name="start" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="mb-4">
+                    <label for="eventEnd" class="block text-sm font-medium text-gray-700">End Time</label>
+                    <input disabled type="datetime-local" id="eventEnd" name="end" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridDay',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridDay'
+        },
+        height: '100%',
+        events: '/get_calendar_data/',
+        allDaySlot: false,
+        eventClick: function(info) {
+            showEventDetails(info.event);
+        }
+    });
+    calendar.render();
+});
+
+// TODO: JS code for event modal implementation, check TODO above.
+function showEventDetails(event) {
+    document.getElementById('modalTitle').textContent = 'Event Details';
+    document.getElementById('eventId').value = event.id;
+    document.getElementById('eventTitle').value = event.title;
+    document.getElementById('eventStart').value = event.start.toISOString().slice(0, 16);
+    document.getElementById('eventEnd').value = event.end.toISOString().slice(0, 16);
+    document.getElementById('eventModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('eventModal').classList.add('hidden');
+}
+</script>
 {% endblock %}

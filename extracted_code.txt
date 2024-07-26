@@ -906,51 +906,150 @@ if __name__ == '__main__':
 {% block name %}Schedule or Request a Lesson{% endblock %}
 {% block content %}
 
-<div class="container mx-auto">
-    <form method="post" x-data="{ showModal: false }" class="bg-white rounded-lg shadow-md p-6">
-        {% csrf_token %}
+<div class="bg-white rounded-lg shadow-md p-6 h-full">
+    <div class="h-full flex flex-col overflow-hidden">
+        <div class="flex-grow overflow-y-auto">
+            <div class="container mx-auto p-4 h-full">
+                <form id="lessonRequestForm" method="post">
+                    {% csrf_token %}
 
-        <div class="flex flex-col gap-4 justify-center w-full">
-            {% for field in form %}
-                <div class="w-full">
-                    {{ field.label }}
-                    {{ field|add_class:"shadow border rounded w-full text-gray-700 focus:border-purple-500" }}
-                    {% if field.errors %}
-                        {% for error in field.errors %}
-                            <p class="text-red-500 text-xs italic">{{ error }}</p>
+                    <div class="flex flex-col gap-4 justify-center w-full">
+                        <div class="w-full">
+                            {{ form.student.label_tag }}
+                            {% render_field form.student class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" id="student-select" %}
+                            {% if form.student.errors %}
+                                {% for error in form.student.errors %}
+                                    <p class="text-red-500 text-xs italic">{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div id="calendar-container" class="w-full hidden mt-4">
+                            <div id="calendar"></div>
+                        </div>
+
+                        {% for field in form %}
+                            {% if field.name != 'student' %}
+                                <div class="w-full">
+                                    {{ field.label_tag }}
+                                    {% render_field field class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-purple-500" %}
+                                    {% if field.errors %}
+                                        {% for error in field.errors %}
+                                            <p class="text-red-500 text-xs italic">{{ error }}</p>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         {% endfor %}
-                    {% endif %}
-                </div>
-            {% endfor %}
+                        
+                        <input type="hidden" name="timezone">
 
-            <div class="pt-6">
-                <button type="button" x-on:click="showModal = true" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
-                    Submit
+                        <div class="pt-6">
+                            <button type="submit" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                Submit Lesson Request
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="confirmModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 m-4 max-w-xl w-full">
+            <h2 class="text-xl mb-4">Confirm Lesson Request</h2>
+            <p>Are you sure you want to submit this lesson request?</p>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button id="cancelButton" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">
+                    Cancel
+                </button>
+                <button id="confirmButton" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                    Confirm
                 </button>
             </div>
         </div>
-
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" x-show="showModal" x-cloak>
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div class="mt-3 text-center">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Lesson Schedule/Request</h3>
-                    <div class="mt-2 px-7 py-3">
-                        <p class="text-sm text-gray-500">Are you sure you want to submit this lesson schedule/request?</p>
-                    </div>
-                    <div class="items-center px-4 py-3">
-                        <button type="button" x-on:click="showModal = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2">
-                            Cancel
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-purple-500 text-white text-base font-medium rounded-md w-24">
-                            Confirm
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
+    </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var timezoneInput = document.createElement('input');
+        timezoneInput.setAttribute('type', 'hidden');
+        timezoneInput.setAttribute('name', 'timezone');
+        timezoneInput.setAttribute('value', Intl.DateTimeFormat().resolvedOptions().timeZone);
+        document.getElementById('lessonRequestForm').appendChild(timezoneInput);
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendarContainer = document.getElementById('calendar-container');
+        var studentSelect = document.getElementById('student-select');
+        var form = document.getElementById('lessonRequestForm');
+        var modal = document.getElementById('confirmModal');
+        var cancelButton = document.getElementById('cancelButton');
+        var confirmButton = document.getElementById('confirmButton');
+    
+        if (!studentSelect) {
+            console.error('Student select element not found');
+            return;
+        }
+    
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 'auto',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek'
+            },
+            events: [],
+        });
+    
+        studentSelect.addEventListener('change', function() {
+            var studentId = this.value;
+            if (studentId) {
+                calendarContainer.classList.remove('hidden');
+                if (!calendar.isRendered) {
+                    calendar.render();
+                    calendar.isRendered = true;
+                }
+                fetch(`/get_student_schedule/${studentId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        calendar.removeAllEvents();
+                        calendar.addEventSource(data);
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                calendarContainer.classList.add('hidden');
+                calendar.removeAllEvents();
+            }
+        });
+    
+        // Show modal on form submit
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            modal.classList.remove('hidden');
+        });
+    
+        // Hide modal on cancel
+        cancelButton.addEventListener('click', function() {
+            modal.classList.add('hidden');
+        });
+    
+        // Submit form on confirm
+        confirmButton.addEventListener('click', function() {
+            form.submit();
+        });
+    
+        if (studentSelect.value) {
+            studentSelect.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 {% endblock %}
 
 # File: cs_nea/templates/scheduling/create_lesson.html
@@ -976,7 +1075,7 @@ if __name__ == '__main__':
     <div class="h-full flex flex-col overflow-hidden">
         <div class="flex-grow overflow-y-auto">
             <div class="container mx-auto p-4 h-full">
-                <form id="lessonRequestForm" method="post" class="mb-8">
+                <form id="lessonRequestForm" method="post">
                     {% csrf_token %}
                     
                     <div class="flex flex-col gap-4 justify-center w-full">
@@ -1285,18 +1384,16 @@ if __name__ == '__main__':
             const localDate = new Date(dateTimeString);
             const options = {
                 year: 'numeric',
-                month: 'long',
+                month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: false,
+                hour12: true,
             };
             element.textContent = localDate.toLocaleDateString(undefined, options);
         });
     });
 </script>
-
-
 {% endblock %}
 
 
@@ -2301,139 +2398,185 @@ function showEditForm(noteId) {
 
 # File: cs_nea/templates/components/notification.html
 {% load static %}
-<div
-    x-data="notificationComponent()"
-    class="relative inline-block text-left mr-4"
->
-    <button
-        @click="toggleNotifications"
-        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-500 text-white focus:outline-none"
-    >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-        >
-            <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
+
+<div id="notificationComponent" class="relative inline-block text-left mr-4">
+    <button id="notificationButton" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-500 text-white focus:outline-none relative">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
         </svg>
+        <span id="notification-count" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full" style="display: none;"></span>
     </button>
 
-    <div
-        x-show="isOpen"
-        @click.away="isOpen = false"
-        class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none"
-        role="menu"
-        aria-orientation="vertical"
-        aria-labelledby="menu-button"
-        tabindex="-1"
-    >
-        <div class="py-1 max-h-80 overflow-y-auto" role="none">
-            <template
-                x-for="notification in notifications"
-                :key="notification.id"
-            >
-                <div class="flex items-center px-4 py-3 hover:bg-gray-100">
-                    <div class="flex-grow">
-                        <p
-                            x-text="notification.content"
-                            class="text-sm text-gray-700"
-                        ></p>
-                        <p
-                            x-text="notification.timestamp"
-                            class="text-xs text-gray-500"
-                        ></p>
-                    </div>
-                    <button
-                        @click="dismissNotification(notification.id)"
-                        class="ml-2 text-gray-400 hover:text-gray-600"
-                    >
-                        <svg
-                            class="h-5 w-5"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                        >
-                            <path
-                                fill-rule="evenodd"
-                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
-                            />
-                        </svg>
-                    </button>
-                </div>
-            </template>
-            <div
-                x-show="notifications.length === 0"
-                class="px-4 py-3 text-sm text-gray-700"
-            >
-                No new notifications
-            </div>
+    <div id="notificationDropdown" class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1" style="display: none;">
+        <div id="notificationList" class="py-1 max-h-80 overflow-y-auto" role="none">
+            <!-- Notifications will be inserted here -->
         </div>
     </div>
 </div>
 
 <script>
-    function notificationComponent() {
-        return {
-            isOpen: false,
-            notifications: [],
-            toggleNotifications() {
-                this.isOpen = !this.isOpen;
-                if (this.isOpen) {
-                    this.fetchNotifications();
-                }
-            },
-            fetchNotifications() {
-                fetch("/get_notifications/")
-                    .then((response) => response.json())
-                    .then((data) => {
-                        this.notifications = data;
-                    });
-            },
-            dismissNotification(id) {
-                fetch(`/mark_notification_read/${id}/`, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": getCookie("csrftoken"),
-                    },
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        if (data.status === "success") {
-                            this.notifications = this.notifications.filter(
-                                (n) => n.id !== id
-                            );
-                        }
-                    });
-            },
-        };
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationComponent = {
+        button: document.getElementById('notificationButton'),
+        dropdown: document.getElementById('notificationDropdown'),
+        list: document.getElementById('notificationList'),
+        countElement: document.getElementById('notification-count'),
+        isOpen: false,
+        notifications: [],
+        unreadCount: 0,
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === name + "=") {
-                    cookieValue = decodeURIComponent(
-                        cookie.substring(name.length + 1)
-                    );
-                    break;
+        init: function() {
+            this.button.addEventListener('click', () => this.toggleNotifications());
+            document.addEventListener('click', (e) => this.handleOutsideClick(e));
+            this.fetchNotifications();
+        },
+
+        toggleNotifications: function() {
+            this.isOpen = !this.isOpen;
+            this.dropdown.style.display = this.isOpen ? 'block' : 'none';
+            if (this.isOpen) {
+                this.fetchNotifications();
+            }
+        },
+
+        handleOutsideClick: function(event) {
+            if (this.isOpen && !this.dropdown.contains(event.target) && !this.button.contains(event.target)) {
+                this.toggleNotifications();
+            }
+        },
+
+        fetchNotifications: function() {
+            fetch("/get_notifications/")
+                .then(response => response.json())
+                .then(data => {
+                    this.notifications = data;
+                    this.updateNotificationList();
+                    this.updateUnreadCount();
+                });
+        },
+
+        updateNotificationList: function() {
+            this.list.innerHTML = '';
+            if (this.notifications.length === 0) {
+                this.list.innerHTML = '<div class="px-4 py-3 text-sm text-gray-700">No new notifications</div>';
+            } else {
+                this.notifications.forEach(notification => {
+                    const notificationElement = this.createNotificationElement(notification);
+                    this.list.appendChild(notificationElement);
+                });
+            }
+        },
+
+        createNotificationElement: function(notification) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center px-4 py-3 hover:bg-gray-100';
+            div.innerHTML = `
+                <div class="flex-grow">
+                    <p class="text-sm text-gray-700">${notification.content}</p>
+                    <p class="text-xs text-gray-500">${this.formatDateTime(notification.timestamp)}</p>
+                </div>
+                <button class="ml-2 text-gray-400 hover:text-gray-600" onclick="notificationComponent.dismissNotification(${notification.id})">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+            `;
+            return div;
+        },
+
+        dismissNotification: function(id) {
+            fetch(`/mark_notification_read/${id}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": this.getCookie("csrftoken"),
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        this.notifications = this.notifications.filter(n => n.id !== id);
+                        this.updateNotificationList();
+                        this.updateUnreadCount();
+                    }
+                });
+        },
+
+        updateUnreadCount: function() {
+            this.unreadCount = this.notifications.filter(n => !n.is_read).length;
+            this.countElement.textContent = this.unreadCount;
+            this.countElement.style.display = this.unreadCount > 0 ? 'inline-flex' : 'none';
+        },
+
+        // Function to convert UTC to local
+        formatDateTime: function(timestamp) {
+            if (!timestamp) return "No date available";
+            try {
+                // Assume the timestamp is in UTC and convert it to ISO
+                if (timestamp.includes('T')) {
+                    // ISO format from websocket
+                    date = new Date(timestamp);
+                } else {
+                    // Database format
+                    date = new Date(timestamp.replace(' ', 'T') + 'Z');
+                }
+                
+                if (isNaN(date.getTime())) {
+                    console.error("Invalid date:", timestamp);
+                    return "Invalid Date";
+                }
+                
+                const localTimestamp = date.toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                });
+                
+                return localTimestamp;
+            } catch (error) {
+                console.error("Error formatting date:", error);
+                return "Date error";
+            }
+        },
+
+        getCookie: function(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
-</script>
+    };
 
+    notificationComponent.init();
+
+    window.notificationComponent = notificationComponent;
+
+    // WebSocket connection for real-time notifications
+    const notificationSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/notifications/'
+    );
+
+    notificationSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'new_notification') {
+            notificationComponent.notifications.unshift(data.notification);
+            notificationComponent.updateNotificationList();
+            notificationComponent.updateUnreadCount();
+            notificationComponent.toggleNotifications();
+        }
+    };
+});
+</script>
 
 # File: cs_nea/templates/components/current_user.html
 {% load static %}
@@ -2807,6 +2950,9 @@ from communications.models import Notification, NotificationConfig
 from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
 from django.utils import timezone
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 def is_teacher(user):
     return user.user_type == 2
@@ -2821,7 +2967,7 @@ def is_student(user):
 @user_passes_test(is_student)
 def student_lesson_request(request):
     if request.method == "POST":
-        form = StudentLessonRequestForm(request.POST)
+        form = StudentLessonRequestForm(request.POST, student=request.user.student)
         if form.is_valid():
             lesson_request = form.save(commit=False)
             lesson_request.student = request.user.student
@@ -2831,6 +2977,34 @@ def student_lesson_request(request):
             lesson_request.end_datetime = form.cleaned_data['end_datetime']
 
             lesson_request.save()
+            teacher = lesson_request.teacher
+            
+            notification_config, created = NotificationConfig.objects.get_or_create(
+                    user=teacher.user
+            )
+            
+            if notification_config.receive_notification:
+                # Create and send notification
+                notification = Notification.objects.create(
+                    receiver=lesson_request.teacher.user,
+                    content=f"New lesson request from {request.user.get_full_name()}",
+                    timestamp=timezone.now().isoformat(),
+                )
+
+                # Send real-time notification
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{lesson_request.teacher.user.id}_notifications",
+                    {
+                        "type": "notification",
+                        "notification": {
+                            "id": notification.id,
+                            "content": notification.content,
+                            "timestamp": notification.timestamp.isoformat(),
+                            "is_read": notification.is_read
+                        }
+                    }
+                )
 
             messages.success(request, "Lesson request submitted successfully!")
             return redirect("dashboard")
@@ -2839,12 +3013,12 @@ def student_lesson_request(request):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = StudentLessonRequestForm()
+        form = StudentLessonRequestForm(student=request.user.student)
 
     return render(request, "scheduling/student_schedule_lesson.html", {"form": form})
 
 
-# Fetching teacher schedule for calendar view
+# Fetching teacher schedule for scheduling view
 @login_required
 @user_passes_test(is_student)
 def get_teacher_schedule(request, teacher_id):
@@ -2892,15 +3066,15 @@ def get_teacher_schedule(request, teacher_id):
 @user_passes_test(is_teacher)
 def teacher_lesson_request(request):
     if request.method == "POST":
-        form = TeacherLessonRequestForm(request.POST)
+        form = TeacherLessonRequestForm(request.POST, teacher=request.user.teacher)
         if form.is_valid():
             lesson_request = form.save(commit=False)
             lesson_request.teacher = request.user.teacher
             lesson_request.is_rescheduling = False
             lesson_request.is_sent_by_teacher = True
             
-            lesson_request.requested_datetime = make_aware(form.cleaned_data['requested_datetime'])
-            lesson_request.end_datetime = make_aware(form.cleaned_data['end_datetime'])
+            lesson_request.requested_datetime = form.cleaned_data['requested_datetime']
+            lesson_request.end_datetime = form.cleaned_data['end_datetime']
 
             if form.cleaned_data["send_request"]:
                 lesson_request.save()
@@ -2917,12 +3091,35 @@ def teacher_lesson_request(request):
                         if lesson_request.recurring_amount > 1
                         else ""
                     )
-                    Notification.objects.create(
+                    notification = Notification.objects.create(
                         receiver=student.user,
                         content=f"New lesson request from {request.user.get_full_name()}{recurring_text}",
+                        timestamp=timezone.now().isoformat(),
                     )
+                    # Send real-time notification
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{lesson_request.student.user.id}_notifications",
+                        {
+                            "type": "notification",
+                            "notification": {
+                                "id": notification.id,
+                                "content": notification.content,
+                                "timestamp": notification.timestamp.isoformat(),
+                                "is_read": notification.is_read
+                            }
+                        }
+                    )
+                    
+                    messages.success(request, "Lesson request sent to student.")
+                    return redirect("dashboard")
+                
+                else:
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            messages.error(request, f"{field}: {error}")
 
-                messages.success(request, "Lesson request sent to student.")
+                
             else:
                 # Create multiple lessons based on recurring amount
                 lesson_duration = (
@@ -2946,9 +3143,24 @@ def teacher_lesson_request(request):
                         if lesson_request.recurring_amount > 1
                         else ""
                     )
-                    Notification.objects.create(
+                    notification = Notification.objects.create(
                         receiver=lesson_request.student.user,
                         content=f"New lesson{recurring_text} scheduled with {request.user.get_full_name()}",
+                    )
+                    
+                    # Send real-time notification
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{lesson_request.student.user.id}_notifications",
+                        {
+                            "type": "notification",
+                            "notification": {
+                                "id": notification.id,
+                                "content": notification.content,
+                                "timestamp": notification.timestamp.isoformat(),
+                                "is_read": notification.is_read
+                            }
+                        }
                     )
                 messages.success(
                     request,
@@ -2957,12 +3169,38 @@ def teacher_lesson_request(request):
 
             return redirect("dashboard")
     else:
-        form = TeacherLessonRequestForm()
+        form = TeacherLessonRequestForm(teacher=request.user.teacher)
 
     return render(request, "scheduling/teacher_schedule_lesson.html", {"form": form})
 
+# Fetching student schedule for scheduling view
+@login_required
+@user_passes_test(is_teacher)
+def get_student_schedule(request, student_id):
+    student = get_object_or_404(Student, student_id=student_id)
+    start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=30)  # Get events for the next 30 days only
+
+    lessons = Lesson.objects.filter(
+        student=student,
+        start_datetime__gte=start,
+        end_datetime__lte=end,
+    )
+
+    events = []
+    for lesson in lessons:
+        events.append({
+            "id": f"lesson_{lesson.lesson_id}",
+            "title": f"Lesson with {Teacher.objects.get(teacher_id=lesson.teacher_id).user.get_full_name()}",
+            "start": lesson.start_datetime.isoformat(),
+            "end": lesson.end_datetime.isoformat(),
+            "color": "blue",
+        })
+
+    return JsonResponse(events, safe=False)
 
 # Create lesson view
+"""
 @login_required
 def create_lesson(request):
     if request.method == "POST":
@@ -2979,21 +3217,21 @@ def create_lesson(request):
         form = LessonForm()
 
     return render(request, "scheduling/create_lesson.html", {"form": form})
-
+"""
 
 # View for listing lessons requests
 @login_required
 def lesson_requests(request):
     if request.user.user_type == 1:  # Student
         scheduling_requests = LessonRequest.objects.filter(
-            student=request.user.student, is_approved=False
+            student=request.user.student, is_approved=False, is_sent_by_teacher=True
         )
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__student=request.user.student, is_approved=False
         )
     else:  # Teacher
         scheduling_requests = LessonRequest.objects.filter(
-            teacher=request.user.teacher, is_approved=False
+            teacher=request.user.teacher, is_approved=False, is_sent_by_teacher=False
         )
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__teacher=request.user.teacher, is_approved=False
@@ -3040,6 +3278,33 @@ def accept_lesson_request(request, request_id):
             lesson_request.is_approved = True
             lesson_request.save()
 
+            # Notifications
+            user_notification_pref = NotificationConfig.objects.filter(user=lesson_request.teacher.user).first()
+            if user_notification_pref and user_notification_pref.receive_notification:
+                    recurring_text = (
+                        f" (recurring {lesson_request.recurring_amount} times)"
+                        if lesson_request.recurring_amount > 1
+                        else ""
+                    )
+                    notification = Notification.objects.create(
+                        receiver=lesson_request.student.user,
+                        content=f"New lesson{recurring_text} scheduled with {request.user.get_full_name()}",
+                    )
+                    
+                    # Send real-time notification
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{lesson_request.student.user.id}_notifications",
+                        {
+                            "type": "notification",
+                            "notification": {
+                                "id": notification.id,
+                                "content": notification.content,
+                                "timestamp": notification.timestamp.isoformat(),
+                                "is_read": notification.is_read
+                            }
+                        }
+                    )
             messages.success(
                 request,
                 f"{lesson_request.recurring_amount} lesson{'s' if lesson_request.recurring_amount > 1 else ''} scheduled successfully.",
@@ -3218,6 +3483,8 @@ class LessonRequest(models.Model):
             raise ValidationError("End datetime must be after the requested datetime.")
         if self.recurring_amount < 1 or self.recurring_amount > 52:
             raise ValidationError("Recurring amount must be between 1 and 52.")
+        
+    
 
 # Lesson model, used store scheduled lessons
 class Lesson(models.Model):
@@ -3229,9 +3496,13 @@ class Lesson(models.Model):
     student_attendance = models.BooleanField(default=False)
     end_datetime = models.DateTimeField()
 
-    # Additional fields from iteration 2
+    # Additional fields - iteration 2
     is_rescheduled = models.BooleanField(default=False)
     rescheduled_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='rescheduled_from')
+    
+    # Notification checks - iteration 3
+    is_teacher_notification_sent = models.BooleanField(default=False)
+    is_student_notification_sent = models.BooleanField(default=False)
     
     def clean(self):
         if self.start_datetime <= timezone.now():
@@ -3327,19 +3598,20 @@ class ReschedulingRequest(models.Model):
 # File: cs_nea/scheduling/forms.py
 from django import forms
 from .models import LessonRequest, Lesson, ReschedulingRequest
-from users.models import Teacher    
+from users.models import Teacher, Student, Invite
 from django.utils import timezone
 from pytz import timezone as pytz_timezone
-import pytz 
+import pytz
+
 
 # Lesson request form for students
 class StudentLessonRequestForm(forms.ModelForm):
     teacher = forms.ModelChoiceField(
-        queryset=Teacher.objects.all(),
+        queryset=Teacher.objects.none(),
         empty_label="Select a teacher",
-        widget=forms.Select(attrs={'class': 'form-control', 'id': 'teacher-select'})
+        widget=forms.Select(attrs={"class": "form-control", "id": "teacher-select"}),
     )
-    
+
     class Meta:
         model = LessonRequest
         fields = [
@@ -3350,37 +3622,64 @@ class StudentLessonRequestForm(forms.ModelForm):
             "recurring_amount",
         ]
         widgets = {
-            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
-            "request_reason": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "requested_datetime": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control"}
+            ),
+            "end_datetime": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control"}
+            ),
+            "request_reason": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
             "recurring_amount": forms.NumberInput(attrs={"class": "form-control"}),
         }
-        
+
     def clean(self):
         cleaned_data = super().clean()
         requested_datetime = cleaned_data.get("requested_datetime")
         end_datetime = cleaned_data.get("end_datetime")
-        user_timezone = self.data.get('timezone')
+        user_timezone = self.data.get("timezone")
 
         if user_timezone:
             user_timezone = pytz_timezone(user_timezone)
-            
+
             if requested_datetime:
                 if requested_datetime.tzinfo is not None:
                     requested_datetime = requested_datetime.replace(tzinfo=None)
                 requested_datetime = user_timezone.localize(requested_datetime)
-                cleaned_data["requested_datetime"] = requested_datetime.astimezone(pytz.UTC)
+                cleaned_data["requested_datetime"] = requested_datetime.astimezone(
+                    pytz.UTC
+                )
 
             if end_datetime:
                 if end_datetime.tzinfo is not None:
                     end_datetime = end_datetime.replace(tzinfo=None)
                 end_datetime = user_timezone.localize(end_datetime)
                 cleaned_data["end_datetime"] = end_datetime.astimezone(pytz.UTC)
-        
+
         return cleaned_data
-    
+
+    def __init__(self, *args, **kwargs):
+        self.student = kwargs.pop("student", None)
+        super(StudentLessonRequestForm, self).__init__(*args, **kwargs)
+
+        if self.student:
+            # Get teachers who are connected to the student
+            connected_teachers = Teacher.objects.filter(
+                sent_invites__student=self.student, 
+                sent_invites__status="accepted"
+            ).distinct()
+
+            self.fields["teacher"].queryset = connected_teachers
+            self.fields["teacher"].label_from_instance = lambda obj: f"{obj.user.get_full_name()} ({obj.user.email})"
+
 # Lesson request form for teachers
 class TeacherLessonRequestForm(forms.ModelForm):
+    student = forms.ModelChoiceField(
+        queryset=Student.objects.none(),
+        empty_label="Select a student",
+        widget=forms.Select(attrs={"class": "form-control", "id": "id_student"}),
+    )
     send_request = forms.BooleanField(required=True, initial=True)
 
     class Meta:
@@ -3393,9 +3692,57 @@ class TeacherLessonRequestForm(forms.ModelForm):
             "recurring_amount",
         ]
         widgets = {
-            "requested_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
+            "requested_datetime": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control"}
+            ),
+            "end_datetime": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control"}
+            ),
+            "request_reason": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
+            "recurring_amount": forms.NumberInput(attrs={"class": "form-control"}),
         }
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        requested_datetime = cleaned_data.get("requested_datetime")
+        end_datetime = cleaned_data.get("end_datetime")
+        user_timezone = self.data.get("timezone")
+
+        if user_timezone:
+            user_timezone = pytz_timezone(user_timezone)
+
+            if requested_datetime:
+                if requested_datetime.tzinfo is not None:
+                    requested_datetime = requested_datetime.replace(tzinfo=None)
+                requested_datetime = user_timezone.localize(requested_datetime)
+                cleaned_data["requested_datetime"] = requested_datetime.astimezone(
+                    pytz.UTC
+                )
+
+            if end_datetime:
+                if end_datetime.tzinfo is not None:
+                    end_datetime = end_datetime.replace(tzinfo=None)
+                end_datetime = user_timezone.localize(end_datetime)
+                cleaned_data["end_datetime"] = end_datetime.astimezone(pytz.UTC)
+
+        return cleaned_data
+    
+    def __init__(self, *args, **kwargs):
+        self.teacher = kwargs.pop("teacher", None)
+        super(TeacherLessonRequestForm, self).__init__(*args, **kwargs)
+
+        if self.teacher:
+            # Get students who are connected to the teacher         
+            connected_students = Student.objects.filter(
+                invites__teacher=self.teacher, 
+                invites__status="accepted"
+            ).distinct()
+
+            self.fields["student"].queryset = connected_students
+            self.fields["student"].label_from_instance = lambda obj: f"{obj.user.get_full_name()} ({obj.user.email})"
+
 
 # Corresponding Django form for the Lesson model
 class LessonForm(forms.ModelForm):
@@ -3409,8 +3756,18 @@ class LessonForm(forms.ModelForm):
             "student_attendance",
         ]
         widgets = {
-            "start_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
-            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local", "data-tz": timezone.get_current_timezone_name()}),
+            "start_datetime": forms.DateTimeInput(
+                attrs={
+                    "type": "datetime-local",
+                    "data-tz": timezone.get_current_timezone_name(),
+                }
+            ),
+            "end_datetime": forms.DateTimeInput(
+                attrs={
+                    "type": "datetime-local",
+                    "data-tz": timezone.get_current_timezone_name(),
+                }
+            ),
         }
 
     def clean(self):
@@ -3427,48 +3784,57 @@ class LessonForm(forms.ModelForm):
 
         return cleaned_data
 
+
 # Reschedule lesson form
 class RescheduleLessonForm(forms.ModelForm):
     lesson = forms.ModelChoiceField(
         queryset=None,
         label="Select Lesson to Reschedule",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
 
     class Meta:
         model = ReschedulingRequest
-        fields = ['lesson', 'requested_datetime', 'end_datetime', 'request_reason']
+        fields = ["lesson", "requested_datetime", "end_datetime", "request_reason"]
         widgets = {
-            'requested_datetime': forms.DateTimeInput(
-                attrs={'type': 'datetime-local', 'class': 'form-control'},
-                format='%Y-%m-%dT%H:%M'
+            "requested_datetime": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control"},
+                format="%Y-%m-%dT%H:%M",
             ),
-            'end_datetime': forms.DateTimeInput(
-                attrs={'type': 'datetime-local', 'class': 'form-control'},
-                format='%Y-%m-%dT%H:%M'
+            "end_datetime": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control"},
+                format="%Y-%m-%dT%H:%M",
             ),
-            'request_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            "request_reason": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+        self.user = kwargs.pop("user", None)
         super(RescheduleLessonForm, self).__init__(*args, **kwargs)
         if self.user:
-            if self.user.user_type == 1:  
-                self.fields['lesson'].queryset = Lesson.objects.filter(student=self.user.student, is_rescheduled=False).order_by('start_datetime')
-            else:   
-                self.fields['lesson'].queryset = Lesson.objects.filter(teacher=self.user.teacher, is_rescheduled=False).order_by('start_datetime')
+            if self.user.user_type == 1:
+                self.fields["lesson"].queryset = Lesson.objects.filter(
+                    student=self.user.student, is_rescheduled=False
+                ).order_by("start_datetime")
+            else:
+                self.fields["lesson"].queryset = Lesson.objects.filter(
+                    teacher=self.user.teacher, is_rescheduled=False
+                ).order_by("start_datetime")
 
     def clean(self):
         cleaned_data = super().clean()
-        requested_datetime = cleaned_data.get('requested_datetime')
-        end_datetime = cleaned_data.get('end_datetime')
+        requested_datetime = cleaned_data.get("requested_datetime")
+        end_datetime = cleaned_data.get("end_datetime")
 
         if requested_datetime and requested_datetime <= timezone.now():
             raise forms.ValidationError("Requested datetime must be in the future.")
 
         if end_datetime and requested_datetime and end_datetime <= requested_datetime:
-            raise forms.ValidationError("End datetime must be after the requested datetime.")
+            raise forms.ValidationError(
+                "End datetime must be after the requested datetime."
+            )
 
         return cleaned_data
 
@@ -3491,7 +3857,7 @@ from .calendar_views import (
 )
 
 urlpatterns = [
-    path("create_lesson", views.create_lesson, name="create_lesson"),
+    #path("create_lesson", views.create_lesson, name="create_lesson"),
 
     # Path for creating student and teacher lesson requests
     path(
@@ -3539,6 +3905,8 @@ urlpatterns = [
     
     # Fetching teacher schedule URL
     path('get_teacher_schedule/<int:teacher_id>/', views.get_teacher_schedule, name='get_teacher_schedule'),
+    # Fetching student schedule URL
+    path('get_student_schedule/<int:student_id>/', views.get_student_schedule, name='get_student_schedule'),
 ]
 
 
@@ -3548,17 +3916,32 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from .models import Notification, Assignment, Note
+from .models import Notification, Assignment, Note, NotificationConfig
 from django.contrib.auth import get_user_model
-from .forms import AssignmentForm
+from .forms import AssignmentForm, NotificationConfigForm
 from django.utils import timezone
-from users.models import Student
-
+from users.models import Student, Teacher
 
 User = get_user_model()
 
-
 # Notification views - only JSON responses
+@login_required
+def notification_preferences(request):
+    try:
+        preferences = NotificationConfig.objects.get(user=request.user)
+    except NotificationConfig.DoesNotExist:
+        preferences = NotificationConfig(user=request.user)
+
+    if request.method == 'POST':
+        form = NotificationConfigForm(request.POST, instance=preferences)
+        if form.is_valid():
+            form.save()
+            return redirect('notification_preferences')
+    else:
+        form = NotificationConfigForm(instance=preferences)
+
+    return render(request, 'notification_preferences.html', {'form': form})
+
 @login_required
 def get_notifications(request):
     notifications = Notification.objects.filter(
@@ -3594,10 +3977,23 @@ def mark_notification_read(request, notification_id):
 # Real time messaging view
 @login_required
 def message_list(request):
-    if request.user.user_type == 1: 
-        users = User.objects.filter(user_type=2)  
-    else:  
-        users = User.objects.filter(user_type=1) 
+    if request.user.user_type == 1:  # Student
+        student = Student.objects.get(user=request.user)
+        connected_teachers = User.objects.filter(
+            teacher__sent_invites__student=student,
+            teacher__sent_invites__status='accepted',
+            user_type=2
+        ).distinct()
+        users = connected_teachers
+    else:  # Teacher
+        teacher = Teacher.objects.get(user=request.user)
+        connected_students = User.objects.filter(
+            student__invites__teacher=teacher,
+            student__invites__status='accepted',
+            user_type=1
+        ).distinct()
+        users = connected_students
+
     return render(request, "communications/message_list.html", {"users": users})
 
 
@@ -3770,6 +4166,91 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event))
 
 
+# Notification consumer
+class NotificationConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.user = self.scope["user"]
+        self.notification_group_name = f"user_{self.user.id}_notifications"
+
+        await self.channel_layer.group_add(
+            self.notification_group_name,
+            self.channel_name
+        )
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(
+            self.notification_group_name,
+            self.channel_name
+        )
+
+    async def notification(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'new_notification',
+            'notification': event['notification']
+        }))
+
+# File: cs_nea/communications/tasks.py
+from django.utils import timezone
+from .models import Notification, NotificationConfig
+from scheduling.models import Lesson
+from datetime import timedelta
+from celery import shared_task
+
+def send_notification(user, content):
+    Notification.objects.create(receiver=user, content=content)
+    # TODO: Implement other options of sending notifications
+
+def schedule_notifications():
+    now = timezone.now()
+    for lesson in Lesson.objects.filter(start_datetime__gt=now):
+        student_preferences = NotificationConfig.objects.get(user=lesson.student.user)
+        teacher_preferences = NotificationConfig.objects.get(user=lesson.teacher.user)
+
+        # Student notifications
+        if student_preferences.lesson_reminder_24hr and not lesson.is_student_notification_sent:
+            if lesson.start_datetime - now <= timedelta(hours=24):
+                send_notification(lesson.student.user, f"Reminder: Your lesson with {lesson.teacher.user.get_full_name()} is in 24 hours.")
+                lesson.is_student_notification_sent = True
+                lesson.save()
+
+        if student_preferences.lesson_reminder_1hr and not lesson.is_student_notification_sent:
+            if lesson.start_datetime - now <= timedelta(minutes=60):
+                send_notification(lesson.student.user, f"Reminder: Your lesson with {lesson.teacher.user.get_full_name()} is in 1 hour.")
+                lesson.is_student_notification_sent = True
+                lesson.save()
+                
+        if student_preferences.lesson_reminder_30min and not lesson.is_student_notification_sent:
+            if lesson.start_datetime - now <= timedelta(minutes=30):
+                send_notification(lesson.student.user, f"Reminder: Your lesson with {lesson.teacher.user.get_full_name()} is in 30 minutes.")
+                lesson.is_student_notification_sent = True
+                lesson.save()
+
+        # Teacher notifications
+        if teacher_preferences.lesson_reminder_24hr and not lesson.is_teacher_notification_sent:
+            if lesson.start_datetime - now <= timedelta(hours=24):
+                send_notification(lesson.teacher.user, f"Reminder: Your lesson with {lesson.student.user.get_full_name()} is in 24 hours.")
+                lesson.is_teacher_notification_sent = True
+                lesson.save()
+                
+        if teacher_preferences.lesson_reminder_1hr and not lesson.is_teacher_notification_sent:
+            if lesson.start_datetime - now <= timedelta(minutes=30):
+                send_notification(lesson.teacher.user, f"Reminder: Your lesson with {lesson.student.user.get_full_name()} is in 1 hour.")
+                lesson.is_teacher_notification_sent = True
+                lesson.save()
+                
+        if teacher_preferences.lesson_reminder_30min and not lesson.is_teacher_notification_sent:
+            if lesson.start_datetime - now <= timedelta(minutes=30):
+                send_notification(lesson.teacher.user, f"Reminder: Your lesson with {lesson.student.user.get_full_name()} is in 30 minutes.")
+                lesson.is_teacher_notification_sent = True
+                lesson.save()
+
+
+# Celery definition of task - Celery persistently checks at regular intervals
+@shared_task
+def check_scheduled_notifications():
+    schedule_notifications()
+
 # File: cs_nea/communications/__init__.py
 
 
@@ -3780,7 +4261,8 @@ from django.apps import AppConfig
 class CommunicationsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "communications"
-
+    def ready(self):
+        import communications.signals
 
 # File: cs_nea/communications/models.py
 from django.db import models
@@ -3800,8 +4282,14 @@ class NotificationConfig(models.Model):
     message_notification = models.BooleanField(default=True)
     attendance_notification = models.BooleanField(default=True)
     t2r_requests = models.BooleanField(default=True)
-    cancellation_notification = models.BooleanField(default=True)
+    cancellation_notification = models.BooleanField(default=True)   
 
+    # Lesson reminder notification frequency - iteration 2
+    weekly_summary = models.BooleanField(default=False)
+    lesson_reminder_1hr = models.BooleanField(default=True)
+    lesson_reminder_24hr = models.BooleanField(default=False)
+    lesson_reminder_30min = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"Notification Config for {self.user.username}"
 
@@ -3877,19 +4365,43 @@ class Note(models.Model):
         return f"Note for {self.student} by {self.teacher}"
 
 
+# File: cs_nea/communications/signals.py
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth import get_user_model
+from .models import NotificationConfig
+
+User = get_user_model()
+
+# Creates a notification config when a user is created
+@receiver(post_save, sender=User)
+def create_notification_config(sender, instance, created, **kwargs):
+    if created:
+        NotificationConfig.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_notification_config(sender, instance, **kwargs):
+    instance.notificationconfig.save()
+
 # File: cs_nea/communications/routing.py
 from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
+    # Real time messaging routing
     re_path(r"ws/dm/(?P<user_id>\w+)/$", consumers.DirectMessageConsumer.as_asgi()),
+
+    # Notification routing
+    re_path(r'ws/notifications/$', consumers.NotificationConsumer.as_asgi()),
 ]
+
 
 
 # File: cs_nea/communications/forms.py
 from django import forms
-from .models import Assignment
+from .models import Assignment, NotificationConfig
 from users.models import Student
+
 
 class AssignmentForm(forms.ModelForm):
     class Meta:
@@ -3907,6 +4419,23 @@ class AssignmentForm(forms.ModelForm):
                 invites__teacher=self.teacher, invites__status="accepted"
             )
 
+
+class NotificationConfigForm(forms.ModelForm):
+    class Meta:
+        model = NotificationConfig
+        fields = [
+            "receive_notification",
+            "lesson_reminder",
+            "assignment_notification",
+            "message_notification",
+            "attendance_notification",
+            "t2r_requests",
+            "cancellation_notification",
+            "weekly_summary",
+            "lesson_reminder_1hr",
+            "lesson_reminder_24hr",
+            "lesson_reminder_30min",
+        ]
 
 
 # File: cs_nea/communications/urls.py
@@ -4795,6 +5324,17 @@ urlpatterns = [
 ]
 
 
+# File: cs_nea/cs_nea/celery_config.py
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "check-scheduled-notifications-every-5-minutes": {
+        "task": "communications.tasks.check_scheduled_notifications",
+        "schedule": crontab(minute="*/5"),
+    },
+}
+
+
 # File: cs_nea/cs_nea/asgi.py
 import os
 from django.core.asgi import get_asgi_application
@@ -4830,6 +5370,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -4855,11 +5396,9 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    
     # Additional apps for real time messaging - these two must come before staticfiles
     "daphne",
     "channels",
-    
     "django.contrib.staticfiles",
     # Additional apps
     "tailwind",
@@ -4867,12 +5406,11 @@ INSTALLED_APPS = [
     "django_browser_reload",
     "widget_tweaks",
     "phonenumber_field",
-    
     # My django apps
     "users",
     "dashboard",
     "scheduling",
-    "communications",    
+    "communications",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -4957,7 +5495,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [    
+STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
@@ -4975,27 +5513,59 @@ INTERNAL_IPS = [
 LOGIN_URL = "index"
 LOGIN_REDIRECT_URL = "dashboard"
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Replace with your SMTP server address
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"  # Replace with your SMTP server address
 EMAIL_PORT = 587  # Replace with your SMTP port number
 EMAIL_USE_TLS = True  # Set to True if your SMTP server requires TLS
-EMAIL_HOST_USER = 'zhaojin.chu07@gmail.com'  # Replace with your SMTP username
-EMAIL_HOST_PASSWORD = 'wxwk ximf qxzy oiyl'  # Replace with your SMTP password
-DEFAULT_FROM_EMAIL = 'zhaojin.chu07@gmail.com'  # Replace with your default from email address
+EMAIL_HOST_USER = "zhaojin.chu07@gmail.com"  # Replace with your SMTP username
+EMAIL_HOST_PASSWORD = "wxwk ximf qxzy oiyl"  # Replace with your SMTP password
+DEFAULT_FROM_EMAIL = (
+    "zhaojin.chu07@gmail.com"  # Replace with your default from email address
+)
 
 # Settings for real time messaging
 ASGI_APPLICATION = "cs_nea.asgi.application"
 
-# Uses the in-memory channel layer  
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
-}
+# Uses the in-memory channel layer
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 # Timezone settings
 USE_TZ = True
 TIME_ZONE = "UTC"
+
+# Celery settings
+CELERY_BROKER_URL = "redis://localhost:6379/0"  # Using Redis as broker
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"  # Storing results in Redis
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+# Celery beat schedule
+CELERY_BEAT_SCHEDULE = {
+    "check-scheduled-notifications-every-5-minutes": {
+        "task": "communications.tasks.check_scheduled_notifications",
+        "schedule": crontab(minute="*/5"),
+    },
+}
+
+
+# File: cs_nea/cs_nea/celery.py
+from __future__ import absolute_import, unicode_literals
+import os
+from celery import Celery
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cs_nea.settings")
+
+app = Celery("cs_nea")
+app.config_from_object("django.conf:settings", namespace="CELERY")
+app.autodiscover_tasks()
+
+
+@app.task(bind=True)
+def debug_task(self):
+    print(f"Request: {self.request!r}")
+
 
 # File: cs_nea/cs_nea/wsgi.py
 """
