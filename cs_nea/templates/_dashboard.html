@@ -17,7 +17,7 @@
     {% block extra_head %} {% endblock %}
   </head>
 
-  <body class="bg-neutral-200" x-data="{ sidebarOpen: true }">
+  <body class="bg-neutral-200" x-data="{ sidebarOpen: false }">
     <div>
       <header class="sticky top-0 z-50">
         <div
@@ -135,78 +135,79 @@
         <div class="flex h-screen bg-gray-200">
           <!-- Sidebar -->
           <div
-            class="z-30 inset-y-0 left-0 w-56 transition duration-300 transform bg-gray-900 overflow-y-auto fixed top-14"
+            class="z-30 inset-y-0 left-0 w-56 transition duration-300 transform bg-neutral-700 overflow-y-auto fixed top-14"
             :class="{'translate-x-0 ease-out': sidebarOpen, '-translate-x-full ease-in': !sidebarOpen}"
+            id="sidebar"
           >
             <!-- Sidebar content -->
             <a
               href="{% url 'calendar' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
             >
               <span class="mx-3">Calendar</span>
             </a>  
             {% if user.user_type == 1 %}
             <a
               href="{% url 'student_invites' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
             >
               <span class="mx-3">View Invites</span>
             </a>
 
             <a
               href="{% url 'student_teachers' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
               ><span class="mx-3">My Teachers</span></a
             >
 
             <a
               href="{% url 'student_lesson_request' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
             >
               <span class="mx-3">Schedule with a teacher</span>
             </a>
             {% elif user.user_type == 2 %}
             <a
               href="{% url 'invite_student' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
               ><span class="mx-3">Invite Student</span></a
             >
             <a
               href="{% url 'teacher_students' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
               ><span class="mx-3">My Students</span></a
             >
             <a
               href="{% url 'teacher_lesson_request' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
             >
               <span class="mx-3">Schedule with a student</span>
             </a>
             {% endif %}
             <a
               href="{% url 'reschedule_lesson' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
             >
               <span class="mx-3">Reschedule a lesson</span>
             </a>
 
             <a
               href="{% url 'message_list' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
             >
               <span class="mx-3">Messages</span>
             </a>
             
             <a
               href="{% url 'assignment_list' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
             >
               <span class="mx-3">Assignments</span>
             </a>
 
             <a 
               href="{% url 'lesson_requests' %}" 
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
+              class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25"
             >
               <span class="mx-3">Lesson Requests</span>
             </a>
@@ -235,10 +236,38 @@
           </div>
         </div>
       </main>
-
-      <footer></footer>
     </div>
 
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+          // Sidebar activation logic
+        const sidebar = document.getElementById("sidebar");
+        let sidebarOpen = false;
+
+        function openSidebar() {
+          sidebar.classList.remove("-translate-x-full");
+          sidebar.classList.add("translate-x-0");
+          sidebarOpen = true;
+        }
+
+        function closeSidebar() {
+          sidebar.classList.remove("translate-x-0");
+          sidebar.classList.add("-translate-x-full");
+          sidebarOpen = false;
+        }
+
+        document.addEventListener('mousemove', function(event) {
+          if (event.clientX <= 10 && !sidebarOpen) {
+            openSidebar();
+          }
+        });
+
+        document.addEventListener('mouseleave', function(event) {
+          if (event.clientX > 10 && sidebarOpen) {
+            closeSidebar();
+          }
+        });
+      });
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
