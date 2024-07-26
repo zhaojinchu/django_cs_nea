@@ -49,10 +49,10 @@
                     <input type="datetime-local" id="eventEnd" name="end" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 </div>
                 <div class="flex justify-end space-x-2">
-                    <button type="button" id="deleteEventButton" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Delete</button>
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Cancel</button>
-                    <button type="button" onclick="saveEvent()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Save</button>
-                
+                    <button type="button" id="deleteEventButton" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Delete</button>
+                    <button type="button" id="saveEventButton" onclick="saveEvent()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Save</button>
+
                 </div>
             </form>
         </div>
@@ -76,9 +76,12 @@
             select: handleDateSelect,
             eventClick: function(info) {
                 if (info.event.id.startsWith('event_')) {
-                    showEditModal(info.event);
+                    showEditModal(info.event, false);
+                } else if (info.event.id.startsWith('lesson_')) {
+                    showEditModal(info.event, true);
                 }
             },
+            
             eventDrop: function(info) {
                 updateEvent(info.event);
             },
@@ -144,11 +147,15 @@
     }
     
     
-    function showEditModal(event) {
-        document.getElementById('modalTitle').textContent = 'Edit Event';
+    function showEditModal(event, isLesson) {
+        document.getElementById('modalTitle').textContent = isLesson ? 'View Lesson' : 'Edit Event';
         document.getElementById('eventTitle').value = event.title;
         document.getElementById('eventAllDay').checked = event.allDay;
         document.getElementById('eventId').value = event.id;
+
+        // Temporarily change the type to text to ensure re-rendering - Fixes issue where on first time fields aren't populated
+        document.getElementById('eventStart').type = 'text';
+        document.getElementById('eventEnd').type = 'text';
     
         // Convert UTC to local time
         let startLocal = moment.utc(event.start).local().format('YYYY-MM-DDTHH:mm');
@@ -162,9 +169,20 @@
             document.getElementById('eventEnd').value = endLocal;
         }
     
+        // Disable fields if it's a lesson
+        document.getElementById('eventTitle').disabled = isLesson;
+        document.getElementById('eventAllDay').disabled = isLesson;
+        document.getElementById('eventStart').disabled = isLesson;
+        document.getElementById('eventEnd').disabled = isLesson;
+    
+        // Hide delete and save buttons if it's a lesson
+        document.getElementById('deleteEventButton').style.display = isLesson ? 'none' : 'inline-block';
+        document.getElementById('saveEventButton').style.display = isLesson ? 'none' : 'inline-block';
+    
         document.getElementById('eventModal').classList.remove('hidden');
         updateDateTimeInputs(event.allDay);
     }
+    
     
     
     function closeModal() {
