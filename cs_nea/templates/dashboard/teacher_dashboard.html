@@ -143,14 +143,7 @@ function updateAttendance(lessonId, attended) {
           attended: attended
       })
   })
-  .then(response => response.json())
-  .then(data => {
-      if (data.success) {
-          console.log('Attendance updated successfully');
-      } else {
-          console.error('Failed to update attendance');
-      }
-  });
+  .then(response => response.json());
 }
 
 // TODO: JS code for event modal implementation, check TODO above.

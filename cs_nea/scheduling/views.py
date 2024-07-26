@@ -526,7 +526,7 @@ def get_recent_lessons(request):
     ).order_by('-start_datetime')[:10]  # Get last 10 lessons within past week
 
     lessons_data = [{
-        'id': lesson.lesson_id,
+        'lesson_id': lesson.lesson_id,
         'start_time': lesson.start_datetime.strftime('%Y-%m-%d %H:%M'),
         'student_name': lesson.student.user.get_full_name(),
         'attendance': lesson.student_attendance
