@@ -10,16 +10,32 @@ Teacher Dashboard
 {% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow-md p-6 h-full">
-    <div class="h-full flex flex-col overflow-hidden">
-        <div class="flex-grow overflow-y-auto">
-            <div class="container mx-auto p-4 h-full">
-                <div class="bg-white shadow-md rounded-lg overflow-hidden h-full">
-                    <div id="calendar" class="h-full"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="flex h-full gap-4">
+  <!-- Calendar Section -->
+  <div class="w-1/2 pr-4">
+      <div class="bg-white rounded-lg shadow-md p-6 h-full">
+          <div id="calendar" class="h-full"></div>
+      </div>
+  </div>
+  
+  <!-- Attendance Table Section -->
+  <div class="w-1/2 pl-4">
+      <div class="bg-white rounded-lg shadow-md p-6 h-full overflow-y-auto">
+          <h2 class="text-2xl font-bold mb-4">Recent Lessons Attendance</h2>
+          <table class="w-full">
+              <thead>
+                  <tr>
+                      <th class="text-left">Time</th>
+                      <th class="text-left">Student</th>
+                      <th class="text-left">Attendance</th>
+                  </tr>
+              </thead>
+              <tbody id="attendanceTableBody">
+                  <!-- Attendance rows will be populated here -->
+              </tbody>
+          </table>
+      </div>
+  </div>
 </div>
 
 <!-- TODO: I like this event modal popup thing, add this to other calendar implementations? -->
@@ -53,6 +69,7 @@ Teacher Dashboard
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Calendar functions and initalization
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridDay',
@@ -64,12 +81,77 @@ document.addEventListener('DOMContentLoaded', function() {
         height: '100%',
         events: '/get_calendar_data/',
         allDaySlot: false,
+        timeZone: 'local',
         eventClick: function(info) {
             showEventDetails(info.event);
         }
     });
     calendar.render();
+
+    // Function to fetch and update attendance table
+    function updateAttendanceTable() {
+      fetch('/get_recent_lessons/')
+          .then(response => response.json())
+          .then(data => {
+              const tableBody = document.getElementById('attendanceTableBody');
+              tableBody.innerHTML = '';
+              data.forEach(lesson => {
+                // Parse the UTC time and convert to local time
+                const [datePart, timePart] = lesson.start_time.split(' ');
+                const utcDate = new Date(datePart + 'T' + timePart + 'Z');
+                const localTime = utcDate.toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                const row = `
+                    <tr>
+                        <td>${localTime}</td>
+                        <td>${lesson.student_name}</td>
+                        <td>
+                            <input type="checkbox" 
+                                   ${lesson.attendance ? 'checked' : ''} 
+                                   onchange="updateAttendance(${lesson.lesson_id}, this.checked)">
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+              });
+          });
+  }
+
+  // Initial load of attendance table
+  updateAttendanceTable();
+
+  // Refresh attendance table every 5 minutes
+  setInterval(updateAttendanceTable, 300000);
 });
+
+// Form post to backend to update attendance
+function updateAttendance(lessonId, attended) {
+  fetch('/update_attendance/', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: JSON.stringify({
+          lesson_id: lessonId,
+          attended: attended
+      })
+  })
+  .then(response => response.json())
+  .then(data => {
+      if (data.success) {
+          console.log('Attendance updated successfully');
+      } else {
+          console.error('Failed to update attendance');
+      }
+  });
+}
 
 // TODO: JS code for event modal implementation, check TODO above.
 function showEventDetails(event) {
@@ -85,4 +167,5 @@ function closeModal() {
     document.getElementById('eventModal').classList.add('hidden');
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 {% endblock %}

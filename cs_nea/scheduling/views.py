@@ -1,6 +1,8 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from .forms import (
     StudentLessonRequestForm,
@@ -510,3 +512,40 @@ def decline_rescheduling_request(request, rescheduling_request_id):
     rescheduling_request.delete()
     messages.success(request, "Rescheduling request declined and deleted.")
     return redirect("lesson_requests")
+
+
+# Attendance views
+@login_required
+@user_passes_test(is_teacher)
+def get_recent_lessons(request):
+    now = timezone.now()
+    recent_lessons = Lesson.objects.filter(
+        teacher=request.user.teacher,
+        start_datetime__lte=now,
+        start_datetime__gte=now - timezone.timedelta(days=7)
+    ).order_by('-start_datetime')[:10]  # Get last 10 lessons within past week
+
+    lessons_data = [{
+        'id': lesson.lesson_id,
+        'start_time': lesson.start_datetime.strftime('%Y-%m-%d %H:%M'),
+        'student_name': lesson.student.user.get_full_name(),
+        'attendance': lesson.student_attendance
+    } for lesson in recent_lessons]
+
+    return JsonResponse(lessons_data, safe=False)
+
+@require_POST
+@login_required
+@user_passes_test(is_teacher)
+def update_attendance(request):
+    data = json.loads(request.body)
+    lesson_id = data.get('lesson_id')
+    attended = data.get('attended')
+
+    try:
+        lesson = Lesson.objects.get(lesson_id=lesson_id, teacher=request.user.teacher)
+        lesson.student_attendance = attended
+        lesson.save()
+        return JsonResponse({'success': True})
+    except Lesson.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Lesson not found'}, status=404)
