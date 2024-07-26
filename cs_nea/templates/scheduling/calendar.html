@@ -147,13 +147,25 @@
     function showEditModal(event) {
         document.getElementById('modalTitle').textContent = 'Edit Event';
         document.getElementById('eventTitle').value = event.title;
-        document.getElementById('eventStart').value = event.allDay ? event.start.toISOString().slice(0, 10) : event.start.toISOString().slice(0, 16);
-        document.getElementById('eventEnd').value = event.allDay ? event.end.toISOString().slice(0, 10) : event.end.toISOString().slice(0, 16);
         document.getElementById('eventAllDay').checked = event.allDay;
         document.getElementById('eventId').value = event.id;
+    
+        // Convert UTC to local time
+        let startLocal = moment.utc(event.start).local().format('YYYY-MM-DDTHH:mm');
+        let endLocal = moment.utc(event.end).local().format('YYYY-MM-DDTHH:mm');
+    
+        if (event.allDay) {
+            document.getElementById('eventStart').value = startLocal.slice(0, 10);
+            document.getElementById('eventEnd').value = endLocal.slice(0, 10);
+        } else {
+            document.getElementById('eventStart').value = startLocal;
+            document.getElementById('eventEnd').value = endLocal;
+        }
+    
         document.getElementById('eventModal').classList.remove('hidden');
         updateDateTimeInputs(event.allDay);
-    }   
+    }
+    
     
     function closeModal() {
         document.getElementById('eventModal').classList.add('hidden');
