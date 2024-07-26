@@ -76,26 +76,26 @@ def get_calendar_data(request):
 @login_required
 @require_POST
 def create_event(request):
-    if request.user.user_type != 2:
-        return JsonResponse({"error": "Only teachers can create events"}, status=403)
-
     title = request.POST.get("title")
     start_str = request.POST.get("start")
     end_str = request.POST.get("end")
     all_day = request.POST.get("allDay") == "true"
     event_type = request.POST.get("event_type", "other")
-
+    timezone_offset = int(request.POST.get('timezone_offset', 0))
+    
     try:
         if all_day:
-            start = timezone.datetime.strptime(start_str, "%Y-%m-%d").date()
-            end = timezone.datetime.strptime(end_str, "%Y-%m-%d").date()
-            start_datetime = timezone.make_aware(timezone.datetime.combine(start, timezone.datetime.min.time()))
-            end_datetime = timezone.make_aware(timezone.datetime.combine(end, timezone.datetime.max.time()))
+            start = datetime.strptime(start_str, "%Y-%m-%d").date()
+            end = datetime.strptime(end_str, "%Y-%m-%d").date()
+            start_datetime = timezone.make_aware(datetime.combine(start, datetime.min.time()))
+            end_datetime = timezone.make_aware(datetime.combine(end, datetime.max.time()))
         else:
-            start_datetime = timezone.datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%S")
-            end_datetime = timezone.datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%S")
-            start_datetime = timezone.make_aware(start_datetime)
-            end_datetime = timezone.make_aware(end_datetime)
+            start_datetime = datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%S")
+            end_datetime = datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%S")
+            
+            # Convert to UTC
+            start_datetime = timezone.make_aware(start_datetime) + timedelta(minutes=timezone_offset)
+            end_datetime = timezone.make_aware(end_datetime) + timedelta(minutes=timezone_offset)
 
         event = CalendarEvent.objects.create(
             teacher=request.user.teacher,
@@ -103,7 +103,6 @@ def create_event(request):
             start_datetime=start_datetime,
             end_datetime=end_datetime,
             all_day=all_day,
-            event_type=event_type,
         )
 
         return JsonResponse({

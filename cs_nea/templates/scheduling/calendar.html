@@ -182,19 +182,23 @@
 
         var start = formData.get('start');
         var end = formData.get('end');
-        
+ 
         if (allDay) {
             // For all-day events, use the date and set time to midnight UTC
             start = moment(start).format('YYYY-MM-DD');
             end = moment(end).format('YYYY-MM-DD');
         } else {
             // For timed events, keep the time but ensure it's in ISO format
-            start = moment(start).format('YYYY-MM-DDTHH:mm:ss');
-            end = moment(end).format('YYYY-MM-DDTHH:mm:ss');
+            start = moment(start).subtract(timezoneOffset, 'minutes').format('YYYY-MM-DDTHH:mm:ss');
+            end = moment(end).subtract(timezoneOffset, 'minutes').format('YYYY-MM-DDTHH:mm:ss');
         }
 
         formData.set('start', start);
         formData.set('end', end);
+
+        // Add timezone offset
+        var timezoneOffset = new Date().getTimezoneOffset();
+        formData.set('timezone_offset', timezoneOffset);
     
         fetch(url, {
             method: 'POST',
