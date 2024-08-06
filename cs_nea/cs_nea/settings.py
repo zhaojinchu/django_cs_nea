@@ -26,7 +26,13 @@ SECRET_KEY = "django-insecure-z&kc3iy^14wh+aj5q7@rt7mxnwr&^xj=3#*(g8o-uh8$-a-q=4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+# Production only allowed hosts
+ALLOWED_HOSTS = ["172.105.48.136", "localhost", "127.0.0.1", "172-105-48-136.ip.linodeusercontent.com"]
+
+# Tell django it is behind proxy
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
 
 # Application definition
