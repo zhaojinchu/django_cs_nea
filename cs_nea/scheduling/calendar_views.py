@@ -6,11 +6,13 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from datetime import datetime, timedelta
 
+# Returns calendar view
 @login_required
 def calendar_view(request):
     return render(request, "scheduling/calendar.html")
 
 
+# Gets calendar data for AJAX requests
 @login_required
 @require_GET
 def get_calendar_data(request):
@@ -117,7 +119,7 @@ def create_event(request):
     except ValueError as e:
         return JsonResponse({"error": str(e)}, status=400)
 
-
+# Updates an event in case of changes
 @login_required
 @require_POST
 def update_event(request):
@@ -169,6 +171,7 @@ def update_event(request):
         return JsonResponse({"error": str(e)}, status=400)
 
 
+# Deletes an event
 @login_required
 @require_POST
 def delete_event(request):

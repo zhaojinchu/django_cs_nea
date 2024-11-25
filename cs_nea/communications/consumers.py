@@ -9,7 +9,9 @@ from .models import Message, MessageConfig
 User = get_user_model()
 
 
+# Direct message consumer - used for chatting with other users
 class DirectMessageConsumer(AsyncWebsocketConsumer):
+    # Gets the user ID from the URL route
     async def connect(self):
         self.user = self.scope["user"]
         self.other_user_id = self.scope["url_route"]["kwargs"]["user_id"]
@@ -25,9 +27,11 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             message_data = await self.get_message_data(message)
             await self.send(text_data=json.dumps(message_data))
 
+    # Disconnects the user from the room
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
+    # Function to recieve messages from other user
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
@@ -47,11 +51,13 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         await self.send(text_data=json.dumps(event))
 
+    # Function to save a message for future display
     @database_sync_to_async
     def save_message(self, content):
         other_user = User.objects.get(id=self.other_user_id)
         Message.objects.create(sender=self.user, receiver=other_user, content=content)
 
+    # Function to get the previous messages saved for the user
     @database_sync_to_async
     def get_previous_messages(self):
         other_user = User.objects.get(id=self.other_user_id)
@@ -69,10 +75,12 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             "sender": message.sender.get_full_name(),
             "timestamp": message.timestamp.isoformat(),
         }
-
+        
+    
     @database_sync_to_async
     def can_send_message(self):
         other_user = User.objects.get(id=self.other_user_id)
+        # Check if the user has a message config for the other user through the message_config table
         config = MessageConfig.objects.filter(
             (models.Q(student=self.user) & models.Q(teacher=other_user))
             | (models.Q(student=other_user) & models.Q(teacher=self.user))
@@ -86,6 +94,7 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             sender=self.user, receiver=other_user, content=content
         )
 
+    # Receives messages from the other user in real-time
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
@@ -101,26 +110,25 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event))
 
 
-# Notification consumer
+# Notification consumer - used for receiving and sending notifications in real-time
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user = self.scope["user"]
         self.notification_group_name = f"user_{self.user.id}_notifications"
 
         await self.channel_layer.group_add(
-            self.notification_group_name,
-            self.channel_name
+            self.notification_group_name, self.channel_name
         )
         await self.accept()
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
-            self.notification_group_name,
-            self.channel_name
+            self.notification_group_name, self.channel_name
         )
 
     async def notification(self, event):
-        await self.send(text_data=json.dumps({
-            'type': 'new_notification',
-            'notification': event['notification']
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {"type": "new_notification", "notification": event["notification"]}
+            )
+        )

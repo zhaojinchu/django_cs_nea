@@ -1,8 +1,6 @@
 {% extends "_base.html" %} {% load widget_tweaks %} {% block content %}
 
 {% if request.path == "/student/signup" %}
-
-  <!-- CHANGE TO FIT STUDENTS -->
   <form class="flex pt-28 justify-center" method="post">
     {% csrf_token %}
     <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
@@ -46,7 +44,6 @@
     </div>
   </form>
 {% elif request.path == "/teacher/signup" %}
-  <!-- CHANGE TO FIT TEACHERS-->
   <form class="flex pt-28 justify-center" method="post">
     {% csrf_token %}
     <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
@@ -100,6 +97,8 @@
 {% endif %}
 
 {% endblock content %} 
+
+<!-- Navbar links -->
 {% block navright %}
   {% if request.path == "/student/signup" %}
     <a href="{% url 'student_login' %}">

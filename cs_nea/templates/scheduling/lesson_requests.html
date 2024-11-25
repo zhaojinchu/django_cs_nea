@@ -4,6 +4,7 @@
 {% block name %}Lesson Requests{% endblock %}
 
 {% block content %}
+<!-- View for lesson request -->
 <div class="container mx-auto" x-data="{ showAcceptModal: false, showDeclineModal: false, selectedRequest: null, requestType: '' }">
     {% if scheduling_requests or rescheduling_requests %}
         <h2 class="text-xl font-semibold mb-4">New Lesson Requests</h2>

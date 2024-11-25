@@ -14,6 +14,7 @@
 </div>
 
 <script>
+    // WebSocket connection to the server
     const chatSocket = new WebSocket(
         'ws://' + window.location.host + '/ws/dm/{{ other_user.id }}/'
     );
@@ -54,6 +55,7 @@
         }
     };
 
+    // Function to send a message
     function sendMessage() {
         const message = messageInput.value.trim();
         if (message) {
@@ -73,6 +75,7 @@
         }
     }
 
+    // Function to send queued messages in case of disconnect
     function sendQueuedMessages() {
         while (messageQueue.length > 0) {
             const message = messageQueue.shift();
@@ -80,6 +83,7 @@
         }
     }
 
+    // Function to add a message to the chat
     function addMessageToChat(sender, message, timestamp) {
         const messageElement = document.createElement('div');
         const isCurrentUser = sender === "{{ user.get_full_name }}";
@@ -99,6 +103,7 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+    // Function to show an error message
     function showError(message) {
         const errorElement = document.createElement('div');
         errorElement.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4';

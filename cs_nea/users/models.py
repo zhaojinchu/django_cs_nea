@@ -5,8 +5,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 
-
-# Create your models here.
+# Base user model containing basic user information
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -101,6 +100,7 @@ class User(AbstractBaseUser):
         return self.email
 
 
+# Teacher model
 class Teacher(models.Model):
     teacher_id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -115,7 +115,7 @@ class Teacher(models.Model):
         return f"{self.user.get_first_name()} ({self.user.email})"
 
 
-
+# Student model
 class Student(models.Model):
     student_id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -136,8 +136,9 @@ class Student(models.Model):
         return f"{self.user.get_first_name()} ({self.user.email})"
 
 
-
+# Invite model
 class Invite(models.Model):
+    # Invite status choices
     INVITE_STATUS_CHOICES = (
         ("pending", "Pending"),
         ("accepted", "Accepted"),

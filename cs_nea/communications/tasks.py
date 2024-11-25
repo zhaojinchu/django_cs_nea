@@ -2,6 +2,7 @@ from django.utils import timezone
 from .models import Notification, NotificationConfig
 from scheduling.models import Lesson
 from datetime import timedelta
+# Celery is a task queue that allows you to run tasks asynchronously
 from celery import shared_task
 
 def send_notification(user, content):
@@ -9,6 +10,7 @@ def send_notification(user, content):
     # TODO: Implement other options of sending notifications
 
 def schedule_notifications():
+    # Timezone awareness
     now = timezone.now()
     for lesson in Lesson.objects.filter(start_datetime__gt=now):
         student_preferences = NotificationConfig.objects.get(user=lesson.student.user)

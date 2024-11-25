@@ -54,7 +54,7 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     is_edited = models.BooleanField(default=False)
 
-
+# Models for message configurations
 class MessageConfig(models.Model):
     student = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="student_message_configs"

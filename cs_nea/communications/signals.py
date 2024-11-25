@@ -11,6 +11,7 @@ def create_notification_config(sender, instance, created, **kwargs):
     if created:
         NotificationConfig.objects.create(user=instance)
 
+# Saves a notification config when user modifies it
 @receiver(post_save, sender=User)
 def save_notification_config(sender, instance, **kwargs):
     instance.notificationconfig.save()

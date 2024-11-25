@@ -28,7 +28,7 @@ from communications.models import Note
 def index(request):
     return render(request, "index.html")
 
-
+# Login view
 def login(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
@@ -36,6 +36,7 @@ def login(request):
             email = form.cleaned_data.get("email")
             password = form.cleaned_data.get("password")
             user = authenticate(request, username=email, password=password)
+            # Checks if the user account is valid, then redirects to dashboard
             if user is not None:
                 if 'teacher/login' in request.path:
                     if not user.user_type == 2:
@@ -63,7 +64,7 @@ def login(request):
     return render(request, "users/login.html", {"form": form})
 
 
-# 2 factor authentication views
+# 2-FA views
 def two_factor_verify(request):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -71,6 +72,7 @@ def two_factor_verify(request):
 
     user = User.objects.get(id=user_id)
 
+    # Checks if the code is valid and not expired
     if request.method == "POST":
         form = TwoFactorForm(request.POST)
         if form.is_valid():
@@ -93,6 +95,7 @@ def two_factor_verify(request):
     return render(request, "users/two_factor_verify.html", {"form": form})
 
 
+# Account recovery views
 def account_recovery(request):
     if request.method == "POST":
         form = RetrieveAccountForm(request.POST)
@@ -113,6 +116,7 @@ def account_recovery(request):
     return render(request, "users/account_recovery.html", {"form": form})
 
 
+# Sends a two-factor authentication code to the user's email
 def send_two_factor_code(user):
     subject = "Your Two-Factor Authentication Code"
     message = f"Your two-factor authentication code is: {user.two_factor_code}"
@@ -167,6 +171,7 @@ def password_reset(request, token):
     return render(request, "users/password_reset.html", {"form": form})
 
 
+# Enables or disables 2-FA for future logins
 @login_required
 def enable_disable_2fa(request):
     user = request.user
@@ -189,6 +194,7 @@ def enable_disable_2fa(request):
     return render(request, "users/enable_disable_2fa.html", {"form": form})
 
 
+# Sends a password reset link to the user's email
 def send_password_reset_link(request, user):
     user.generate_password_reset_token()
     reset_link = request.build_absolute_uri(
@@ -199,6 +205,7 @@ def send_password_reset_link(request, user):
     send_mail(subject, message, "noreply@example.com", [user.email])
 
 
+# Signup views
 def signup(request):
     if request.path == "/student/signup":
         form_class = StudentSignupForm
@@ -252,6 +259,7 @@ def profile(request):
     return render(request, "users/profile.html")
 
 
+# Settings views
 @login_required
 def settings(request):
     user = request.user
@@ -276,12 +284,14 @@ def settings(request):
     return render(request, "users/settings.html", {"form": form})
 
 
+# Invite views
 @login_required
 @user_passes_test(lambda u: u.user_type == 2)
 def invite_student(request):
     teacher = request.user.teacher
     if request.method == "POST":
         form = InviteForm(request.POST, teacher=teacher)
+        # Validates form and creates an invite
         if form.is_valid():
             student_email = form.cleaned_data["student_email"]
             message = form.cleaned_data["message"]
@@ -305,6 +315,7 @@ def invite_student(request):
         form = InviteForm(teacher=teacher)
 
     return render(request, "users/teacher_templates/invite_student.html", {"form": form})
+
 
 @login_required
 @user_passes_test(lambda u: u.user_type == 1)
@@ -337,6 +348,8 @@ def student_teachers(request):
     teachers = [invite.teacher for invite in accepted_invites]
     return render(request, "users/student_templates/student_teachers.html", {"teachers": teachers})
 
+
+# Views for teachers view of their students and notes
 @login_required
 @user_passes_test(lambda u: u.user_type == 2)
 def teacher_students(request):

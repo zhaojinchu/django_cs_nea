@@ -16,6 +16,7 @@
 </div>
 
 <script>
+// Listens for DOMContentLoaded event and initializes the notification component
 document.addEventListener('DOMContentLoaded', function() {
     const notificationComponent = {
         button: document.getElementById('notificationButton'),
@@ -67,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         },
-
+        // Creates a notification element if there are new notifications
         createNotificationElement: function(notification) {
             const div = document.createElement('div');
             div.className = 'flex items-center px-4 py-3 hover:bg-gray-100';
@@ -84,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             return div;
         },
-
+        // Dismisses and removes a notifcation
         dismissNotification: function(id) {
             fetch(`/mark_notification_read/${id}/`, {
                 method: "POST",
@@ -141,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return "Date error";
             }
         },
-
+        // Gets a cookie value from the document ensures validity
         getCookie: function(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {

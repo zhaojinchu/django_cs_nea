@@ -29,6 +29,7 @@ def notification_preferences(request):
 
     return render(request, 'notification_preferences.html', {'form': form})
 
+# Fetches notifications for the user
 @login_required
 def get_notifications(request):
     notifications = Notification.objects.filter(
@@ -44,7 +45,7 @@ def get_notifications(request):
     ]
     return JsonResponse(data, safe=False)
 
-
+# Marks a notification as read
 @require_POST
 @login_required
 def mark_notification_read(request, notification_id):
@@ -133,9 +134,9 @@ def assignment_detail(request, assignment_id):
         request, "communications/assignment_detail.html", {"assignment": assignment}
     )
 
-
+# Marks an assignment as completed
 @login_required
-@user_passes_test(lambda u: u.user_type == 1)
+@user_passes_test(lambda u: u.user_type == 1) # Checks user type
 def mark_completed(request, assignment_id):
     assignment = get_object_or_404(Assignment, pk=assignment_id)
     if assignment.student != request.user.student:

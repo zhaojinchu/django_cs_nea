@@ -154,14 +154,15 @@ INTERNAL_IPS = [
 LOGIN_URL = "index"
 LOGIN_REDIRECT_URL = "dashboard"
 
+# Email sending details and settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"  # Replace with your SMTP server address
-EMAIL_PORT = 587  # Replace with your SMTP port number
-EMAIL_USE_TLS = True  # Set to True if your SMTP server requires TLS
-EMAIL_HOST_USER = "zhaojin.chu07@gmail.com"  # Replace with your SMTP username
-EMAIL_HOST_PASSWORD = "wxwk ximf qxzy oiyl"  # Replace with your SMTP password
+EMAIL_HOST = "smtp.gmail.com"  
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True  
+EMAIL_HOST_USER = "zhaojin.chu07@gmail.com"  
+EMAIL_HOST_PASSWORD = "wxwk ximf qxzy oiyl"  
 DEFAULT_FROM_EMAIL = (
-    "zhaojin.chu07@gmail.com"  # Replace with your default from email address
+    "zhaojin.chu07@gmail.com" 
 )
 
 # Settings for real time messaging

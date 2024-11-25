@@ -106,6 +106,7 @@ class TeacherLessonRequestForm(forms.ModelForm):
             "recurring_amount": forms.NumberInput(attrs={"class": "form-control"}),
         }
         
+    # Validates the form
     def clean(self):
         cleaned_data = super().clean()
         requested_datetime = cleaned_data.get("requested_datetime")
@@ -157,6 +158,7 @@ class LessonForm(forms.ModelForm):
             "end_datetime",
             "student_attendance",
         ]
+        # Custom timedate widgets for the form
         widgets = {
             "start_datetime": forms.DateTimeInput(
                 attrs={
@@ -225,6 +227,7 @@ class RescheduleLessonForm(forms.ModelForm):
                     teacher=self.user.teacher, is_rescheduled=False
                 ).order_by("start_datetime")
 
+    # Validates the form
     def clean(self):
         cleaned_data = super().clean()
         requested_datetime = cleaned_data.get("requested_datetime")

@@ -5,12 +5,12 @@ from .models import User, Student, Teacher, Invite
 from communications.models import Note
 from phonenumber_field.formfields import SplitPhoneNumberField
 
-
+# Login form
 class LoginForm(forms.Form):
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput())
 
-
+# Signup form
 class SignupForm(forms.ModelForm):
     confirm_password = forms.CharField(widget=forms.PasswordInput())
     contact_number = SplitPhoneNumberField()
@@ -30,7 +30,8 @@ class SignupForm(forms.ModelForm):
             "password": forms.PasswordInput(),
             "date_of_birth": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
         }
-
+    
+    # Validations
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
@@ -65,6 +66,7 @@ class SignupForm(forms.ModelForm):
         return date_of_birth
 
 
+# Student signup form
 class StudentSignupForm(SignupForm):
     grade_level = forms.IntegerField(
         min_value=1,
@@ -83,7 +85,7 @@ class StudentSignupForm(SignupForm):
         model = User
         fields = SignupForm.Meta.fields + ["grade_level", "extra_student_info"]
 
-
+# Teacher signup form
 class TeacherSignupForm(SignupForm):
     extra_teacher_info = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
@@ -96,7 +98,7 @@ class TeacherSignupForm(SignupForm):
         fields = SignupForm.Meta.fields + ["extra_teacher_info"]
 
 
-# 2 factor authentication form
+# 2-FA form
 class TwoFactorForm(forms.Form):
     code = forms.CharField(
         max_length=6,
@@ -113,7 +115,7 @@ class RetrieveAccountForm(forms.Form):
 class PasswordResetRequestForm(forms.Form):
     email = forms.EmailField()
 
-
+# Password reset form
 class PasswordResetForm(forms.Form):
     new_password = forms.CharField(
         widget=forms.PasswordInput(), validators=[validate_password]
@@ -169,7 +171,7 @@ class UserSettingsForm(forms.ModelForm):
                 }
             ),
         }
-
+     # Validation
     def clean(self):
         cleaned_data = super().clean()
         current_password = cleaned_data.get("current_password")
@@ -215,11 +217,14 @@ class InviteForm(forms.Form):
                     raise ValidationError(
                         "You have already sent an invite to this student."
                     )
+                    
+        # Error checking and validation
         except User.DoesNotExist:
             raise ValidationError("No student account found with this email address.")
         return email
 
 
+# Form to implement notes
 class NoteForm(forms.ModelForm):
     class Meta:
         model = Note

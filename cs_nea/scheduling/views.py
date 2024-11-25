@@ -28,7 +28,7 @@ from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-
+# Predefined functions for checking user type
 def is_teacher(user):
     return user.user_type == 2
 
@@ -113,6 +113,7 @@ def get_teacher_schedule(request, teacher_id):
         end_datetime__lte=end,
     )
 
+    # Creating and posting lesson or events to calendar
     events = []
     for lesson in lessons:
         events.append({
@@ -449,7 +450,7 @@ def reschedule_lesson(request):
 
     return render(request, "scheduling/reschedule_lesson.html", {"form": form})
 
-
+# Accepts a rescheduling request
 @login_required
 def accept_rescheduling_request(request, rescheduling_request_id):
     rescheduling_request = get_object_or_404(
@@ -484,7 +485,7 @@ def accept_rescheduling_request(request, rescheduling_request_id):
 
     return redirect("lesson_requests")
 
-
+# Declines a rescheduling request
 @login_required
 def decline_rescheduling_request(request, rescheduling_request_id):
     rescheduling_request = get_object_or_404(
@@ -534,6 +535,8 @@ def get_recent_lessons(request):
 
     return JsonResponse(lessons_data, safe=False)
 
+
+# Updates attendance for a lesson
 @require_POST
 @login_required
 @user_passes_test(is_teacher)

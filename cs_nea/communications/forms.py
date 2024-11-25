@@ -2,7 +2,7 @@ from django import forms
 from .models import Assignment, NotificationConfig
 from users.models import Student
 
-
+# Assignment form for creating and editing assignments
 class AssignmentForm(forms.ModelForm):
     class Meta:
         model = Assignment
@@ -19,7 +19,7 @@ class AssignmentForm(forms.ModelForm):
                 invites__teacher=self.teacher, invites__status="accepted"
             )
 
-
+# Notification config form for creating and editing notification configs
 class NotificationConfigForm(forms.ModelForm):
     class Meta:
         model = NotificationConfig

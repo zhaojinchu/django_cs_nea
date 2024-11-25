@@ -6,6 +6,7 @@ import communications.routing  # you'll create this in step 6
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cs_nea.settings')
 
+# Application definition and websocket routing
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
