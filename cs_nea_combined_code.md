@@ -1,42 +1,8 @@
 
-# --- File: .gitignore ---
-
-```plaintext
-env/
-cs_nea/node_modules/
-```
-
-# --- File: .prettierrc ---
-
-```plaintext
-{
-  "tabWidth": 4,
-  "useTabs": false
-}
-
-```
-
-# === Directory: cs_nea ===
+# Directory: cs_nea
 
 
-# --- File: cs_nea/celerybeat-schedule.dir ---
-
-```plaintext
-'entries', (0, 379)
-'__version__', (512, 20)
-'tz', (1024, 18)
-'utc_enabled', (1536, 4)
-
-```
-
-# --- File: cs_nea/celerybeat-schedule.dat ---
-
-```plaintext
-[Could not decode file: /Users/zhaojin/Documents/django_cs_nea/cs_nea/celerybeat-schedule.dat]
-
-```
-
-# --- File: cs_nea/manage.py ---
+# File: cs_nea/manage.py 
 
 ```python
 #!/usr/bin/env python
@@ -64,20 +30,10 @@ if __name__ == '__main__':
 
 ```
 
-# --- File: cs_nea/celerybeat-schedule.bak ---
-
-```plaintext
-'entries', (0, 379)
-'__version__', (512, 20)
-'tz', (1024, 18)
-'utc_enabled', (1536, 4)
-
-```
-
-# === Directory: cs_nea/scheduling ===
+# Directory: cs_nea/scheduling
 
 
-# --- File: cs_nea/scheduling/models.py ---
+# File: cs_nea/scheduling/models.py 
 
 ```python
 from django.db import models
@@ -224,7 +180,7 @@ class ReschedulingRequest(models.Model):
         return new_lesson
 ```
 
-# --- File: cs_nea/scheduling/calendar_views.py ---
+# File: cs_nea/scheduling/calendar_views.py 
 
 ```python
 from django.http import JsonResponse
@@ -417,13 +373,13 @@ def delete_event(request):
 
 ```
 
-# --- File: cs_nea/scheduling/__init__.py ---
+# File: cs_nea/scheduling/__init__.py 
 
 ```python
 
 ```
 
-# --- File: cs_nea/scheduling/apps.py ---
+# File: cs_nea/scheduling/apps.py 
 
 ```python
 from django.apps import AppConfig
@@ -435,7 +391,7 @@ class SchedulingConfig(AppConfig):
 
 ```
 
-# --- File: cs_nea/scheduling/forms.py ---
+# File: cs_nea/scheduling/forms.py 
 
 ```python
 from django import forms
@@ -685,7 +641,7 @@ class RescheduleLessonForm(forms.ModelForm):
 
 ```
 
-# --- File: cs_nea/scheduling/admin.py ---
+# File: cs_nea/scheduling/admin.py 
 
 ```python
 from django.contrib import admin
@@ -694,7 +650,7 @@ from django.contrib import admin
 
 ```
 
-# --- File: cs_nea/scheduling/tests.py ---
+# File: cs_nea/scheduling/tests.py 
 
 ```python
 from django.test import TestCase
@@ -703,7 +659,7 @@ from django.test import TestCase
 
 ```
 
-# --- File: cs_nea/scheduling/urls.py ---
+# File: cs_nea/scheduling/urls.py 
 
 ```python
 from django.urls import path
@@ -775,7 +731,7 @@ urlpatterns = [
 
 ```
 
-# --- File: cs_nea/scheduling/views.py ---
+# File: cs_nea/scheduling/views.py 
 
 ```python
 import json
@@ -1335,10 +1291,10 @@ def update_attendance(request):
 
 ```
 
-# === Directory: cs_nea/cs_nea ===
+# Directory: cs_nea/cs_nea
 
 
-# --- File: cs_nea/cs_nea/asgi.py ---
+# File: cs_nea/cs_nea/asgi.py 
 
 ```python
 import os
@@ -1360,13 +1316,13 @@ application = ProtocolTypeRouter({
 })
 ```
 
-# --- File: cs_nea/cs_nea/__init__.py ---
+# File: cs_nea/cs_nea/__init__.py 
 
 ```python
 
 ```
 
-# --- File: cs_nea/cs_nea/celery_config.py ---
+# File: cs_nea/cs_nea/celery_config.py 
 
 ```python
 from celery.schedules import crontab
@@ -1381,7 +1337,7 @@ CELERY_BEAT_SCHEDULE = {
 
 ```
 
-# --- File: cs_nea/cs_nea/celery.py ---
+# File: cs_nea/cs_nea/celery.py 
 
 ```python
 from __future__ import absolute_import, unicode_literals
@@ -1402,7 +1358,7 @@ def debug_task(self):
 
 ```
 
-# --- File: cs_nea/cs_nea/settings.py ---
+# File: cs_nea/cs_nea/settings.py 
 
 ```python
 """
@@ -1600,7 +1556,7 @@ CELERY_BEAT_SCHEDULE = {
 
 ```
 
-# --- File: cs_nea/cs_nea/urls.py ---
+# File: cs_nea/cs_nea/urls.py 
 
 ```python
 """
@@ -1636,7 +1592,7 @@ urlpatterns = [
 
 ```
 
-# --- File: cs_nea/cs_nea/wsgi.py ---
+# File: cs_nea/cs_nea/wsgi.py 
 
 ```python
 """
@@ -1658,10 +1614,10 @@ application = get_wsgi_application()
 
 ```
 
-# === Directory: cs_nea/dashboard ===
+# Directory: cs_nea/dashboard
 
 
-# --- File: cs_nea/dashboard/models.py ---
+# File: cs_nea/dashboard/models.py 
 
 ```python
 from django.db import models
@@ -1670,13 +1626,13 @@ from django.db import models
 
 ```
 
-# --- File: cs_nea/dashboard/__init__.py ---
+# File: cs_nea/dashboard/__init__.py 
 
 ```python
 
 ```
 
-# --- File: cs_nea/dashboard/apps.py ---
+# File: cs_nea/dashboard/apps.py 
 
 ```python
 from django.apps import AppConfig
@@ -1688,13 +1644,13 @@ class DashboardConfig(AppConfig):
 
 ```
 
-# --- File: cs_nea/dashboard/admin.py ---
+# File: cs_nea/dashboard/admin.py 
 
 ```python
 from django.contrib import admin
 ```
 
-# --- File: cs_nea/dashboard/tests.py ---
+# File: cs_nea/dashboard/tests.py 
 
 ```python
 from django.test import TestCase
@@ -1703,7 +1659,7 @@ from django.test import TestCase
 
 ```
 
-# --- File: cs_nea/dashboard/urls.py ---
+# File: cs_nea/dashboard/urls.py 
 
 ```python
 from django.urls import path
@@ -1718,7 +1674,7 @@ urlpatterns = [
 
 ```
 
-# --- File: cs_nea/dashboard/views.py ---
+# File: cs_nea/dashboard/views.py 
 
 ```python
 from django.shortcuts import render, redirect
@@ -1769,16 +1725,16 @@ def teacher_dashboard(request):
 
 ```
 
-# === Directory: cs_nea/static ===
+# Directory: cs_nea/static
 
 
-# === Directory: cs_nea/static/media ===
+# Directory: cs_nea/static/media
 
 
-# === Directory: cs_nea/users ===
+# Directory: cs_nea/users
 
 
-# --- File: cs_nea/users/models.py ---
+# File: cs_nea/users/models.py 
 
 ```python
 from django.db import models
@@ -1948,13 +1904,13 @@ class Invite(models.Model):
 
 ```
 
-# --- File: cs_nea/users/__init__.py ---
+# File: cs_nea/users/__init__.py 
 
 ```python
 
 ```
 
-# --- File: cs_nea/users/apps.py ---
+# File: cs_nea/users/apps.py 
 
 ```python
 from django.apps import AppConfig
@@ -1966,7 +1922,7 @@ class UsersConfig(AppConfig):
 
 ```
 
-# --- File: cs_nea/users/forms.py ---
+# File: cs_nea/users/forms.py 
 
 ```python
 from django import forms
@@ -2206,7 +2162,7 @@ class NoteForm(forms.ModelForm):
 
 ```
 
-# --- File: cs_nea/users/admin.py ---
+# File: cs_nea/users/admin.py 
 
 ```python
 from django.contrib import admin
@@ -2215,7 +2171,7 @@ from django.contrib import admin
 
 ```
 
-# --- File: cs_nea/users/urls.py ---
+# File: cs_nea/users/urls.py 
 
 ```python
 from django.urls import path
@@ -2266,7 +2222,7 @@ urlpatterns = [
 
 ```
 
-# --- File: cs_nea/users/views.py ---
+# File: cs_nea/users/views.py 
 
 ```python
 from django.shortcuts import render, redirect, get_object_or_404
@@ -2671,10 +2627,10 @@ def teacher_students(request):
 
 ```
 
-# === Directory: cs_nea/templates ===
+# Directory: cs_nea/templates
 
 
-# --- File: cs_nea/templates/index.html ---
+# File: cs_nea/templates/index.html 
 
 ```html
 {% extends "_base.html" %}
@@ -2715,7 +2671,7 @@ def teacher_students(request):
 
 ```
 
-# --- File: cs_nea/templates/_dashboard.html ---
+# File: cs_nea/templates/_dashboard.html 
 
 ```html
 <!-- TODO: Make dashboard more responsive -->
@@ -2903,7 +2859,7 @@ def teacher_students(request):
 
 ```
 
-# --- File: cs_nea/templates/_base.html ---
+# File: cs_nea/templates/_base.html 
 
 ```html
 {% load static %} {% load static tailwind_tags %}
@@ -3099,10 +3055,10 @@ def teacher_students(request):
 
 ```
 
-# === Directory: cs_nea/templates/scheduling ===
+# Directory: cs_nea/templates/scheduling
 
 
-# --- File: cs_nea/templates/scheduling/lesson_requests.html ---
+# File: cs_nea/templates/scheduling/lesson_requests.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -3235,7 +3191,7 @@ def teacher_students(request):
 
 ```
 
-# --- File: cs_nea/templates/scheduling/calendar.html ---
+# File: cs_nea/templates/scheduling/calendar.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -3599,7 +3555,7 @@ def teacher_students(request):
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/scheduling/create_lesson.html ---
+# File: cs_nea/templates/scheduling/create_lesson.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -3614,7 +3570,7 @@ def teacher_students(request):
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/scheduling/student_schedule_lesson.html ---
+# File: cs_nea/templates/scheduling/student_schedule_lesson.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -3773,7 +3729,7 @@ def teacher_students(request):
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/scheduling/reschedule_lesson.html ---
+# File: cs_nea/templates/scheduling/reschedule_lesson.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -3825,7 +3781,7 @@ def teacher_students(request):
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/scheduling/create_other_event.html ---
+# File: cs_nea/templates/scheduling/create_other_event.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -3841,7 +3797,7 @@ def teacher_students(request):
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/scheduling/teacher_schedule_lesson.html ---
+# File: cs_nea/templates/scheduling/teacher_schedule_lesson.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -3996,10 +3952,10 @@ def teacher_students(request):
 {% endblock %}
 ```
 
-# === Directory: cs_nea/templates/dashboard ===
+# Directory: cs_nea/templates/dashboard
 
 
-# --- File: cs_nea/templates/dashboard/teacher_dashboard.html ---
+# File: cs_nea/templates/dashboard/teacher_dashboard.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -4168,7 +4124,7 @@ function closeModal() {
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/dashboard/student_dashboard.html ---
+# File: cs_nea/templates/dashboard/student_dashboard.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -4261,10 +4217,10 @@ function closeModal() {
 {% endblock %}
 ```
 
-# === Directory: cs_nea/templates/components ===
+# Directory: cs_nea/templates/components
 
 
-# --- File: cs_nea/templates/components/notification.html ---
+# File: cs_nea/templates/components/notification.html 
 
 ```html
 {% load static %}
@@ -4450,7 +4406,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 ```
 
-# --- File: cs_nea/templates/components/current_user.html ---
+# File: cs_nea/templates/components/current_user.html 
 
 ```html
 {% load static %}
@@ -4517,10 +4473,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 ```
 
-# === Directory: cs_nea/templates/users ===
+# Directory: cs_nea/templates/users
 
 
-# --- File: cs_nea/templates/users/profile.html ---
+# File: cs_nea/templates/users/profile.html 
 
 ```html
 {% extends "_dashboard.html" %} 
@@ -4548,7 +4504,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 ```
 
-# --- File: cs_nea/templates/users/account_recovery.html ---
+# File: cs_nea/templates/users/account_recovery.html 
 
 ```html
 {% extends "_base.html" %}
@@ -4601,7 +4557,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock content %}
 ```
 
-# --- File: cs_nea/templates/users/two_factor_verify.html ---
+# File: cs_nea/templates/users/two_factor_verify.html 
 
 ```html
 {% extends "_base.html" %}
@@ -4655,7 +4611,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 ```
 
-# --- File: cs_nea/templates/users/password_reset.html ---
+# File: cs_nea/templates/users/password_reset.html 
 
 ```html
 {% extends "_base.html" %}
@@ -4708,7 +4664,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock content %}
 ```
 
-# --- File: cs_nea/templates/users/login.html ---
+# File: cs_nea/templates/users/login.html 
 
 ```html
 {% extends "_base.html" %} {% load widget_tweaks %} 
@@ -4805,7 +4761,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 ```
 
-# --- File: cs_nea/templates/users/account_recovery_2fa.html ---
+# File: cs_nea/templates/users/account_recovery_2fa.html 
 
 ```html
 {% extends "_base.html" %}
@@ -4859,7 +4815,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock content %}
 ```
 
-# --- File: cs_nea/templates/users/settings.html ---
+# File: cs_nea/templates/users/settings.html 
 
 ```html
 <!-- users/templates/users/settings.html -->
@@ -4916,7 +4872,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/users/signup.html ---
+# File: cs_nea/templates/users/signup.html 
 
 ```html
 {% extends "_base.html" %} {% load widget_tweaks %} {% block content %}
@@ -5061,10 +5017,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 ```
 
-# === Directory: cs_nea/templates/users/student_templates ===
+# Directory: cs_nea/templates/users/student_templates
 
 
-# --- File: cs_nea/templates/users/student_templates/student_invites.html ---
+# File: cs_nea/templates/users/student_templates/student_invites.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5110,7 +5066,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/users/student_templates/student_teachers.html ---
+# File: cs_nea/templates/users/student_templates/student_teachers.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5146,10 +5102,10 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 ```
 
-# === Directory: cs_nea/templates/users/teacher_templates ===
+# Directory: cs_nea/templates/users/teacher_templates
 
 
-# --- File: cs_nea/templates/users/teacher_templates/teacher_students.html ---
+# File: cs_nea/templates/users/teacher_templates/teacher_students.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5244,7 +5200,7 @@ function showEditForm(noteId) {
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/users/teacher_templates/invite_student.html ---
+# File: cs_nea/templates/users/teacher_templates/invite_student.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5293,10 +5249,10 @@ function showEditForm(noteId) {
 {% endblock content %}
 ```
 
-# === Directory: cs_nea/templates/communications ===
+# Directory: cs_nea/templates/communications
 
 
-# --- File: cs_nea/templates/communications/create_assignment.html ---
+# File: cs_nea/templates/communications/create_assignment.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5334,7 +5290,7 @@ function showEditForm(noteId) {
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/communications/assignment_detail.html ---
+# File: cs_nea/templates/communications/assignment_detail.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5374,7 +5330,7 @@ function showEditForm(noteId) {
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/communications/message_list.html ---
+# File: cs_nea/templates/communications/message_list.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5399,7 +5355,7 @@ function showEditForm(noteId) {
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/communications/direct_message.html ---
+# File: cs_nea/templates/communications/direct_message.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5540,7 +5496,7 @@ function showEditForm(noteId) {
 {% endblock %}
 ```
 
-# --- File: cs_nea/templates/communications/assignment_list.html ---
+# File: cs_nea/templates/communications/assignment_list.html 
 
 ```html
 {% extends "_dashboard.html" %}
@@ -5584,10 +5540,10 @@ function showEditForm(noteId) {
 {% endblock %}
 ```
 
-# === Directory: cs_nea/communications ===
+# Directory: cs_nea/communications
 
 
-# --- File: cs_nea/communications/signals.py ---
+# File: cs_nea/communications/signals.py 
 
 ```python
 from django.db.models.signals import post_save
@@ -5609,7 +5565,7 @@ def save_notification_config(sender, instance, **kwargs):
     instance.notificationconfig.save()
 ```
 
-# --- File: cs_nea/communications/tasks.py ---
+# File: cs_nea/communications/tasks.py 
 
 ```python
 from django.utils import timezone
@@ -5675,7 +5631,7 @@ def check_scheduled_notifications():
     schedule_notifications()
 ```
 
-# --- File: cs_nea/communications/models.py ---
+# File: cs_nea/communications/models.py 
 
 ```python
 from django.db import models
@@ -5779,7 +5735,7 @@ class Note(models.Model):
 
 ```
 
-# --- File: cs_nea/communications/consumers.py ---
+# File: cs_nea/communications/consumers.py 
 
 ```python
 import json
@@ -5919,13 +5875,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
 ```
 
-# --- File: cs_nea/communications/__init__.py ---
+# File: cs_nea/communications/__init__.py 
 
 ```python
 
 ```
 
-# --- File: cs_nea/communications/apps.py ---
+# File: cs_nea/communications/apps.py 
 
 ```python
 from django.apps import AppConfig
@@ -5938,7 +5894,7 @@ class CommunicationsConfig(AppConfig):
         import communications.signals
 ```
 
-# --- File: cs_nea/communications/forms.py ---
+# File: cs_nea/communications/forms.py 
 
 ```python
 from django import forms
@@ -5982,7 +5938,7 @@ class NotificationConfigForm(forms.ModelForm):
 
 ```
 
-# --- File: cs_nea/communications/routing.py ---
+# File: cs_nea/communications/routing.py 
 
 ```python
 from django.urls import re_path
@@ -6000,7 +5956,7 @@ websocket_urlpatterns = [
 
 ```
 
-# --- File: cs_nea/communications/urls.py ---
+# File: cs_nea/communications/urls.py 
 
 ```python
 from django.urls import path
@@ -6034,7 +5990,7 @@ urlpatterns = [
 
 ```
 
-# --- File: cs_nea/communications/views.py ---
+# File: cs_nea/communications/views.py 
 
 ```python
 from django.http import JsonResponse

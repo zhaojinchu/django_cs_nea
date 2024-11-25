@@ -6,7 +6,8 @@ output_file = 'cs_nea_combined_code.md'  # Use Markdown extension for highlighti
 
 # Define folders and files to exclude
 exclude_dirs = ['.git', 'node_modules', 'venv', 'env', '__pycache__', 'CACHE', 'src', 'migrations', 'theme']
-exclude_files = ['db.sqlite3', 'README.md', 'TODO.md', 'cs_nea_combined_code.md', 'requirements.txt', 'new_extractor.py']  # Database file to exclude
+exclude_files = ['db.sqlite3', 'README.md', 'TODO.md', 'cs_nea_combined_code.md', 'requirements.txt', 'new_extractor.py',
+                 '.gitignore', '.prettierrc', 'celerybeat-schedule.bak', 'celerybeat-schedule.dat', 'celerybeat-schedule.dir']  # Database file to exclude
 image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.ico']  # Image file extensions
 
 # Map file extensions to languages for syntax highlighting
@@ -29,7 +30,7 @@ def collect_project_code_with_highlighting(base_dir, output_path):
             # Write directory header
             rel_dir_path = os.path.relpath(root, base_dir)
             if rel_dir_path != ".":
-                outfile.write(f"\n# === Directory: {rel_dir_path} ===\n\n")
+                outfile.write(f"\n# Directory: {rel_dir_path}\n\n")
 
             # Write files after listing folders
             for file in files:
@@ -45,7 +46,7 @@ def collect_project_code_with_highlighting(base_dir, output_path):
                 file_path = os.path.join(root, file)
                 file_extension = os.path.splitext(file)[1]
                 language = extension_to_language.get(file_extension, 'plaintext')
-                outfile.write(f"\n# --- File: {os.path.relpath(file_path, base_dir)} ---\n\n")
+                outfile.write(f"\n# File: {os.path.relpath(file_path, base_dir)} \n\n")
                 outfile.write(f"```{language}\n")  # Start code block with language
                 
                 # Attempt to read the file content
