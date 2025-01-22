@@ -104,7 +104,7 @@ class ReschedulingRequest(models.Model):
             raise ValidationError("End datetime must be after the requested datetime.")
 
     def __str__(self):
-        return f"Rescheduling request for lesson {self.original_lesson.id} on {self.requested_datetime}"
+        return f"Rescheduling request for lesson {self.original_lesson.lesson_id} on {self.requested_datetime}"
     
     # Instead of this in the views.py file, we implement in the model to save space.
     @transaction.atomic

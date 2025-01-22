@@ -254,11 +254,10 @@ class RescheduleLessonForm(forms.ModelForm):
         cleaned_data = super().clean()
         requested_datetime = cleaned_data.get("requested_datetime")
         end_datetime = cleaned_data.get("end_datetime")
-        user_timezone = self.data.get("timezone")
+        user_timezone = getattr(self.user, "timezone", None)
 
         if user_timezone:
             user_timezone = pytz_timezone(user_timezone)
-
             if requested_datetime:
                 if requested_datetime.tzinfo is not None:
                     requested_datetime = requested_datetime.replace(tzinfo=None)

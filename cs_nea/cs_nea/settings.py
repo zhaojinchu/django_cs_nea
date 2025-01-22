@@ -64,8 +64,10 @@ MIDDLEWARE = [
     # Automatic page refreshes
     "django_browser_reload.middleware.BrowserReloadMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "cs_nea.middleware.timezone_middleware.UserTimezoneMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    
 ]
 
 ROOT_URLCONF = "cs_nea.urls"

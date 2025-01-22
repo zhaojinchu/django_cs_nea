@@ -28,7 +28,7 @@ from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from pytz import timezone as pytz_timezone, UnknownTimeZoneError
-import pytz
+from django.utils.timezone import localtime
 
 def is_teacher(user):
     return user.user_type == 2
@@ -298,21 +298,37 @@ def create_lesson(request):
 # View for listing lessons requests
 @login_required
 def lesson_requests(request):
-    if request.user.user_type == 1:  # Student
+    # Convert to user's local timezone
+    def localize_request(requests):
+        for req in requests:
+            if hasattr(req, "requested_datetime") and req.requested_datetime:
+                req.requested_datetime_local = localtime(req.requested_datetime)
+            if hasattr(req, "end_datetime") and req.end_datetime:
+                req.end_datetime_local = localtime(req.end_datetime)
+            if hasattr(req, "original_lesson") and hasattr(req.original_lesson, "start_datetime"):
+                req.original_lesson.start_datetime_local = localtime(req.original_lesson.start_datetime)
+        return requests
+
+    # Filter requests based on user type
+    if request.user.user_type == 1:
         scheduling_requests = LessonRequest.objects.filter(
             student=request.user.student, is_approved=False, is_sent_by_teacher=True
         )
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__student=request.user.student, is_approved=False
         )
-    else:  # Teacher
+    else:
         scheduling_requests = LessonRequest.objects.filter(
             teacher=request.user.teacher, is_approved=False, is_sent_by_teacher=False
         )
         rescheduling_requests = ReschedulingRequest.objects.filter(
             original_lesson__teacher=request.user.teacher, is_approved=False
         )
-    
+
+    # Localize datetimes
+    scheduling_requests = localize_request(scheduling_requests)
+    rescheduling_requests = localize_request(rescheduling_requests)
+
     context = {
         "scheduling_requests": scheduling_requests,
         "rescheduling_requests": rescheduling_requests,
@@ -424,8 +440,6 @@ def reschedule_lesson(request):
                     rescheduling_request.end_datetime = form.cleaned_data['end_datetime']
                     rescheduling_request.save()
                     
-                    
-                    
                     # Create notification for the other party
                     other_user = (
                         rescheduling_request.original_lesson.teacher.user
@@ -437,8 +451,6 @@ def reschedule_lesson(request):
 
                     # Convert start_datetime to the user's local timezone
                     localized_start_datetime = rescheduling_request.original_lesson.start_datetime.astimezone(user_timezone)
-                    print(localized_start_datetime, flush=True)
-                    print(rescheduling_request.original_lesson.start_datetime, flush=True)
                     # Format the datetime for a user-friendly display
                     formatted_datetime = localized_start_datetime.strftime('%d-%m-%Y %I:%M %p')
 
