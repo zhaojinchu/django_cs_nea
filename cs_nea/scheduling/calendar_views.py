@@ -28,7 +28,7 @@ def get_calendar_data(request):
             end_datetime__lte=end,
         )
         calendar_events = CalendarEvent.objects.filter(
-            teacher=request.user.teacher,
+            user=request.user,
             start_datetime__gte=start,
             end_datetime__lte=end,
         )
@@ -38,7 +38,12 @@ def get_calendar_data(request):
             start_datetime__gte=start,
             end_datetime__lte=end,
         )
-        calendar_events = []  # Students don't see calendar events
+        calendar_events = CalendarEvent.objects.filter(
+            user=request.user,
+            start_datetime__gte=start,
+            end_datetime__lte=end,
+        )
+        
     else:
         lessons = []
         calendar_events = []
@@ -98,7 +103,7 @@ def create_event(request):
             end_datetime = timezone.make_aware(end_datetime) + timedelta(minutes=timezone_offset)
 
         event = CalendarEvent.objects.create(
-            teacher=request.user.teacher,
+            user=request.user,
             title=title,
             start_datetime=start_datetime,
             end_datetime=end_datetime,

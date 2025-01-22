@@ -2,7 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
-from users.models import Student, Teacher
+from users.models import Student, Teacher, User
 from django.db import transaction
 from communications.models import Notification
 
@@ -69,7 +69,7 @@ class CalendarEvent(models.Model):
     )
 
     event_id = models.AutoField(primary_key=True)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     start_datetime = models.DateTimeField()

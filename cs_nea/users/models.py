@@ -53,10 +53,10 @@ class User(AbstractBaseUser):
         "password",
         max_length=255,
         validators=[
-            MinLengthValidator(6),
+            MinLengthValidator(8),
             RegexValidator(
-                r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$",
-                "Password must have at least 6 characters, including a number and a capital letter.",
+                r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$",
+                "Password must have at least 8 characters, including a number and a capital letter.",
             ),
         ],
     )

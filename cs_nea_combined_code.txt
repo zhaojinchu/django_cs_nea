@@ -1,6 +1,14 @@
 
+# --- celerybeat-schedule.bak ---
 
-# File: cs_nea/manage.py
+'entries', (0, 379)
+'__version__', (512, 20)
+'tz', (1024, 18)
+'utc_enabled', (1536, 4)
+
+
+# --- manage.py ---
+
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
@@ -25,7 +33,21 @@ if __name__ == '__main__':
     main()
 
 
-# File: cs_nea/templates/_base.html
+# --- celerybeat-schedule.dat ---
+
+[Could not decode file: /home/zhaojin/my_projects/cs_neaV2/cs_nea/celerybeat-schedule.dat]
+
+
+# --- celerybeat-schedule.dir ---
+
+'entries', (0, 379)
+'__version__', (512, 20)
+'tz', (1024, 18)
+'utc_enabled', (1536, 4)
+
+
+# --- templates/_base.html ---
+
 {% load static %} {% load static tailwind_tags %}
 
 <!DOCTYPE html>
@@ -218,258 +240,193 @@ if __name__ == '__main__':
 </html>
 
 
-# File: cs_nea/templates/_dashboard.html
+# --- templates/_dashboard.html ---
+
 <!-- TODO: Make dashboard more responsive -->
 
 {% load static %} {% load static tailwind_tags %}
 
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEA</title>
     {% tailwind_css %}
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
-    ></script>
-    {% block extra_head %} {% endblock %}
-  </head>
-
-  <body class="bg-neutral-200" x-data="{ sidebarOpen: true }">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    {% block extra_head %}{% endblock %}
+    <style>
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-neutral-200" x-data="sidebarData()" x-init="init()">
     <div>
-      <header class="sticky top-0 z-50">
-        <div
-          class="flex fixed top-0 py-2 w-full items-center justify-between bg-neutral-800 bg-opacity-95 backdrop-blur shadow-md"
-        >
-          <!-- Left -->
-          <div class="flex flex-grow gap-x-10 px-10 text-lg text-white py-2.5">
-            {% if "home" in request.path %}
-            <div class="flex font-semibold">
-              <a href="{% url 'index' %}" class="hover:text-purple-400">Home</a>
+        <header class="sticky top-0 z-50">
+            <div class="flex fixed top-0 py-2 w-full items-center justify-between bg-neutral-800 bg-opacity-95 backdrop-blur shadow-md">
+                <!-- Left -->
+                <div class="flex flex-grow gap-x-10 px-10 text-lg text-white py-2.5">
+                    {% if "home" in request.path %}
+                    <div class="flex font-semibold">
+                        <a href="{% url 'index' %}" class="hover:text-purple-400">Home</a>
+                    </div>
+                    {% endif %}
+                    <!-- Sidebar Button -->
+                    {% if user.is_authenticated %}
+                    <button @click="toggleSidebar()" class="text-white focus:outline-none">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 6H20M4 12H20M4 18H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                    <div class="flex">
+                        <a href="{% url 'dashboard' %}" class="hover:text-purple-400">Dashboard</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Auto disappearing messages -->
+                <div id="messages-container" class="fixed left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+                    <div class="w-full pt-2">
+                        {% for message in messages %}
+                        <div class="message px-4 py-3 rounded-md shadow-sm mb-2 flex items-center justify-between {% if message.tags == 'error' %} bg-red-100 border border-red-400 text-red-700 {% else %} bg-green-100 border border-green-400 text-green-700 {% endif %}" role="alert">
+                            <span class="flex-grow">{{ message }}</span>
+                            <button onclick="dismissMessage(this.parentNode)" class="ml-4 focus:outline-none">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        const messages = document.querySelectorAll("#messages-container .message");
+                        messages.forEach((message) => {
+                            setTimeout(() => {
+                                dismissMessage(message);
+                            }, 10000);
+                        });
+                    });
+
+                    function dismissMessage(messageElement) {
+                        messageElement.style.transition = "opacity 300ms, transform 300ms";
+                        messageElement.style.opacity = "0";
+                        messageElement.style.transform = "scale(0.9)";
+                        setTimeout(() => {
+                            messageElement.remove();
+                        }, 300);
+                    }
+                </script>
+
+                <!-- Right -->
+                <div class="flex gap-x-6 px-6">
+                    {% block navright %}{% endblock navright %}
+                    {% if user.is_authenticated %}
+                    <!-- Notification component -->
+                    {% include "components/notification.html" %}
+                    <!-- Current user component -->
+                    {% include "components/current_user.html" %}
+                    {% endif %}
+                </div>
             </div>
-            {% endif %}
-            <!-- Sidebar Button -->
-            {% if user.is_authenticated %}
-            <button
-              @click="sidebarOpen = !sidebarOpen"
-              class="text-white focus:outline-none"
-            >
-              <svg
-                class="h-6 w-6"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M4 6H20M4 12H20M4 18H11"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                ></path>
-              </svg>
-            </button>
-            <div class="flex">
-              <a href="{% url 'dashboard' %}" class="hover:text-purple-400"
-                >Dashboard</a
-              >
+        </header>
+
+        <main class="relative">
+            <!-- Content | Below is dashboard only code -->
+            <div class="flex h-screen bg-gray-200">
+                <!-- Sidebar -->
+                <div id="sidebar" class="z-30 inset-y-0 left-0 w-56 transform bg-neutral-700 overflow-y-auto fixed top-14 transition" :class="{'translate-x-0 ease-out': sidebarOpen, '-translate-x-full ease-in': !sidebarOpen}">
+                    <!-- Sidebar content -->
+                    <a href="{% url 'calendar' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">Calendar</span>
+                    </a>
+                    {% if user.user_type == 1 %}
+                    <a href="{% url 'student_invites' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">View Invites</span>
+                    </a>
+                    <a href="{% url 'student_teachers' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">My Teachers</span></a>
+                    <a href="{% url 'student_lesson_request' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">Schedule with a teacher</span></a>
+                    {% elif user.user_type == 2 %}
+                    <a href="{% url 'invite_student' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">Invite Student</span></a>
+                    <a href="{% url 'teacher_students' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">My Students</span></a>
+                    <a href="{% url 'teacher_lesson_request' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">Schedule with a student</span></a>
+                    {% endif %}
+                    <a href="{% url 'reschedule_lesson' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">Reschedule a lesson</span></a>
+                    <a href="{% url 'message_list' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">Messages</span></a>
+                    <a href="{% url 'assignment_list' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">Assignments</span></a>
+                    <a href="{% url 'lesson_requests' %}" class="flex items-center mt-4 py-2 px-6 text-white hover:bg-neutral-800 hover:bg-opacity-25 sidebar-link">
+                        <span class="mx-3">Lesson Requests</span></a>
+                    {% block sidemenu %}{% endblock %}
+                </div>
+
+                <!-- Main content -->
+                <div class="flex-1 flex flex-col overflow-hidden" :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}">
+                    <div class="flex-1 flex flex-col overflow-hidden bg-gray-200 pt-20">
+                        <div class="flex-1 flex flex-col overflow-hidden container mx-auto px-4">
+                            <h3 class="text-neutral-800 text-3xl mb-8 font-bold">
+                                {% block name %}{% endblock %}
+                            </h3>
+                            <!-- Add dashboard content here... -->
+                            <div class="flex-1 overflow-y-auto mb-2">
+                                {% block content %}{% endblock %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            {% endif %}
-          </div>
-
-          <!-- Auto dissapearing messages -->
-          <div
-            id="messages-container"
-            class="fixed left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4"
-          >
-            <div class="w-full pt-2">
-              {% for message in messages %}
-              <div
-                class="message px-4 py-3 rounded-md shadow-sm mb-2 flex items-center justify-between {% if message.tags == 'error' %} bg-red-100 border border-red-400 text-red-700 {% else %} bg-green-100 border border-green-400 text-green-700 {% endif %}"
-                role="alert"
-              >
-                <span class="flex-grow">{{ message }}</span>
-                <button
-                  onclick="dismissMessage(this.parentNode)"
-                  class="ml-4 focus:outline-none"
-                >
-                  <svg
-                    class="h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-
-          <script>
-            document.addEventListener("DOMContentLoaded", function () {
-              const messages = document.querySelectorAll(
-                "#messages-container .message"
-              );
-              messages.forEach((message) => {
-                setTimeout(() => {
-                  dismissMessage(message);
-                }, 10000);
-              });
-            });
-
-            function dismissMessage(messageElement) {
-              messageElement.style.transition =
-                "opacity 300ms, transform 300ms";
-              messageElement.style.opacity = "0";
-              messageElement.style.transform = "scale(0.9)";
-              setTimeout(() => {
-                messageElement.remove();
-              }, 300);
-            }
-          </script>
-
-          <!-- Right -->
-          <div class="flex gap-x-6 px-6">
-            {% block navright %} {% endblock navright %} {% if user.is_authenticated %}
-
-            <!-- Notification component -->
-            {% include "components/notification.html" %}
-
-            <!-- Current user component -->
-            {% include "components/current_user.html" %}
-            {% endif %}
-          </div>
-        </div>
-      </header>
-
-      <main class="relative">
-        <!-- Content | Below is dashboard only code -->
-        <div class="flex h-screen bg-gray-200">
-          <!-- Sidebar -->
-          <div
-            class="z-30 inset-y-0 left-0 w-56 transition duration-300 transform bg-gray-900 overflow-y-auto fixed top-14"
-            :class="{'translate-x-0 ease-out': sidebarOpen, '-translate-x-full ease-in': !sidebarOpen}"
-          >
-            <!-- Sidebar content -->
-            <a
-              href="{% url 'calendar' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Calendar</span>
-            </a>  
-            {% if user.user_type == 1 %}
-            <a
-              href="{% url 'student_invites' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">View Invites</span>
-            </a>
-
-            <a
-              href="{% url 'student_teachers' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-              ><span class="mx-3">My Teachers</span></a
-            >
-
-            <a
-              href="{% url 'student_lesson_request' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Schedule with a teacher</span>
-            </a>
-            {% elif user.user_type == 2 %}
-            <a
-              href="{% url 'invite_student' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-              ><span class="mx-3">Invite Student</span></a
-            >
-            <a
-              href="{% url 'teacher_students' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-              ><span class="mx-3">My Students</span></a
-            >
-            <a
-              href="{% url 'teacher_lesson_request' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Schedule with a student</span>
-            </a>
-            {% endif %}
-            <a
-              href="{% url 'reschedule_lesson' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Reschedule a lesson</span>
-            </a>
-
-            <a
-              href="{% url 'message_list' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Messages</span>
-            </a>
-            
-            <a
-              href="{% url 'assignment_list' %}"
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Assignments</span>
-            </a>
-
-            <a 
-              href="{% url 'lesson_requests' %}" 
-              class="flex items-center mt-4 py-2 px-6 text-gray-300 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100"
-            >
-              <span class="mx-3">Lesson Requests</span>
-            </a>
-
-            {% block sidemenu %}{% endblock %}
-          </div>
-
-          <!-- Main content -->
-          <div
-            class="flex-1 flex flex-col overflow-hidden"
-            :class="{'ml-64': sidebarOpen, 'ml-0': !sidebarOpen}"
-          >
-            <div
-              class="flex-1 flex flex-col overflow-hidden bg-gray-200 pt-20"  
-            >
-              <div class="flex-1 flex flex-col overflow-hidden container mx-auto px-4">  
-                <h3 class="text-neutral-800 text-3xl mb-8 font-bold">
-                  {% block name %}{% endblock %}
-                </h3>
-                <!-- Add dashboard content here... -->
-                <div class="flex-1 overflow-y-auto mb-2">
-                {% block content %}{% endblock %}
-                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <footer></footer>
+        </main>
     </div>
 
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
-    ></script>
-    {% block extra_js %} {% endblock %}
-  </body>
+    <script>
+        function sidebarData() {
+            return {
+                sidebarOpen: localStorage.getItem('sidebarOpen') === 'true',
+                init() {
+                    this.$watch('sidebarOpen', value => {
+                        localStorage.setItem('sidebarOpen', value);
+                    });
+                    document.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                },
+                handleMouseMove(event) {
+                    const sidebarWidth = document.querySelector('#sidebar').offsetWidth;
+                    const mouseX = event.clientX;
+
+                    if (mouseX <= 10) {
+                        this.sidebarOpen = true;
+                    } else if (mouseX > sidebarWidth) {
+                        this.sidebarOpen = false;
+                    }
+                },
+                toggleSidebar() {
+                    this.sidebarOpen = !this.sidebarOpen;
+                }
+            };
+        }
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('sidebarData', sidebarData);
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
 </html>
 
 
-# File: cs_nea/templates/index.html
+# --- templates/index.html ---
+
 {% extends "_base.html" %}
 
 {% block content %}
@@ -506,74 +463,266 @@ if __name__ == '__main__':
 {% endblock content %}
 
 
-# File: cs_nea/templates/dashboard/student_dashboard.html
-{% extends "_dashboard.html" %} {% block name %} Student Dashboard {% endblock %} 
+# --- templates/dashboard/student_dashboard.html ---
 
-{% block content %}
-<h2>Calendar</h2>
-<div class="calendar">
-  <h3>Lessons</h3>
-  {% for lesson in lessons %}
-  <div class="lesson">
-    <p>
-      {{ lesson.start_datetime|date:"F d, Y H:i" }} - {{
-      lesson.end_datetime|date:"H:i" }}
-    </p>
-    <p>Student: {{ lesson.student }}</p>
-    <p>Teacher: {{ lesson.teacher }}</p>
-  </div>
-  {% endfor %}
+{% extends "_dashboard.html" %}
+{% load static %}
 
-  <h3>Other Events</h3>
-  {% for event in other_events %}
-  <div class="other-event">
-    <p>
-      {{ event.start_datetime|date:"F d, Y H:i" }} - {{
-      event.end_datetime|date:"H:i" }}
-    </p>
-    <p>Teacher: {{ event.teacher }}</p>
-    <p>Description: {{ event.event_description }}</p>
-  </div>
-  {% endfor %}
-</div>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 {% endblock %}
 
-
-# File: cs_nea/templates/dashboard/teacher_dashboard.html
-{% extends "_dashboard.html" %} {% block name %} Teacher Dashboard {% endblock %} 
-{% block content %}
-<div class="pt-16">
-  <h2>Calendar</h2>
-  <div class="calendar">
-    <h3>Lessons</h3>
-    {% for lesson in lessons %}
-    <div class="lesson">
-      <p>
-        {{ lesson.start_datetime|date:"F d, Y H:i" }} - {{
-        lesson.end_datetime|date:"H:i" }}
-      </p>
-      <p>Student: {{ lesson.student }}</p>
-      <p>Teacher: {{ lesson.teacher }}</p>
-    </div>
-    {% endfor %}
-
-    <h3>Other Events</h3>
-    {% for event in other_events %}
-    <div class="other-event">
-      <p>
-        {{ event.start_datetime|date:"F d, Y H:i" }} - {{
-        event.end_datetime|date:"H:i" }}
-      </p>
-      <p>Teacher: {{ event.teacher }}</p>
-      <p>Description: {{ event.event_description }}</p>
-    </div>
-    {% endfor %}
-  </div>
-</div>
+{% block name %}
+Student Dashboard
 {% endblock %}
 
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6 h-full">
+    <div class="h-full flex flex-col overflow-hidden">
+        <div class="flex-grow overflow-y-auto">
+            <div class="container mx-auto p-4 h-full">
+                <div class="bg-white shadow-md rounded-lg overflow-hidden h-full">
+                    <div id="calendar" class="h-full"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-# File: cs_nea/templates/scheduling/calendar.html
+<!-- TODO: I like this event modal popup thing, add this to other calendar implementations? -->
+<!-- Event Modal -->
+<div id="eventModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 m-4 max-w-xl w-full">
+            <h2 id="modalTitle" class="text-xl mb-4"></h2>
+            <form id="eventForm">
+                {% csrf_token %}
+                <input type="hidden" id="eventId" name="id">
+                <div class="mb-4">
+                    <label for="eventTitle" class="block text-sm font-medium text-gray-700">Event Title</label>
+                    <input disabled type="text" id="eventTitle" name="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="mb-4">
+                    <label for="eventStart" class="block text-sm font-medium text-gray-700">Start Time</label>
+                    <input disabled type="datetime-local" id="eventStart" name="start" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="mb-4">
+                    <label for="eventEnd" class="block text-sm font-medium text-gray-700">End Time</label>
+                    <input disabled type="datetime-local" id="eventEnd" name="end" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridDay',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridDay'
+        },
+        height: '100%',
+        events: '/get_calendar_data/',
+        allDaySlot: false,
+        eventClick: function(info) {
+            showEventDetails(info.event);
+        }
+    });
+    calendar.render();
+});
+
+// TODO: JS code for event modal implementation, check TODO above.
+function showEventDetails(event) {
+    document.getElementById('modalTitle').textContent = 'Event Details';
+    document.getElementById('eventId').value = event.id;
+    document.getElementById('eventTitle').value = event.title;
+    document.getElementById('eventStart').value = event.start.toISOString().slice(0, 16);
+    document.getElementById('eventEnd').value = event.end.toISOString().slice(0, 16);
+    document.getElementById('eventModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('eventModal').classList.add('hidden');
+}
+</script>
+{% endblock %}
+
+# --- templates/dashboard/teacher_dashboard.html ---
+
+{% extends "_dashboard.html" %}
+{% load static %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+{% endblock %}
+
+{% block name %}
+Teacher Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="flex h-full gap-4">
+  <!-- Calendar Section -->
+  <div class="w-1/2 pr-4">
+      <div class="bg-white rounded-lg shadow-md p-6 h-full">
+          <div id="calendar" class="h-full"></div>
+      </div>
+  </div>
+  
+  <!-- Attendance Table Section -->
+  <div class="w-1/2 pl-4">
+      <div class="bg-white rounded-lg shadow-md p-6 h-full overflow-y-auto">
+          <h2 class="text-2xl font-semibold mb-4 text-neutral-800">Recent Lessons Attendance</h2>
+          <table class="w-full">
+              <thead>
+                  <tr>
+                      <th class="text-left text-neutral-800 font-semibold">Time</th>
+                      <th class="text-left text-neutral-800 font-semibold">Student</th>
+                      <th class="text-left text-neutral-800 font-semibold">Attendance</th>
+                  </tr>
+              </thead>
+              <tbody id="attendanceTableBody">
+                  <!-- Attendance rows will be populated here -->
+              </tbody>
+          </table>
+      </div>
+  </div>
+</div>
+
+<!-- TODO: I like this event modal popup thing, add this to other calendar implementations? -->
+<!-- Event Modal -->
+<div id="eventModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 m-4 max-w-xl w-full">
+            <h2 id="modalTitle" class="text-xl mb-4"></h2>
+            <form id="eventForm">
+                {% csrf_token %}
+                <input type="hidden" id="eventId" name="id">
+                <div class="mb-4">
+                    <label for="eventTitle" class="block text-sm font-medium text-gray-700">Event Title</label>
+                    <input disabled type="text" id="eventTitle" name="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="mb-4">
+                    <label for="eventStart" class="block text-sm font-medium text-gray-700">Start Time</label>
+                    <input disabled type="datetime-local" id="eventStart" name="start" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="mb-4">
+                    <label for="eventEnd" class="block text-sm font-medium text-gray-700">End Time</label>
+                    <input disabled type="datetime-local" id="eventEnd" name="end" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calendar functions and initalization
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridDay',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridDay'
+        },
+        height: '100%',
+        events: '/get_calendar_data/',
+        allDaySlot: false,
+        timeZone: 'local',
+        eventClick: function(info) {
+            showEventDetails(info.event);
+        }
+    });
+    calendar.render();
+
+    // Function to fetch and update attendance table
+    function updateAttendanceTable() {
+      fetch('/get_recent_lessons/')
+          .then(response => response.json())
+          .then(data => {
+              const tableBody = document.getElementById('attendanceTableBody');
+              tableBody.innerHTML = '';
+              data.forEach(lesson => {
+                // Parse the UTC time and convert to local time
+                const [datePart, timePart] = lesson.start_time.split(' ');
+                const utcDate = new Date(datePart + 'T' + timePart + 'Z');
+                const localTime = utcDate.toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                const row = `
+                    <tr>
+                        <td>${localTime}</td>
+                        <td>${lesson.student_name}</td>
+                        <td>
+                            <input type="checkbox" 
+                                   ${lesson.attendance ? 'checked' : ''} 
+                                   onchange="updateAttendance(${lesson.lesson_id}, this.checked)">
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+              });
+          });
+  }
+
+  // Initial load of attendance table
+  updateAttendanceTable();
+
+  // Refresh attendance table every 5 minutes
+  setInterval(updateAttendanceTable, 300000);
+});
+
+// Form post to backend to update attendance
+function updateAttendance(lessonId, attended) {
+  fetch('/update_attendance/', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: JSON.stringify({
+          lesson_id: lessonId,
+          attended: attended
+      })
+  })
+  .then(response => response.json());
+}
+
+// TODO: JS code for event modal implementation, check TODO above.
+function showEventDetails(event) {
+    document.getElementById('modalTitle').textContent = 'Event Details';
+    document.getElementById('eventId').value = event.id;
+    document.getElementById('eventTitle').value = event.title;
+    document.getElementById('eventStart').value = event.start.toISOString().slice(0, 16);
+    document.getElementById('eventEnd').value = event.end.toISOString().slice(0, 16);
+    document.getElementById('eventModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('eventModal').classList.add('hidden');
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+{% endblock %}
+
+# --- templates/scheduling/calendar.html ---
+
 {% extends "_dashboard.html" %}
 {% load static %}
 
@@ -625,10 +774,10 @@ if __name__ == '__main__':
                     <input type="datetime-local" id="eventEnd" name="end" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 </div>
                 <div class="flex justify-end space-x-2">
-                    <button type="button" id="deleteEventButton" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Delete</button>
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Cancel</button>
-                    <button type="button" onclick="saveEvent()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Save</button>
-                
+                    <button type="button" id="deleteEventButton" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Delete</button>
+                    <button type="button" id="saveEventButton" onclick="saveEvent()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Save</button>
+
                 </div>
             </form>
         </div>
@@ -652,9 +801,12 @@ if __name__ == '__main__':
             select: handleDateSelect,
             eventClick: function(info) {
                 if (info.event.id.startsWith('event_')) {
-                    showEditModal(info.event);
+                    showEditModal(info.event, false);
+                } else if (info.event.id.startsWith('lesson_')) {
+                    showEditModal(info.event, true);
                 }
             },
+            
             eventDrop: function(info) {
                 updateEvent(info.event);
             },
@@ -720,16 +872,43 @@ if __name__ == '__main__':
     }
     
     
-    function showEditModal(event) {
-        document.getElementById('modalTitle').textContent = 'Edit Event';
+    function showEditModal(event, isLesson) {
+        document.getElementById('modalTitle').textContent = isLesson ? 'View Lesson' : 'Edit Event';
         document.getElementById('eventTitle').value = event.title;
-        document.getElementById('eventStart').value = event.allDay ? event.start.toISOString().slice(0, 10) : event.start.toISOString().slice(0, 16);
-        document.getElementById('eventEnd').value = event.allDay ? event.end.toISOString().slice(0, 10) : event.end.toISOString().slice(0, 16);
         document.getElementById('eventAllDay').checked = event.allDay;
         document.getElementById('eventId').value = event.id;
+
+        // Temporarily change the type to text to ensure re-rendering - Fixes issue where on first time fields aren't populated
+        document.getElementById('eventStart').type = 'text';
+        document.getElementById('eventEnd').type = 'text';
+    
+        // Convert UTC to local time
+        let startLocal = moment.utc(event.start).local().format('YYYY-MM-DDTHH:mm');
+        let endLocal = moment.utc(event.end).local().format('YYYY-MM-DDTHH:mm');
+    
+        if (event.allDay) {
+            document.getElementById('eventStart').value = startLocal.slice(0, 10);
+            document.getElementById('eventEnd').value = endLocal.slice(0, 10);
+        } else {
+            document.getElementById('eventStart').value = startLocal;
+            document.getElementById('eventEnd').value = endLocal;
+        }
+    
+        // Disable fields if it's a lesson
+        document.getElementById('eventTitle').disabled = isLesson;
+        document.getElementById('eventAllDay').disabled = isLesson;
+        document.getElementById('eventStart').disabled = isLesson;
+        document.getElementById('eventEnd').disabled = isLesson;
+    
+        // Hide delete and save buttons if it's a lesson
+        document.getElementById('deleteEventButton').style.display = isLesson ? 'none' : 'inline-block';
+        document.getElementById('saveEventButton').style.display = isLesson ? 'none' : 'inline-block';
+    
         document.getElementById('eventModal').classList.remove('hidden');
         updateDateTimeInputs(event.allDay);
-    }   
+    }
+    
+    
     
     function closeModal() {
         document.getElementById('eventModal').classList.add('hidden');
@@ -758,19 +937,23 @@ if __name__ == '__main__':
 
         var start = formData.get('start');
         var end = formData.get('end');
-        
+ 
         if (allDay) {
             // For all-day events, use the date and set time to midnight UTC
             start = moment(start).format('YYYY-MM-DD');
             end = moment(end).format('YYYY-MM-DD');
         } else {
             // For timed events, keep the time but ensure it's in ISO format
-            start = moment(start).format('YYYY-MM-DDTHH:mm:ss');
-            end = moment(end).format('YYYY-MM-DDTHH:mm:ss');
+            start = moment(start).subtract(timezoneOffset, 'minutes').format('YYYY-MM-DDTHH:mm:ss');
+            end = moment(end).subtract(timezoneOffset, 'minutes').format('YYYY-MM-DDTHH:mm:ss');
         }
 
         formData.set('start', start);
         formData.set('end', end);
+
+        // Add timezone offset
+        var timezoneOffset = new Date().getTimezoneOffset();
+        formData.set('timezone_offset', timezoneOffset);
     
         fetch(url, {
             method: 'POST',
@@ -900,7 +1083,8 @@ if __name__ == '__main__':
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 {% endblock %}
 
-# File: cs_nea/templates/scheduling/teacher_schedule_lesson.html
+# --- templates/scheduling/teacher_schedule_lesson.html ---
+
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
 {% block name %}Schedule or Request a Lesson{% endblock %}
@@ -1052,7 +1236,8 @@ if __name__ == '__main__':
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 {% endblock %}
 
-# File: cs_nea/templates/scheduling/create_lesson.html
+# --- templates/scheduling/create_lesson.html ---
+
 {% extends "_dashboard.html" %}
 
 {% block content %}
@@ -1064,7 +1249,8 @@ if __name__ == '__main__':
 </form>
 {% endblock %}
 
-# File: cs_nea/templates/scheduling/student_schedule_lesson.html
+# --- templates/scheduling/student_schedule_lesson.html ---
+
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
 
@@ -1219,7 +1405,8 @@ if __name__ == '__main__':
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 {% endblock %}
 
-# File: cs_nea/templates/scheduling/reschedule_lesson.html
+# --- templates/scheduling/reschedule_lesson.html ---
+
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
 {% block name %}Request Lesson Rescheduling{% endblock %}
@@ -1268,7 +1455,8 @@ if __name__ == '__main__':
 
 {% endblock %}
 
-# File: cs_nea/templates/scheduling/lesson_requests.html
+# --- templates/scheduling/lesson_requests.html ---
+
 {% extends "_dashboard.html" %}
 {% load static %}
 
@@ -1397,7 +1585,8 @@ if __name__ == '__main__':
 {% endblock %}
 
 
-# File: cs_nea/templates/scheduling/create_other_event.html
+# --- templates/scheduling/create_other_event.html ---
+
 {% extends "_dashboard.html" %}
 
 {% endblock %}
@@ -1410,7 +1599,8 @@ if __name__ == '__main__':
 </form>
 {% endblock %}
 
-# File: cs_nea/templates/communications/message_list.html
+# --- templates/communications/message_list.html ---
+
 {% extends "_dashboard.html" %}
 
 {% block name %} Direct Messages {% endblock %}
@@ -1431,7 +1621,8 @@ if __name__ == '__main__':
 </div>
 {% endblock %}
 
-# File: cs_nea/templates/communications/assignment_detail.html
+# --- templates/communications/assignment_detail.html ---
+
 {% extends "_dashboard.html" %}
 {% load static %}
 
@@ -1466,7 +1657,8 @@ if __name__ == '__main__':
 </div>
 {% endblock %}
 
-# File: cs_nea/templates/communications/create_assignment.html
+# --- templates/communications/create_assignment.html ---
+
 {% extends "_dashboard.html" %}
 {% load static %}
 {% load widget_tweaks %}
@@ -1501,7 +1693,8 @@ if __name__ == '__main__':
 </div>
 {% endblock %}
 
-# File: cs_nea/templates/communications/assignment_list.html
+# --- templates/communications/assignment_list.html ---
+
 {% extends "_dashboard.html" %}
 {% load static %}
 
@@ -1541,7 +1734,8 @@ if __name__ == '__main__':
 </div>
 {% endblock %}
 
-# File: cs_nea/templates/communications/direct_message.html
+# --- templates/communications/direct_message.html ---
+
 {% extends "_dashboard.html" %}
 {% block name %}Chat with {{ other_user.get_full_name }}{% endblock %}
 {% block content %}
@@ -1674,7 +1868,8 @@ if __name__ == '__main__':
 
 {% endblock %}
 
-# File: cs_nea/templates/users/signup.html
+# --- templates/users/signup.html ---
+
 {% extends "_base.html" %} {% load widget_tweaks %} {% block content %}
 
 {% if request.path == "/student/signup" %}
@@ -1817,7 +2012,8 @@ if __name__ == '__main__':
 {% endblock navright %}
 
 
-# File: cs_nea/templates/users/password_reset.html
+# --- templates/users/password_reset.html ---
+
 {% extends "_base.html" %}
 {% load widget_tweaks %}
 
@@ -1866,7 +2062,8 @@ if __name__ == '__main__':
 </div>
 {% endblock content %}
 
-# File: cs_nea/templates/users/account_recovery.html
+# --- templates/users/account_recovery.html ---
+
 {% extends "_base.html" %}
 {% load widget_tweaks %}
 
@@ -1915,7 +2112,8 @@ if __name__ == '__main__':
 </div>
 {% endblock content %}
 
-# File: cs_nea/templates/users/settings.html
+# --- templates/users/settings.html ---
+
 <!-- users/templates/users/settings.html -->
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
@@ -1968,7 +2166,8 @@ if __name__ == '__main__':
 </div>
 {% endblock %}
 
-# File: cs_nea/templates/users/account_recovery_2fa.html
+# --- templates/users/account_recovery_2fa.html ---
+
 {% extends "_base.html" %}
 {% load widget_tweaks %}
 
@@ -2018,7 +2217,8 @@ if __name__ == '__main__':
 </div>
 {% endblock content %}
 
-# File: cs_nea/templates/users/login.html
+# --- templates/users/login.html ---
+
 {% extends "_base.html" %} {% load widget_tweaks %} 
 
 {% block content %}
@@ -2111,7 +2311,8 @@ if __name__ == '__main__':
 {% endif %} {% endblock navright %}
 
 
-# File: cs_nea/templates/users/profile.html
+# --- templates/users/profile.html ---
+
 {% extends "_dashboard.html" %} 
 
 {% block name %}Profile{% endblock %} 
@@ -2136,7 +2337,8 @@ if __name__ == '__main__':
 {% endblock content %}
 
 
-# File: cs_nea/templates/users/two_factor_verify.html
+# --- templates/users/two_factor_verify.html ---
+
 {% extends "_base.html" %}
 {% load widget_tweaks %}
 
@@ -2186,7 +2388,8 @@ if __name__ == '__main__':
 {% endblock content %}
 
 
-# File: cs_nea/templates/users/student_templates/student_teachers.html
+# --- templates/users/student_templates/student_teachers.html ---
+
 {% extends "_dashboard.html" %}
 {% load static %}
 {% block name %}Teachers{% endblock %}
@@ -2218,7 +2421,8 @@ if __name__ == '__main__':
 
 {% endblock %}
 
-# File: cs_nea/templates/users/student_templates/student_invites.html
+# --- templates/users/student_templates/student_invites.html ---
+
 {% extends "_dashboard.html" %}
 {% load static %}
 {% block name %}Pending Invites{% endblock %}
@@ -2260,7 +2464,8 @@ if __name__ == '__main__':
 
 {% endblock %}
 
-# File: cs_nea/templates/users/teacher_templates/teacher_students.html
+# --- templates/users/teacher_templates/teacher_students.html ---
+
 {% extends "_dashboard.html" %}
 {% load static %}
 
@@ -2351,7 +2556,8 @@ function showEditForm(noteId) {
 </script>
 {% endblock %}
 
-# File: cs_nea/templates/users/teacher_templates/invite_student.html
+# --- templates/users/teacher_templates/invite_student.html ---
+
 {% extends "_dashboard.html" %}
 {% load widget_tweaks %}
 
@@ -2396,7 +2602,8 @@ function showEditForm(noteId) {
 </div>
 {% endblock content %}
 
-# File: cs_nea/templates/components/notification.html
+# --- templates/components/notification.html ---
+
 {% load static %}
 
 <div id="notificationComponent" class="relative inline-block text-left mr-4">
@@ -2578,7 +2785,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-# File: cs_nea/templates/components/current_user.html
+# --- templates/components/current_user.html ---
+
 {% load static %}
 <div x-data="{ open: false }" class="relative inline-block text-left mr-4">
     <div>
@@ -2641,13 +2849,15 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 
-# File: cs_nea/dashboard/admin.py
+# --- dashboard/admin.py ---
+
 from django.contrib import admin
 
 # Register your models here.
 
 
-# File: cs_nea/dashboard/views.py
+# --- dashboard/views.py ---
+
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from communications.models import Notification
@@ -2695,10 +2905,12 @@ def teacher_dashboard(request):
     return render(request, "dashboard/teacher_dashboard.html")
 
 
-# File: cs_nea/dashboard/__init__.py
+# --- dashboard/__init__.py ---
 
 
-# File: cs_nea/dashboard/apps.py
+
+# --- dashboard/apps.py ---
+
 from django.apps import AppConfig
 
 
@@ -2707,19 +2919,22 @@ class DashboardConfig(AppConfig):
     name = 'dashboard'
 
 
-# File: cs_nea/dashboard/models.py
+# --- dashboard/models.py ---
+
 from django.db import models
 
 # Create your models here.
 
 
-# File: cs_nea/dashboard/tests.py
+# --- dashboard/tests.py ---
+
 from django.test import TestCase
 
 # Create your tests here.
 
 
-# File: cs_nea/dashboard/urls.py
+# --- dashboard/urls.py ---
+
 from django.urls import path
 from .views import dashboard, student_dashboard, teacher_dashboard   
 
@@ -2730,13 +2945,15 @@ urlpatterns = [
 ]
 
 
-# File: cs_nea/scheduling/admin.py
+# --- scheduling/admin.py ---
+
 from django.contrib import admin
 
 # Register your models here.
 
 
-# File: cs_nea/scheduling/calendar_views.py
+# --- scheduling/calendar_views.py ---
+
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 from django.contrib.auth.decorators import login_required
@@ -2815,26 +3032,26 @@ def get_calendar_data(request):
 @login_required
 @require_POST
 def create_event(request):
-    if request.user.user_type != 2:
-        return JsonResponse({"error": "Only teachers can create events"}, status=403)
-
     title = request.POST.get("title")
     start_str = request.POST.get("start")
     end_str = request.POST.get("end")
     all_day = request.POST.get("allDay") == "true"
     event_type = request.POST.get("event_type", "other")
-
+    timezone_offset = int(request.POST.get('timezone_offset', 0))
+    
     try:
         if all_day:
-            start = timezone.datetime.strptime(start_str, "%Y-%m-%d").date()
-            end = timezone.datetime.strptime(end_str, "%Y-%m-%d").date()
-            start_datetime = timezone.make_aware(timezone.datetime.combine(start, timezone.datetime.min.time()))
-            end_datetime = timezone.make_aware(timezone.datetime.combine(end, timezone.datetime.max.time()))
+            start = datetime.strptime(start_str, "%Y-%m-%d").date()
+            end = datetime.strptime(end_str, "%Y-%m-%d").date()
+            start_datetime = timezone.make_aware(datetime.combine(start, datetime.min.time()))
+            end_datetime = timezone.make_aware(datetime.combine(end, datetime.max.time()))
         else:
-            start_datetime = timezone.datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%S")
-            end_datetime = timezone.datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%S")
-            start_datetime = timezone.make_aware(start_datetime)
-            end_datetime = timezone.make_aware(end_datetime)
+            start_datetime = datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%S")
+            end_datetime = datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%S")
+            
+            # Convert to UTC
+            start_datetime = timezone.make_aware(start_datetime) + timedelta(minutes=timezone_offset)
+            end_datetime = timezone.make_aware(end_datetime) + timedelta(minutes=timezone_offset)
 
         event = CalendarEvent.objects.create(
             teacher=request.user.teacher,
@@ -2842,7 +3059,6 @@ def create_event(request):
             start_datetime=start_datetime,
             end_datetime=end_datetime,
             all_day=all_day,
-            event_type=event_type,
         )
 
         return JsonResponse({
@@ -2924,10 +3140,13 @@ def delete_event(request):
     return JsonResponse({"success": True})
 
 
-# File: cs_nea/scheduling/views.py
+# --- scheduling/views.py ---
+
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from .forms import (
     StudentLessonRequestForm,
@@ -3439,10 +3658,49 @@ def decline_rescheduling_request(request, rescheduling_request_id):
     return redirect("lesson_requests")
 
 
-# File: cs_nea/scheduling/__init__.py
+# Attendance views
+@login_required
+@user_passes_test(is_teacher)
+def get_recent_lessons(request):
+    now = timezone.now()
+    recent_lessons = Lesson.objects.filter(
+        teacher=request.user.teacher,
+        start_datetime__lte=now,
+        start_datetime__gte=now - timezone.timedelta(days=7)
+    ).order_by('-start_datetime')[:10]  # Get last 10 lessons within past week
+
+    lessons_data = [{
+        'lesson_id': lesson.lesson_id,
+        'start_time': lesson.start_datetime.strftime('%Y-%m-%d %H:%M'),
+        'student_name': lesson.student.user.get_full_name(),
+        'attendance': lesson.student_attendance
+    } for lesson in recent_lessons]
+
+    return JsonResponse(lessons_data, safe=False)
+
+@require_POST
+@login_required
+@user_passes_test(is_teacher)
+def update_attendance(request):
+    data = json.loads(request.body)
+    lesson_id = data.get('lesson_id')
+    attended = data.get('attended')
+
+    try:
+        lesson = Lesson.objects.get(lesson_id=lesson_id, teacher=request.user.teacher)
+        lesson.student_attendance = attended
+        lesson.save()
+        return JsonResponse({'success': True})
+    except Lesson.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Lesson not found'}, status=404)
 
 
-# File: cs_nea/scheduling/apps.py
+# --- scheduling/__init__.py ---
+
+
+
+# --- scheduling/apps.py ---
+
 from django.apps import AppConfig
 
 
@@ -3451,7 +3709,8 @@ class SchedulingConfig(AppConfig):
     name = 'scheduling'
 
 
-# File: cs_nea/scheduling/models.py
+# --- scheduling/models.py ---
+
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -3595,7 +3854,8 @@ class ReschedulingRequest(models.Model):
         
         return new_lesson
 
-# File: cs_nea/scheduling/forms.py
+# --- scheduling/forms.py ---
+
 from django import forms
 from .models import LessonRequest, Lesson, ReschedulingRequest
 from users.models import Teacher, Student, Invite
@@ -3839,13 +4099,15 @@ class RescheduleLessonForm(forms.ModelForm):
         return cleaned_data
 
 
-# File: cs_nea/scheduling/tests.py
+# --- scheduling/tests.py ---
+
 from django.test import TestCase
 
 # Create your tests here.
 
 
-# File: cs_nea/scheduling/urls.py
+# --- scheduling/urls.py ---
+
 from django.urls import path
 from . import views
 from .calendar_views import (
@@ -3907,10 +4169,15 @@ urlpatterns = [
     path('get_teacher_schedule/<int:teacher_id>/', views.get_teacher_schedule, name='get_teacher_schedule'),
     # Fetching student schedule URL
     path('get_student_schedule/<int:student_id>/', views.get_student_schedule, name='get_student_schedule'),
+    
+    # Attendance related URLs
+    path('get_recent_lessons/', views.get_recent_lessons, name='get_recent_lessons'),
+    path('update_attendance/', views.update_attendance, name='update_attendance'),
 ]
 
 
-# File: cs_nea/communications/views.py
+# --- communications/views.py ---
+
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -4062,7 +4329,8 @@ def mark_completed(request, assignment_id):
     messages.success(request, "Task marked as completed.")
     return redirect("assignment_list")
 
-# File: cs_nea/communications/consumers.py
+# --- communications/consumers.py ---
+
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -4190,7 +4458,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'notification': event['notification']
         }))
 
-# File: cs_nea/communications/tasks.py
+# --- communications/tasks.py ---
+
 from django.utils import timezone
 from .models import Notification, NotificationConfig
 from scheduling.models import Lesson
@@ -4251,10 +4520,12 @@ def schedule_notifications():
 def check_scheduled_notifications():
     schedule_notifications()
 
-# File: cs_nea/communications/__init__.py
+# --- communications/__init__.py ---
 
 
-# File: cs_nea/communications/apps.py
+
+# --- communications/apps.py ---
+
 from django.apps import AppConfig
 
 
@@ -4264,7 +4535,8 @@ class CommunicationsConfig(AppConfig):
     def ready(self):
         import communications.signals
 
-# File: cs_nea/communications/models.py
+# --- communications/models.py ---
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from users.models import Student, Teacher, User
@@ -4365,7 +4637,8 @@ class Note(models.Model):
         return f"Note for {self.student} by {self.teacher}"
 
 
-# File: cs_nea/communications/signals.py
+# --- communications/signals.py ---
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
@@ -4383,7 +4656,8 @@ def create_notification_config(sender, instance, created, **kwargs):
 def save_notification_config(sender, instance, **kwargs):
     instance.notificationconfig.save()
 
-# File: cs_nea/communications/routing.py
+# --- communications/routing.py ---
+
 from django.urls import re_path
 from . import consumers
 
@@ -4397,7 +4671,8 @@ websocket_urlpatterns = [
 
 
 
-# File: cs_nea/communications/forms.py
+# --- communications/forms.py ---
+
 from django import forms
 from .models import Assignment, NotificationConfig
 from users.models import Student
@@ -4438,7 +4713,8 @@ class NotificationConfigForm(forms.ModelForm):
         ]
 
 
-# File: cs_nea/communications/urls.py
+# --- communications/urls.py ---
+
 from django.urls import path
 from . import views
 
@@ -4469,13 +4745,15 @@ urlpatterns = [
 ]
 
 
-# File: cs_nea/users/admin.py
+# --- users/admin.py ---
+
 from django.contrib import admin
 
 # Register your models here.
 
 
-# File: cs_nea/users/views.py
+# --- users/views.py ---
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
@@ -4864,10 +5142,12 @@ def teacher_students(request):
 
 
 
-# File: cs_nea/users/__init__.py
+# --- users/__init__.py ---
 
 
-# File: cs_nea/users/apps.py
+
+# --- users/apps.py ---
+
 from django.apps import AppConfig
 
 
@@ -4876,7 +5156,8 @@ class UsersConfig(AppConfig):
     name = 'users'
 
 
-# File: cs_nea/users/models.py
+# --- users/models.py ---
+
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import RegexValidator, EmailValidator, MinLengthValidator
@@ -5042,7 +5323,8 @@ class Invite(models.Model):
         return f"Invite from {self.teacher} to {self.student} ({self.status})"
 
 
-# File: cs_nea/users/forms.py
+# --- users/forms.py ---
+
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -5274,7 +5556,8 @@ class NoteForm(forms.ModelForm):
         }
 
 
-# File: cs_nea/users/urls.py
+# --- users/urls.py ---
+
 # users/urls.py
 
 from django.urls import path
@@ -5324,7 +5607,8 @@ urlpatterns = [
 ]
 
 
-# File: cs_nea/cs_nea/celery_config.py
+# --- cs_nea/celery_config.py ---
+
 from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
@@ -5335,7 +5619,8 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 
-# File: cs_nea/cs_nea/asgi.py
+# --- cs_nea/asgi.py ---
+
 import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
@@ -5353,10 +5638,12 @@ application = ProtocolTypeRouter({
     ),
 })
 
-# File: cs_nea/cs_nea/__init__.py
+# --- cs_nea/__init__.py ---
 
 
-# File: cs_nea/cs_nea/settings.py
+
+# --- cs_nea/settings.py ---
+
 """
 Django settings for cs_nea project.
 
@@ -5550,7 +5837,8 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 
-# File: cs_nea/cs_nea/celery.py
+# --- cs_nea/celery.py ---
+
 from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
@@ -5567,7 +5855,8 @@ def debug_task(self):
     print(f"Request: {self.request!r}")
 
 
-# File: cs_nea/cs_nea/wsgi.py
+# --- cs_nea/wsgi.py ---
+
 """
 WSGI config for cs_nea project.
 
@@ -5586,7 +5875,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cs_nea.settings')
 application = get_wsgi_application()
 
 
-# File: cs_nea/cs_nea/urls.py
+# --- cs_nea/urls.py ---
+
 """
 URL configuration for cs_nea project.
 
@@ -5616,3 +5906,14 @@ urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
     
 ]
+
+
+# --- static/logo.png ---
+
+[Could not decode file: /home/zhaojin/my_projects/cs_neaV2/cs_nea/static/logo.png]
+
+
+# --- static/media/logo.png ---
+
+[Could not decode file: /home/zhaojin/my_projects/cs_neaV2/cs_nea/static/media/logo.png]
+
