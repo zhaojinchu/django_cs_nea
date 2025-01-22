@@ -482,14 +482,14 @@ def accept_rescheduling_request(request, rescheduling_request_id):
         ReschedulingRequest, rescheduling_id=rescheduling_request_id
     )
 
-    if request.user.user_type == 1:  # Student
+    if request.user.user_type == 1:
         if request.user.student != rescheduling_request.original_lesson.student:
             messages.error(
                 request,
                 "You don't have permission to accept this rescheduling request.",
             )
             return redirect("lesson_requests")
-    elif request.user.user_type == 2:  # Teacher
+    elif request.user.user_type == 2:
         if request.user.teacher != rescheduling_request.original_lesson.teacher:
             messages.error(
                 request,
@@ -499,14 +499,48 @@ def accept_rescheduling_request(request, rescheduling_request_id):
     else:
         messages.error(request, "Invalid user type.")
         return redirect("lesson_requests")
-
+    
     try:
-        new_lesson = rescheduling_request.approve()
-        messages.success(
-            request, f"Lesson rescheduled successfully to {new_lesson.start_datetime}."
-        )
+        with transaction.atomic():
+            original_lesson = rescheduling_request.original_lesson
+
+            # Create the new lesson
+            new_lesson = Lesson.objects.create(
+                student=original_lesson.student,
+                teacher=original_lesson.teacher,
+                start_datetime=rescheduling_request.requested_datetime,
+                end_datetime=rescheduling_request.end_datetime,
+                student_attendance=False,  # Reset attendance for new lesson
+            )
+
+            # Update the original lesson
+            original_lesson.is_rescheduled = True
+            original_lesson.rescheduled_to = new_lesson
+            original_lesson.save()
+
+            # Update the rescheduling request
+            rescheduling_request.is_approved = True
+            rescheduling_request.save()
+
+            # Create notifications
+            Notification.objects.create(
+                receiver=original_lesson.student.user,
+                content=(
+                    f"Lesson on {localtime(original_lesson.start_datetime).strftime("%B %d, %Y at %I:%M %p")} "
+                    f"has been rescheduled to {localtime(new_lesson.start_datetime).strftime("%B %d, %Y at %I:%M %p")}"
+                ),
+            )
+            Notification.objects.create(
+                receiver=original_lesson.teacher.user,
+                content=(
+                    f"Lesson on {localtime(original_lesson.start_datetime).strftime("%B %d, %Y at %I:%M %p")} "
+                    f"has been rescheduled to {localtime(new_lesson.start_datetime).strftime("%B %d, %Y at %I:%M %p")}"
+                ),
+            )
+        messages.success(request, "The lesson has been successfully rescheduled.")
+        
     except Exception as e:
-        messages.error(request, f"An error occurred while rescheduling: {str(e)}")
+        messages.error(request, f"An error occurred: {str(e)}")
 
     return redirect("lesson_requests")
 
