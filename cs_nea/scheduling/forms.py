@@ -190,7 +190,7 @@ class LessonForm(forms.ModelForm):
 # Reschedule lesson form
 class RescheduleLessonForm(forms.ModelForm):
     lesson = forms.ModelChoiceField(
-        queryset=None,
+        queryset=Lesson.objects.none(),
         label="Select Lesson to Reschedule",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
@@ -214,17 +214,10 @@ class RescheduleLessonForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
-        self.request = kwargs.pop("request", None)
         super(RescheduleLessonForm, self).__init__(*args, **kwargs)
         
-        self.fields["lesson"].queryset = Lesson.objects.none()
-        
-        # Get timezone from query parameters
-        if self.request:
-            timezone_string = self.request.GET.get("timezone", "UTC")
-        else:
-            timezone_string = "UTC"
-        
+        # Get timezone
+        timezone_string = self.user.timezone
         try:
             user_timezone = pytz_timezone(timezone_string)
         except UnknownTimeZoneError:
@@ -244,24 +237,18 @@ class RescheduleLessonForm(forms.ModelForm):
                 lessons = Lesson.objects.filter(
                     student=self.user.student, is_rescheduled=False
                 ).order_by("start_datetime")
-                self.fields["lesson"].choices = [
-                    (
-                        lesson.lesson_id,
-                        f"{lesson.start_datetime_local.strftime('%Y-%m-%d %H:%M')} - {lesson.teacher.user.get_full_name()}",
-                    )
-                    for lesson in [localize_datetime(lesson) for lesson in lessons]
-                ]
             else:
                 lessons = Lesson.objects.filter(
                     teacher=self.user.teacher, is_rescheduled=False
                 ).order_by("start_datetime")
-                self.fields["lesson"].choices = [
-                    (
-                        lesson.lesson_id,
-                        f"{lesson.start_datetime_local.strftime('%Y-%m-%d %H:%M')} - {lesson.student.user.get_full_name()}",
-                    )
-                    for lesson in [localize_datetime(lesson) for lesson in lessons]
-                ]
+
+            self.fields["lesson"].queryset = lessons
+
+            # Code to reformat labels in a queryset
+            self.fields["lesson"].label_from_instance = lambda obj: (
+                f"{localize_datetime(obj).start_datetime_local.strftime('%Y-%m-%d %H:%M')} - "
+                f"{obj.teacher.user.get_full_name() if self.user.user_type == 1 else obj.student.user.get_full_name()}"
+            )
         
     def clean(self):
         cleaned_data = super().clean()
@@ -269,27 +256,28 @@ class RescheduleLessonForm(forms.ModelForm):
         end_datetime = cleaned_data.get("end_datetime")
         user_timezone = self.data.get("timezone")
 
+        if user_timezone:
+            user_timezone = pytz_timezone(user_timezone)
+
+            if requested_datetime:
+                if requested_datetime.tzinfo is not None:
+                    requested_datetime = requested_datetime.replace(tzinfo=None)
+                requested_datetime = user_timezone.localize(requested_datetime)
+                cleaned_data["requested_datetime"] = requested_datetime.astimezone(
+                    pytz.UTC
+                )
+
+            if end_datetime:
+                if end_datetime.tzinfo is not None:
+                    end_datetime = end_datetime.replace(tzinfo=None)
+                end_datetime = user_timezone.localize(end_datetime)
+                cleaned_data["end_datetime"] = end_datetime.astimezone(pytz.UTC)
+
         if requested_datetime and requested_datetime <= timezone.now():
             raise forms.ValidationError("Requested datetime must be in the future.")
 
         if end_datetime and requested_datetime and end_datetime <= requested_datetime:
-            raise forms.ValidationError(
-                "End datetime must be after the requested datetime."
-            )
-        
-        if user_timezone:
-            user_timezone = pytz_timezone(user_timezone)
-
-        if requested_datetime:
-            if requested_datetime.tzinfo is not None:
-                requested_datetime = requested_datetime.replace(tzinfo=None)
-            requested_datetime = user_timezone.localize(requested_datetime)
-            cleaned_data["requested_datetime"] = requested_datetime.astimezone(pytz.UTC)
-
-        if end_datetime:
-            if end_datetime.tzinfo is not None:
-                end_datetime = end_datetime.replace(tzinfo=None)
-            end_datetime = user_timezone.localize(end_datetime)
-            cleaned_data["end_datetime"] = end_datetime.astimezone(pytz.UTC)
+            raise forms.ValidationError("End datetime must be after the requested datetime.")
 
         return cleaned_data
+

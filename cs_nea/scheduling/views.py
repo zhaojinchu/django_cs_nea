@@ -28,7 +28,7 @@ from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from pytz import timezone as pytz_timezone, UnknownTimeZoneError
-
+import pytz
 
 def is_teacher(user):
     return user.user_type == 2
@@ -413,26 +413,39 @@ def decline_lesson_request(request, request_id):
 @login_required
 def reschedule_lesson(request):    
     if request.method == "POST":
-        form = RescheduleLessonForm(data=request.POST, user=request.user, request=request)
+        form = RescheduleLessonForm(data=request.POST, user=request.user)
         if form.is_valid():
             try:
                 with transaction.atomic():
                     rescheduling_request = form.save(commit=False)
                     rescheduling_request.requested_by = request.user
                     rescheduling_request.original_lesson = form.cleaned_data["lesson"]
-                    rescheduling_request.requested_datetime = timezone.make_aware(form.cleaned_data['requested_datetime'])
-                    rescheduling_request.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
+                    rescheduling_request.requested_datetime = form.cleaned_data['requested_datetime']
+                    rescheduling_request.end_datetime = form.cleaned_data['end_datetime']
                     rescheduling_request.save()
-
+                    
+                    
+                    
                     # Create notification for the other party
                     other_user = (
                         rescheduling_request.original_lesson.teacher.user
                         if request.user.user_type == 1
                         else rescheduling_request.original_lesson.student.user
                     )
+                    
+                    user_timezone = pytz_timezone(other_user.timezone)
+
+                    # Convert start_datetime to the user's local timezone
+                    localized_start_datetime = rescheduling_request.original_lesson.start_datetime.astimezone(user_timezone)
+                    print(localized_start_datetime, flush=True)
+                    print(rescheduling_request.original_lesson.start_datetime, flush=True)
+                    # Format the datetime for a user-friendly display
+                    formatted_datetime = localized_start_datetime.strftime('%d-%m-%Y %I:%M %p')
+
                     Notification.objects.create(
-                        receiver=other_user,
-                        content=f"New rescheduling request for lesson on {rescheduling_request.original_lesson.start_datetime}",
+                        receiver=other_user,    
+                        content=f"New rescheduling request for lesson on {formatted_datetime}",
+                        timestamp=timezone.now().isoformat(),
                     )
 
                 messages.success(
@@ -446,7 +459,7 @@ def reschedule_lesson(request):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = RescheduleLessonForm(user=request.user, request=request)
+        form = RescheduleLessonForm(user=request.user)
 
     return render(request, "scheduling/reschedule_lesson.html", {"form": form})
 
