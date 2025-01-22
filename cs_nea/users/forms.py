@@ -152,19 +152,19 @@ class UserSettingsForm(forms.ModelForm):
         widgets = {
             "email": forms.EmailInput(
                 attrs={
-                    "disabled": "disabled",
+                    "readonly": "readonly",
                     "class": "bg-neutral-200"
                 }
             ),
             "first_name": forms.TextInput(
                 attrs={
-                    "disabled": "disabled",
+                    "readonly": "readonly",
                     "class": "bg-neutral-200"
                 }
             ),
             "last_name": forms.TextInput(
                 attrs={
-                    "disabled": "disabled",
+                    "readonly": "readonly",
                     "class": "bg-neutral-200"
                 }
             ),
@@ -172,18 +172,6 @@ class UserSettingsForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        current_password = cleaned_data.get("current_password")
-        new_password = cleaned_data.get("new_password")
-        confirm_new_password = cleaned_data.get("confirm_new_password")
-
-        if new_password:
-            if not current_password:
-                raise forms.ValidationError(
-                    "Current password is required to set a new password"
-                )
-            if new_password != confirm_new_password:
-                raise forms.ValidationError("New passwords do not match")
-
         return cleaned_data
 
 

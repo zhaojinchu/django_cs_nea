@@ -7,18 +7,19 @@
 {% block content %}
 <div class="container mx-auto">
     
-    {% if messages %}
-    <div class="mb-4">
-        {% for message in messages %}
-        <div class="p-4 {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %} rounded">
-            {{ message }}
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    
     <form method="post" class="space-y-4">
         {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div
+            class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+            role="alert"
+        >
+            {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
         
         {% for field in form %}
         <div>
@@ -27,9 +28,9 @@
             </label>
             <div class="mt-1">
                 {% if field.name == 'two_factor_enabled' %}
-                    {{ field|add_class:"h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" }}
+                    {{ field|add_class:"h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded" }}
                 {% else %}
-                    {{ field|add_class:"shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" }}
+                    {{ field|add_class:"shadow-sm focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border-gray-300 rounded-md" }}
                 {% endif %}
             </div>
             {% if field.help_text %}
@@ -42,7 +43,7 @@
         {% endfor %}
         
         <div>
-            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
                 Save Changes
             </button>
         </div>

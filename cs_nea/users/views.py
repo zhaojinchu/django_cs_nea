@@ -257,22 +257,50 @@ def settings(request):
     user = request.user
     if request.method == "POST":
         form = UserSettingsForm(request.POST, instance=user)
-        if form.is_valid():
-            if form.cleaned_data.get("new_password"):
-                if user.check_password(form.cleaned_data.get("current_password")):
-                    user.set_password(form.cleaned_data.get("new_password"))
-                    update_session_auth_hash(request, user)  # Keep the user logged in
+        if form.is_valid(): 
+            current_password = form.cleaned_data.get("current_password")
+            new_password = form.cleaned_data.get("new_password")
+            confirm_new_password = form.cleaned_data.get("confirm_new_password")
+            
+            if new_password or current_password or confirm_new_password:
+                # Ensures that all 3 are filled
+                if not (current_password and new_password and confirm_new_password):
+                    messages.error(request, "All password fields must be filled to update your password.")
+                    return render(request, "users/settings.html", {"form": form})
+                if new_password != confirm_new_password:
+                    messages.error(request, "New passwords do not match.")
+                    return render(request, "users/settings.html", {"form": form})
+                
+            # Check if user is trying to change their password
+            if new_password or confirm_new_password:
+                if not current_password:
+                    messages.error(request, "Current password is required to set a new password.")
+                    return render(request, "users/settings.html", {"form": form})
+
+                # Validate the current password
+                if user.check_password(current_password):
+                    user.set_password(new_password)
+                    update_session_auth_hash(request, user)
                     messages.success(request, "Your password has been updated.")
+                    return render(request, "users/settings.html", {"form": form})
                 else:
                     messages.error(request, "Current password is incorrect.")
                     return render(request, "users/settings.html", {"form": form})
 
-            form.save()
-            messages.success(request, "Your settings have been updated.")
+            # Save other fields
+            if form.has_changed():
+                form.save()
+                messages.success(request, "Your settings have been updated.")
+            else:
+                messages.error(request, "No changes detected.")
+
             return redirect("settings")
+        else:
+            # Ensure form with error messages are returned
+            return render(request, "users/settings.html", {"form": form})
     else:
         form = UserSettingsForm(instance=user)
-
+        
     return render(request, "users/settings.html", {"form": form})
 
 
