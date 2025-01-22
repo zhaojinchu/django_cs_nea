@@ -105,38 +105,3 @@ class ReschedulingRequest(models.Model):
 
     def __str__(self):
         return f"Rescheduling request for lesson {self.original_lesson.lesson_id} on {self.requested_datetime}"
-    
-    # Instead of this in the views.py file, we implement in the model to save space.
-    # @transaction.atomic
-    # def approve(self):
-    #     original_lesson = self.original_lesson
-        
-    #     # Create new lesson
-    #     new_lesson = Lesson.objects.create(
-    #         student=original_lesson.student,
-    #         teacher=original_lesson.teacher,
-    #         start_datetime=self.requested_datetime,
-    #         end_datetime=self.end_datetime,
-    #         student_attendance=False  # Reset attendance for new lesson
-    #     )
-        
-    #     # Update original lesson
-    #     original_lesson.is_rescheduled = True
-    #     original_lesson.rescheduled_to = new_lesson
-    #     original_lesson.save()
-        
-    #     # Update rescheduling request
-    #     self.is_approved = True
-    #     self.save()
-        
-    #     # Create notifications
-    #     Notification.objects.create(
-    #         receiver=original_lesson.student.user,
-    #         content=f"Lesson on {original_lesson.start_datetime} has been rescheduled to {new_lesson.start_datetime}"
-    #     )
-    #     Notification.objects.create(
-    #         receiver=original_lesson.teacher.user,
-    #         content=f"Lesson on {original_lesson.start_datetime} has been rescheduled to {new_lesson.start_datetime}"
-    #     )
-        
-    #     return new_lesson
