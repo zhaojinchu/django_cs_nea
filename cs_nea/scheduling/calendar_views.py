@@ -21,7 +21,7 @@ def get_calendar_data(request):
 
     events = []
 
-    if request.user.user_type == 2:  # Teacher
+    if request.user.user_type == 2:
         lessons = Lesson.objects.filter(
             teacher=request.user.teacher,
             start_datetime__gte=start,
@@ -32,7 +32,7 @@ def get_calendar_data(request):
             start_datetime__gte=start,
             end_datetime__lte=end,
         )
-    elif request.user.user_type == 1:  # Student
+    elif request.user.user_type == 1:
         lessons = Lesson.objects.filter(
             student=request.user.student,
             start_datetime__gte=start,
@@ -59,6 +59,7 @@ def get_calendar_data(request):
             "title": event_title,
             "start": lesson.start_datetime.astimezone(user_timezone).isoformat(),
             "end": lesson.end_datetime.astimezone(user_timezone).isoformat(),
+            "allDay": False,
             "color": "blue",
             "editable": False,
         })
