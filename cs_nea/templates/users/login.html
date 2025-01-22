@@ -3,6 +3,8 @@
 {% block content %}
 <form class="flex pt-28 justify-center" method="post">
     {% csrf_token %}
+    <input type="hidden" id="timezone" name="timezone">
+
     <div class="flex flex-col gap-4 justify-center w-full max-w-md px-4">
         {% if request.path == "/student/login" %}
         <div class="text-4xl font-semibold">Student Log In</div>
@@ -47,6 +49,11 @@
         </div>
     </div>
 </form>
+
+<script>
+    // Automatically detect and set the timezone
+    document.getElementById('timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+</script>
 {% endblock content %} 
 
 

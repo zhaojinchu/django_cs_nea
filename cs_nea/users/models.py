@@ -28,6 +28,9 @@ class User(AbstractBaseUser):
         choices=USER_TYPE_CHOICES,
         default=1,
     )
+    
+    # Store timezone
+    timezone = models.CharField(max_length=50, default="UTC")
 
     email = models.EmailField(
         "email address",

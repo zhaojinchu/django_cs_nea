@@ -44,4 +44,19 @@
     </div>
 </div>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const currentUrl = new URL(window.location.href);
+    
+        // Append timezone to query parameters
+        if (!currentUrl.searchParams.has("timezone")) {
+            currentUrl.searchParams.append("timezone", userTimezone);
+            window.location.href = currentUrl.toString();
+        }
+    });
+    
+</script>
+
 {% endblock %}
+

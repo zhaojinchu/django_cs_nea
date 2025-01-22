@@ -2,7 +2,7 @@ from django import forms
 from .models import LessonRequest, Lesson, ReschedulingRequest
 from users.models import Teacher, Student, Invite
 from django.utils import timezone
-from pytz import timezone as pytz_timezone
+from pytz import timezone as pytz_timezone, UnknownTimeZoneError
 import pytz
 
 
@@ -214,21 +214,60 @@ class RescheduleLessonForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
+        self.request = kwargs.pop("request", None)
         super(RescheduleLessonForm, self).__init__(*args, **kwargs)
+        
+        self.fields["lesson"].queryset = Lesson.objects.none()
+        
+        # Get timezone from query parameters
+        if self.request:
+            timezone_string = self.request.GET.get("timezone", "UTC")
+        else:
+            timezone_string = "UTC"
+        
+        try:
+            user_timezone = pytz_timezone(timezone_string)
+        except UnknownTimeZoneError:
+            user_timezone = pytz_timezone("UTC")
+            
+        def localize_datetime(lesson):
+            # Ensure start_datetime is timezone aware
+            if lesson.start_datetime.tzinfo is None:
+                lesson.start_datetime = pytz.UTC.localize(lesson.start_datetime)
+
+            # Convert to user's timezone
+            lesson.start_datetime_local = lesson.start_datetime.astimezone(user_timezone)
+            return lesson
+
         if self.user:
             if self.user.user_type == 1:
-                self.fields["lesson"].queryset = Lesson.objects.filter(
+                lessons = Lesson.objects.filter(
                     student=self.user.student, is_rescheduled=False
                 ).order_by("start_datetime")
+                self.fields["lesson"].choices = [
+                    (
+                        lesson.lesson_id,
+                        f"{lesson.start_datetime_local.strftime('%Y-%m-%d %H:%M')} - {lesson.teacher.user.get_full_name()}",
+                    )
+                    for lesson in [localize_datetime(lesson) for lesson in lessons]
+                ]
             else:
-                self.fields["lesson"].queryset = Lesson.objects.filter(
+                lessons = Lesson.objects.filter(
                     teacher=self.user.teacher, is_rescheduled=False
                 ).order_by("start_datetime")
-
+                self.fields["lesson"].choices = [
+                    (
+                        lesson.lesson_id,
+                        f"{lesson.start_datetime_local.strftime('%Y-%m-%d %H:%M')} - {lesson.student.user.get_full_name()}",
+                    )
+                    for lesson in [localize_datetime(lesson) for lesson in lessons]
+                ]
+        
     def clean(self):
         cleaned_data = super().clean()
         requested_datetime = cleaned_data.get("requested_datetime")
         end_datetime = cleaned_data.get("end_datetime")
+        user_timezone = self.data.get("timezone")
 
         if requested_datetime and requested_datetime <= timezone.now():
             raise forms.ValidationError("Requested datetime must be in the future.")
@@ -237,5 +276,20 @@ class RescheduleLessonForm(forms.ModelForm):
             raise forms.ValidationError(
                 "End datetime must be after the requested datetime."
             )
+        
+        if user_timezone:
+            user_timezone = pytz_timezone(user_timezone)
+
+        if requested_datetime:
+            if requested_datetime.tzinfo is not None:
+                requested_datetime = requested_datetime.replace(tzinfo=None)
+            requested_datetime = user_timezone.localize(requested_datetime)
+            cleaned_data["requested_datetime"] = requested_datetime.astimezone(pytz.UTC)
+
+        if end_datetime:
+            if end_datetime.tzinfo is not None:
+                end_datetime = end_datetime.replace(tzinfo=None)
+            end_datetime = user_timezone.localize(end_datetime)
+            cleaned_data["end_datetime"] = end_datetime.astimezone(pytz.UTC)
 
         return cleaned_data

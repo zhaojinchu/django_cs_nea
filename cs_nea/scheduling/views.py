@@ -27,6 +27,7 @@ from django.utils.timezone import make_aware
 from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from pytz import timezone as pytz_timezone, UnknownTimeZoneError
 
 
 def is_teacher(user):
@@ -55,7 +56,7 @@ def student_lesson_request(request):
             teacher = lesson_request.teacher
             
             notification_config, created = NotificationConfig.objects.get_or_create(
-                    user=teacher.user
+                user=teacher.user
             )
             
             if notification_config.receive_notification:
@@ -410,9 +411,9 @@ def decline_lesson_request(request, request_id):
 
 # Reschedule lesson view
 @login_required
-def reschedule_lesson(request):
+def reschedule_lesson(request):    
     if request.method == "POST":
-        form = RescheduleLessonForm(request.POST, user=request.user)
+        form = RescheduleLessonForm(data=request.POST, user=request.user, request=request)
         if form.is_valid():
             try:
                 with transaction.atomic():
@@ -445,7 +446,7 @@ def reschedule_lesson(request):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = RescheduleLessonForm(user=request.user)
+        form = RescheduleLessonForm(user=request.user, request=request)
 
     return render(request, "scheduling/reschedule_lesson.html", {"form": form})
 

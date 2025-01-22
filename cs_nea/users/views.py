@@ -23,7 +23,7 @@ from .forms import (
 )
 from .models import Student, Teacher, User, Invite
 from communications.models import Note
-
+from pytz import all_timezones
 
 def index(request):
     return render(request, "index.html")
@@ -32,19 +32,27 @@ def index(request):
 def login(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
+        timezone = request.POST.get("timezone", "UTC")
+        
         if form.is_valid():
             email = form.cleaned_data.get("email")
             password = form.cleaned_data.get("password")
             user = authenticate(request, username=email, password=password)
+            
             if user is not None:
                 if 'teacher/login' in request.path:
                     if not user.user_type == 2:
                         messages.error(request, "This is not a teacher account")
                         return redirect("teacher_login")
+                    
                 elif 'student/login' in request.path:
                     if not user.user_type == 1:
                         messages.error(request, "This is not a student account")
                         return redirect("student_login")
+                    
+                if timezone in all_timezones:
+                    user.timezone = timezone
+                    user.save()
 
                 if user.two_factor_enabled:
                     user.generate_two_factor_code()

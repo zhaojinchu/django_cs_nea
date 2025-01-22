@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from .models import User, Student, Teacher, Invite
 from communications.models import Note
 from phonenumber_field.formfields import SplitPhoneNumberField
-
+from pytz import all_timezones
 
 class LoginForm(forms.Form):
     email = forms.EmailField()
@@ -139,6 +139,10 @@ class UserSettingsForm(forms.ModelForm):
         widget=forms.PasswordInput(), required=False, validators=[validate_password]
     )
     confirm_new_password = forms.CharField(widget=forms.PasswordInput(), required=False)
+    timezone = forms.ChoiceField(
+        choices=[(tz, tz) for tz in all_timezones],
+        widget=forms.Select(attrs={"class": "form-control"})
+    )
 
     class Meta:
         model = User
@@ -148,6 +152,7 @@ class UserSettingsForm(forms.ModelForm):
             "email",
             "contact_number",
             "two_factor_enabled",
+            "timezone",
         ]
         widgets = {
             "email": forms.EmailInput(
