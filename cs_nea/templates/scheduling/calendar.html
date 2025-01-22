@@ -91,6 +91,16 @@
             height: '100%',
             timeZone: 'local',
             fixedWeekCount: false, 
+            customButtons: {
+                today: {
+                    text: 'Today',
+                    click: function() {
+                        calendar.removeAllEvents();
+                        calendar.today();
+                        calendar.refetchEvents();
+                    }
+                }
+            },
         });
     
         calendar.render();
