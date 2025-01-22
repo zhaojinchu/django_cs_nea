@@ -182,7 +182,7 @@ def delete_event(request):
         return JsonResponse({"error": "Can only delete calendar events"}, status=400)
 
     event = get_object_or_404(CalendarEvent, event_id=event_id[6:])
-    if event.teacher != request.user.teacher:
+    if event.user != request.user:
         return JsonResponse({"error": "Permission denied"}, status=403)
 
     event.delete()
