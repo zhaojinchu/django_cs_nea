@@ -1,8 +1,24 @@
 # CS NEA 
 
-### Always run
-- python manage.py tailwind start
 
-- celery -A cs_nea beat --loglevel=info
+### Production only
 
-- celery -A cs_nea worker --loglevel=info
+#### Logs
+journalctl -u daphne
+
+#### Restarting services
+sudo systemctl restart daphne
+sudo systemctl restart nginx
+sudo systemctl restart gunicorn
+sudo systemctl restart celery
+sudo systemctl restart celerybeat
+
+#### Reloads systemd
+sudo systemctl daemon-reload
+
+### Services in use
+- Redis
+- Gunicorn
+- Nginx
+- Celery
+- Daphne

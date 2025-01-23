@@ -1,3 +1,25 @@
 env/
 cs_nea/node_modules/
-cs_nea/db.sqlite3
+
+# Database
+db.sqlite3
+
+# Celery Beat
+celerybeat-schedule.*
+
+# Compiled Python Files
+__pycache__/
+*.pyc
+
+# Static Files
+staticfiles/
+
+# Node Modules
+node_modules/
+
+# Tailwind Build Files
+theme/static/css/dist/
+theme/static_src/.cache/
+
+# Logs
+*.log

@@ -41,7 +41,7 @@ def schedule_notifications():
                 lesson.save()
                 
         if teacher_preferences.lesson_reminder_1hr and not lesson.is_teacher_notification_sent:
-            if lesson.start_datetime - now <= timedelta(minutes=30):
+            if lesson.start_datetime - now <= timedelta(minutes=60):
                 send_notification(lesson.teacher.user, f"Reminder: Your lesson with {lesson.student.user.get_full_name()} is in 1 hour.")
                 lesson.is_teacher_notification_sent = True
                 lesson.save()

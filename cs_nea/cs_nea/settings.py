@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-from celery.schedules import crontab
+from celery import Celery
+import os 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +27,7 @@ SECRET_KEY = "django-insecure-z&kc3iy^14wh+aj5q7@rt7mxnwr&^xj=3#*(g8o-uh8$-a-q=4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["193.123.64.13", "127.0.0.1"]
 
 
 # Application definition
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     "daphne",
     "channels",
     "django.contrib.staticfiles",
+    "django_celery_beat",
     # Additional apps
     "tailwind",
     "theme",
@@ -136,11 +138,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
+# URL to serve static files
 STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    os.path.join(BASE_DIR, "static"),
 ]
+
+# Directory where static files will be collected
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -186,8 +192,8 @@ CELERY_TIMEZONE = "UTC"
 
 # Celery beat schedule
 CELERY_BEAT_SCHEDULE = {
-    "check-scheduled-notifications-every-5-minutes": {
+    "check-scheduled-notifications-every-5-seconds": {
         "task": "communications.tasks.check_scheduled_notifications",
-        "schedule": crontab(minute="*/5"),
+        "schedule": 5.0,
     },
 }

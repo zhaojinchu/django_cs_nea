@@ -291,25 +291,6 @@ def get_student_schedule(request, student_id):
         
     return JsonResponse(events, safe=False)
 
-# Create lesson view
-"""
-@login_required
-def create_lesson(request):
-    if request.method == "POST":
-        form = LessonForm(request.POST)
-        if form.is_valid():
-            lesson = form.save(commit=False)
-            lesson.student = Student.objects.get(user=request.user)
-            lesson.start_datetime = timezone.make_aware(form.cleaned_data['start_datetime'])
-            lesson.end_datetime = timezone.make_aware(form.cleaned_data['end_datetime'])
-            lesson.save()
-            messages.success(request, "Lesson created successfully!")
-            return redirect("lesson_list")
-    else:
-        form = LessonForm()
-
-    return render(request, "scheduling/create_lesson.html", {"form": form})
-"""
 
 # View for listing lessons requests
 @login_required
@@ -610,6 +591,7 @@ def get_recent_lessons(request):
 
     return JsonResponse(lessons_data, safe=False)
 
+
 @require_POST
 @login_required
 @user_passes_test(is_teacher)
@@ -625,6 +607,7 @@ def update_attendance(request):
         return JsonResponse({'success': True})
     except Lesson.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Lesson not found'}, status=404)
+
 
 # Fetches the corresponding schedule based on user type
 @login_required
