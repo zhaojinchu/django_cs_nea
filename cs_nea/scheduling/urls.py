@@ -56,11 +56,13 @@ urlpatterns = [
     path("delete_event/", delete_event, name="delete_event"),
     
     # Fetching teacher schedule URL
-    path('get_teacher_schedule/<int:teacher_id>/', views.get_teacher_schedule, name='get_teacher_schedule'),
+    path("get_teacher_schedule/<int:teacher_id>/", views.get_teacher_schedule, name='get_teacher_schedule'),
     # Fetching student schedule URL
-    path('get_student_schedule/<int:student_id>/', views.get_student_schedule, name='get_student_schedule'),
+    path("get_student_schedule/<int:student_id>/", views.get_student_schedule, name='get_student_schedule'),
     
     # Attendance related URLs
-    path('get_recent_lessons/', views.get_recent_lessons, name='get_recent_lessons'),
-    path('update_attendance/', views.update_attendance, name='update_attendance'),
+    path("get_recent_lessons/", views.get_recent_lessons, name='get_recent_lessons'),
+    path("update_attendance/", views.update_attendance, name='update_attendance'),
+    
+    path("get_lesson_details/<int:lesson_id>/", views.get_lesson_details, name="get_lesson_details"),
 ]

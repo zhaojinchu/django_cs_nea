@@ -29,6 +29,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from pytz import timezone as pytz_timezone, UnknownTimeZoneError
 from django.utils.timezone import localtime
+from django.urls import reverse
 
 def is_teacher(user):
     return user.user_type == 2
@@ -624,3 +625,19 @@ def update_attendance(request):
         return JsonResponse({'success': True})
     except Lesson.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Lesson not found'}, status=404)
+
+# Fetches the corresponding schedule based on user type
+@login_required
+def get_lesson_details(request, lesson_id):
+    lesson = get_object_or_404(Lesson, lesson_id=lesson_id)
+
+    if request.user == lesson.student.user:
+        # If the current user is the student, fetch the teacher's schedule
+        schedule_url = reverse("get_teacher_schedule", args=[lesson.teacher.teacher_id])
+    elif request.user == lesson.teacher.user:
+        # If the current user is the teacher, fetch the student's schedule
+        schedule_url = reverse("get_student_schedule", args=[lesson.student.student_id])
+    else:
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+
+    return JsonResponse({"scheduleUrl": schedule_url})
