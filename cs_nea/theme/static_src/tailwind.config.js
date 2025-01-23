@@ -54,4 +54,5 @@ module.exports = {
         require('@tailwindcss/typography'),
         require('@tailwindcss/aspect-ratio'),
     ],
+    output: "/home/ubuntu/django_cs_nea/cs_nea/static/css/dist",
 }
