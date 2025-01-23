@@ -111,9 +111,9 @@ def create_assignment(request):
 
 @login_required
 def assignment_list(request):
-    if request.user.user_type == 1:  # Student
+    if request.user.user_type == 1:
         assignments = Assignment.objects.filter(student=request.user.student)
-    else:  # Teacher
+    else:
         assignments = Assignment.objects.filter(teacher=request.user.teacher)
     return render(
         request, "communications/assignment_list.html", {"assignments": assignments}
