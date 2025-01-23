@@ -104,6 +104,10 @@ def create_assignment(request):
             assignment.save()
             messages.success(request, "Task created successfully.")
             return redirect("assignment_list")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
     else:
         form = AssignmentForm(teacher=request.user.teacher)
     return render(request, "communications/create_assignment.html", {"form": form})

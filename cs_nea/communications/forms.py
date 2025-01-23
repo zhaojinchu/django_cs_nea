@@ -1,6 +1,8 @@
 from django import forms
 from .models import Assignment, NotificationConfig
 from users.models import Student
+from django.core.exceptions import ValidationError
+from django.utils.timezone import now
 
 
 class AssignmentForm(forms.ModelForm):
@@ -18,6 +20,12 @@ class AssignmentForm(forms.ModelForm):
             self.fields["student"].queryset = Student.objects.filter(
                 invites__teacher=self.teacher, invites__status="accepted"
             )
+            
+    def clean_due_date(self):
+        due_date = self.cleaned_data.get("due_date")
+        if due_date and due_date < now():
+            raise ValidationError("The due date cannot be in the past.")
+        return due_date
 
 
 class NotificationConfigForm(forms.ModelForm):
