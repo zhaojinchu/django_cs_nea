@@ -109,7 +109,7 @@ def get_teacher_schedule(request, teacher_id):
     )
 
     calendar_events = CalendarEvent.objects.filter(
-        teacher=teacher,
+        user=teacher.user,
         start_datetime__gte=start,
         end_datetime__lte=end,
     )
@@ -121,7 +121,7 @@ def get_teacher_schedule(request, teacher_id):
             "title": "Busy",
             "start": lesson.start_datetime.isoformat(),
             "end": lesson.end_datetime.isoformat(),
-            "color": "blue",
+            "color": "#383434", # Matched colour with tailwind colours
         })
 
     for event in calendar_events:
@@ -131,7 +131,7 @@ def get_teacher_schedule(request, teacher_id):
             "start": event.start_datetime.isoformat(),
             "end": event.end_datetime.isoformat(),
             "allDay": event.all_day,
-            "color": "green",
+            "color": "#383434",
         })
 
     return JsonResponse(events, safe=False)
@@ -262,17 +262,32 @@ def get_student_schedule(request, student_id):
         start_datetime__gte=start,
         end_datetime__lte=end,
     )
+    calendar_events = CalendarEvent.objects.filter(
+        user=student.user,
+        start_datetime__gte=start,
+        end_datetime__lte=end,
+    )
 
     events = []
     for lesson in lessons:
         events.append({
             "id": f"lesson_{lesson.lesson_id}",
-            "title": f"Lesson with {Teacher.objects.get(teacher_id=lesson.teacher_id).user.get_full_name()}",
+            "title": "Busy",
             "start": lesson.start_datetime.isoformat(),
             "end": lesson.end_datetime.isoformat(),
-            "color": "blue",
+            "color": "#383434", # Matched colour with tailwind colours
         })
 
+    for event in calendar_events:
+        events.append({
+            "id": f"event_{event.event_id}",
+            "title": "Busy",
+            "start": event.start_datetime.isoformat(),
+            "end": event.end_datetime.isoformat(),
+            "allDay": event.all_day,
+            "color": "#383434",
+        })
+        
     return JsonResponse(events, safe=False)
 
 # Create lesson view
