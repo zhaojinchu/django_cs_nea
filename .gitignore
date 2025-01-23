@@ -1,2 +1,3 @@
 env/
 cs_nea/node_modules/
+cs_nea/db.sqlite3
